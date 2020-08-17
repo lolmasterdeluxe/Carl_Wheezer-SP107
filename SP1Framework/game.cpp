@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <string>
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
@@ -17,7 +18,7 @@ SGameChar   g_sChar;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
-Console g_Console(80, 25, "SP1 Framework");
+Console g_Console(45, 15, "SP1 Framework");
 
 //--------------------------------------------------------------
 // Purpose  : Initialisation function
@@ -216,7 +217,7 @@ void update(double dt)
 
 void splashScreenWait()    // waits for time to pass in splash screen
 {
-    if (g_dElapsedTime > 3.0) // wait for 3 seconds to switch to game mode, else do nothing
+    if (g_dElapsedTime > 1.0) // wait for 3 seconds to switch to game mode, else do nothing
         g_eGameState = S_GAME;
 }
 
@@ -231,24 +232,55 @@ void moveCharacter()
 {    
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-    if (g_skKeyEvent[K_UP].keyReleased && g_sChar.m_cLocation.Y > 0)
+    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
     {
-        //Beep(1440, 30);
-        g_sChar.m_cLocation.Y--;       
+        Sleep(75);
+        g_sChar.m_cLocation.Y++;
+        if (GetKeyState(VK_LEFT) & 0X800)
+        {
+            g_sChar.m_cLocation.X--;
+            render();
+        }
+        if (GetKeyState(VK_RIGHT) & 0X800)
+        {
+            g_sChar.m_cLocation.X++;
+            render();
+        }
+        render();
     }
-    if (g_skKeyEvent[K_LEFT].keyReleased && g_sChar.m_cLocation.X > 0)
+    if (g_skKeyEvent[K_UP].keyDown && g_sChar.m_cLocation.Y > 0)
     {
-        //Beep(1440, 30);
+        Beep(1440, 30);
+        for (int i = 0; i < 4; i++)
+        {
+            Sleep(50);
+            g_sChar.m_cLocation.Y--;
+            render();
+        }
+        if (GetKeyState(VK_LEFT) & 0X800)
+        {
+            g_sChar.m_cLocation.X--;
+            render();
+        }
+        if (GetKeyState(VK_RIGHT) & 0X800)
+        {
+            g_sChar.m_cLocation.X++;
+            render();
+        }
+    }
+    if (g_skKeyEvent[K_LEFT].keyDown && g_sChar.m_cLocation.X > 0)
+    {
+        Beep(1440, 30);
         g_sChar.m_cLocation.X--;        
     }
-    if (g_skKeyEvent[K_DOWN].keyReleased && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
+    if (g_skKeyEvent[K_DOWN].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
     {
-        //Beep(1440, 30);
+        Beep(1440, 30);
         g_sChar.m_cLocation.Y++;        
     }
-    if (g_skKeyEvent[K_RIGHT].keyReleased && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 1)
+    if (g_skKeyEvent[K_RIGHT].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 1)
     {
-        //Beep(1440, 30);
+        Beep(1440, 30);
         g_sChar.m_cLocation.X++;        
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
@@ -341,12 +373,15 @@ void renderMap()
 void renderCharacter()
 {
     // Draw the location of the character
-    WORD charColor = 0x0C;
+    char c1 = 205;
+    char c2 = 203;
+    auto c3 = std::string(1, c1) + c2;
+    WORD charColor = 0x4E;
     if (g_sChar.m_bActive)
     {
-        charColor = 0x0A;
+        charColor = 0x2E;
     }
-    g_Console.writeToBuffer(g_sChar.m_cLocation, (char)1, charColor);
+    g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
 void renderFramerate()

@@ -15,8 +15,9 @@ double  g_dElapsedTime;
 double  g_dDeltaTime;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
-
+save state;
 // Game specific variables here
+std::string status;
 SGameChar   g_sChar;
 SGameChar   g_sProj;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
@@ -42,11 +43,12 @@ void init(void)
     std::ifstream save;
     save.open("save.txt");
     if (!save)
-        defaultSave();
-    loadSave();
-    g_sChar.m_cLocation.X = returnX();
-    g_sChar.m_cLocation.Y = returnY();
-    g_sChar.m_bActive = true;
+        state.defaultSave();
+    state.loadSave();
+    g_sChar.m_cLocation.X = state.returnX();
+    g_sChar.m_cLocation.Y = state.returnY();
+    g_sChar.m_bActive = state.returnCharState();
+
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 16, L"Consolas");
 
@@ -299,9 +301,13 @@ void moveCharacter()
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
     {
+        if (status == "1")
+            status = "0";
+        else if (status == "0");
+            status = "1";
         g_sChar.m_bActive = !g_sChar.m_bActive;
     }
-    save(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y));
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 
@@ -316,6 +322,7 @@ void moveProjectile()
         {
             Sleep(15);
             g_sProj.m_cLocation.X++;
+            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
         g_Console.writeToBuffer(g_sProj.m_cLocation, char(196));
@@ -329,6 +336,7 @@ void moveProjectile()
         {
             Sleep(15);
             g_sProj.m_cLocation.X--;
+            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }

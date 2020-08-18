@@ -5,3 +5,13 @@ Release/
 *.suo
 *.user
 ipch/
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+*.vcxproj
+*.filters
+SP1Framework/SP1Framework.vcxproj
+SP1Framework/SP1Framework.vcxproj.filters
+SP1Framework/SP1Framework.vcxproj
+SP1Framework/SP1Framework.vcxproj.filters

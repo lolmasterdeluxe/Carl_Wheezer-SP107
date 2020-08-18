@@ -1,12 +1,14 @@
 // This is the main file for the game logic and function
 //
 //
+#include "save.h"
 #include "game.h"
 #include "Framework\console.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <fstream>
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
@@ -34,9 +36,13 @@ void init( void )
 
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
-
-    g_sChar.m_cLocation.X = g_Console.getConsoleSize().X / 2;
-    g_sChar.m_cLocation.Y = g_Console.getConsoleSize().Y / 2;
+    std::ifstream save;
+    save.open("save.txt");
+    if (!save)
+        defaultSave();
+    loadSave();
+    g_sChar.m_cLocation.X = returnX();
+    g_sChar.m_cLocation.Y = returnY();
     g_sChar.m_bActive = true;
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 16, L"Consolas");
@@ -287,8 +293,7 @@ void moveCharacter()
     {
         g_sChar.m_bActive = !g_sChar.m_bActive;        
     }
-
-   
+    save(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y));
 }
 void processUserInput()
 {

@@ -13,13 +13,16 @@
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
+
 save state;
 // Game specific variables here
 std::string status;
 SGameChar   g_sChar;
 SGameChar   g_sProj;
+SGameChar   g_sEnemy;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
@@ -47,8 +50,9 @@ void init(void)
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
+    g_sEnemy.m_cLocation.X = 40;
+    g_sEnemy.m_cLocation.Y = 14;
     g_sChar.m_bActive = state.returnCharState();
-
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 16, L"Consolas");
 
@@ -236,7 +240,7 @@ void updateGame()       // gameplay logic
 {
     processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
     moveCharacter();    // moves the character, collision detection, physics, etc
-    moveProjectile();                    // sound can be played here too.
+    moveProjectile();   // sound can be played here too.
 }
 
 void moveCharacter()
@@ -250,12 +254,10 @@ void moveCharacter()
         if (GetKeyState(0x41) & 0X800)
         {
             g_sChar.m_cLocation.X--; //fall distance (1 unit)
-            render();
         }
         if (GetKeyState(0x44) & 0X800)
         {
             g_sChar.m_cLocation.X++; //fall distance (1 unit)
-            render();
         }
         render();
     }
@@ -304,7 +306,7 @@ void moveCharacter()
         if (status == "1")
             status = "0";
         else if (status == "0");
-            status = "1";
+        status = "1";
         g_sChar.m_bActive = !g_sChar.m_bActive;
     }
     state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -318,22 +320,29 @@ void moveProjectile()
         Beep(1440, 30);
         g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
         g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-        for (int i = 0; i < (g_Console.getConsoleSize().X - g_sChar.m_cLocation.X); i++)
+        for (int i = 0; i <= 20; i++)
         {
+            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+            {
+                break;
+            }
             Sleep(15);
             g_sProj.m_cLocation.X++;
             state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
-        g_Console.writeToBuffer(g_sProj.m_cLocation, char(196));
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
     {
         Beep(1440, 30);
         g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
         g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-        for (int i = 0; i < g_Console.getConsoleSize().X - (g_Console.getConsoleSize().X - g_sChar.m_cLocation.X); i++)
+        for (int i = 0; i <= 20; i++)
         {
+            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+            {
+                break;
+            }
             Sleep(15);
             g_sProj.m_cLocation.X--;
             state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -341,6 +350,7 @@ void moveProjectile()
         }
     }
 }
+
 void processUserInput()
 {
     // quits the game if player hits the escape key
@@ -427,14 +437,32 @@ void renderCharacter()
     char c1 = 205;
     char c2 = 203;
     auto c3 = std::string(1, c1) + c2;
+    char c4 = 196;
+    char c5 = 152;
     WORD charColor = 0x4E;
-
     if (g_sChar.m_bActive)
     {
         charColor = 0x2E;
     }
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
+    {
+        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
+    }
+    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23)
+    {
+        c4 = 0;
+        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
+    }
+    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+    {
+        i++;
+        if (i > 4)
+        {
+            c5 = 0;
+        }
+    }
+    g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, 0x1E);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
-    g_Console.writeToBuffer(g_sProj.m_cLocation, char(196), 0x1F);
 }
 
 void renderFramerate()

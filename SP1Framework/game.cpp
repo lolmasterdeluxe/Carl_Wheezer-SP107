@@ -13,6 +13,7 @@
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+bool g_bPlayGame = false;
 int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
@@ -72,7 +73,7 @@ void shutdown(void)
 {
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
     g_Console.clearBuffer();
 }
 
@@ -114,7 +115,7 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent)
 {
     switch (g_eGameState)
     {
-    case S_SPLASHSCREEN: // don't handle anything for the splash screen
+    case S_SPLASHSCREEN: menuKBHandler(keyboardEvent); processUserInput();// don't handle anything for the splash screen
         break;
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
@@ -181,6 +182,17 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent)
     }
 }
 
+void menuKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
+    EKEYS key = K_COUNT;
+    switch (keyboardEvent.wVirtualKeyCode) {
+    case VK_SPACE: key = K_SPACE; break;
+    case VK_ESCAPE: key = K_ESCAPE; break;
+    }
+    if (key != K_COUNT) {
+        g_skKeyEvent[key].keyDown = keyboardEvent.bKeyDown;
+        g_skKeyEvent[key].keyReleased = !keyboardEvent.bKeyDown;
+    }
+}
 //--------------------------------------------------------------
 // Purpose  : This is the mouse handler in the game state. Whenever there is a mouse event in the game state, this function will be called.
 //            
@@ -232,7 +244,7 @@ void update(double dt)
 
 void splashScreenWait()    // waits for time to pass in splash screen
 {
-    if (g_dElapsedTime > 1.0) // wait for 3 seconds to switch to game mode, else do nothing
+    if (g_bPlayGame == true) // wait for 3 seconds to switch to game mode, else do nothing
         g_eGameState = S_GAME;
 }
 
@@ -241,6 +253,7 @@ void updateGame()       // gameplay logic
     processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
     moveCharacter();    // moves the character, collision detection, physics, etc
     moveProjectile();   // sound can be played here too.
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 void moveCharacter()
@@ -303,13 +316,11 @@ void moveCharacter()
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
     {
-        if (status == "1")
-            status = "0";
-        else if (status == "0");
-        status = "1";
         g_sChar.m_bActive = !g_sChar.m_bActive;
     }
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+    if (g_sChar.m_bActive) status = "0";
+    else if (!g_sChar.m_bActive) status = "1";
+    //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 
@@ -328,7 +339,7 @@ void moveProjectile()
             }
             Sleep(15);
             g_sProj.m_cLocation.X++;
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
@@ -345,7 +356,7 @@ void moveProjectile()
             }
             Sleep(15);
             g_sProj.m_cLocation.X--;
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
@@ -356,6 +367,8 @@ void processUserInput()
     // quits the game if player hits the escape key
     if (g_skKeyEvent[K_ESCAPE].keyReleased)
         g_bQuitGame = true;
+    if (g_skKeyEvent[K_SPACE].keyReleased)
+        g_bPlayGame = true;
 }
 
 //--------------------------------------------------------------
@@ -395,16 +408,17 @@ void renderToScreen()
 
 void renderSplashScreen()  // renders the splash screen
 {
+    clearScreen();
     COORD c = g_Console.getConsoleSize();
     c.Y /= 3;
     c.X = c.X / 2 - 9;
-    g_Console.writeToBuffer(c, "A game in 3 seconds", 0x03);
+    g_Console.writeToBuffer(c, "Start Menu", 0x03);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 20;
-    g_Console.writeToBuffer(c, "Press <Space> to change character colour", 0x09);
+    g_Console.writeToBuffer(c, "Press <Space> to play", 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 9;
-    g_Console.writeToBuffer(c, "Press 'Esc' to quit", 0x09);
+    g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
 }
 
 void renderGame()

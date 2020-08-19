@@ -4,6 +4,7 @@
 class save {
 private:
 	int x = 0; int y = 0; int projxx = 0; int projyy = 0; int state = 0;
+	int enemies = 0;
 public:
 	save();
 	~save();

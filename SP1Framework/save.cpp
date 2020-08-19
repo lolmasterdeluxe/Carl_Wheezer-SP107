@@ -60,7 +60,7 @@ void save::saveState(string posx, string posy, string charstate, string projx, s
 void save::defaultSave() {
 	ofstream Map;
 	Map.open("save.txt");
-	Map << "201400000000";
+	Map << "20140000000100";
 	Map.close();
 }
 
@@ -77,23 +77,25 @@ void save::readSave() {
 int save::loadSave() {
 	string line; string saveline;
 	ifstream map("save.txt");
-	string posx; string posy; string projx; string projy; string charstate;
+	string posx; string posy; string projx; string projy; string charstate; string numEnemies;
 	if (map.is_open()) {
 		while (getline(map, line));
 		saveline = line;
 		if (saveline.length() == 8)
 			saveline = saveline + "00";
 		if (saveline.length() < 10)
-			saveline = "201400000000";
+			saveline = "20140000000100";
 		posx = saveline.substr(0, 2);
 		posy = saveline.substr(2, 2);
 		charstate = saveline.substr(4, 2);
 		projx = saveline.substr(6, 2);
 		projy = saveline.substr(8, 2);
+		numEnemies = saveline.substr(10, 2);
 		x = stoi(posx);
 		y = stoi(posy);
 		projxx = stoi(projx);
 		projyy = stoi(projy);
+		state = stoi(charstate);
 	}
 	return 0;
 }

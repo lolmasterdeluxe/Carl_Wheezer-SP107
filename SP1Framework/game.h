@@ -3,6 +3,7 @@
 
 #include "Framework\timer.h"
 #include "save.h"
+#include "levels.h"
 
 extern CStopWatch g_swTimer;
 extern bool g_bQuitGame;

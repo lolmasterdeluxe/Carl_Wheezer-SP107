@@ -235,7 +235,7 @@ void update(double dt) {
     switch (g_eGameState) {
     case S_SPLASHSCREEN: splashScreenWait(); // game logic for the splash screen
         break;
-    case S_GAME: updateGame(); updateTime(dt);// gameplay logic when we are in the game
+    case S_GAME: updateGame(); updateTime(dt); // gameplay logic when we are in the game
         break;
     case S_MENU: updateMenu();
         break;

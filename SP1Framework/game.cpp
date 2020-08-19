@@ -54,7 +54,7 @@ void init(void) {
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
 
-    loadLevelData(1);
+    //loadLevelData(1);
 
     std::ifstream save;
     save.open("save.txt");
@@ -294,7 +294,7 @@ void moveCharacter() {
 
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //Fall
+    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { // Fall
         Sleep(75);
         g_sChar.m_cLocation.Y++;
         if (GetKeyState(0x41) & 0X800)
@@ -305,7 +305,7 @@ void moveCharacter() {
     }
     if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
         Beep(1440, 30);
-        for (int i = 0; i < 3; i++) { //Control jump height (i less than value)
+        for (int i = 0; i < 3; i++) { // Control jump height (i less than value)
             Sleep(50);
             g_sChar.m_cLocation.Y--;
             render();
@@ -527,7 +527,7 @@ void renderMap() {
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
 
-    colour(0x00);
+    loadLevelData(1);
 }
 
 void renderCharacter() 
@@ -568,7 +568,7 @@ void renderCharacter()
 }
 
 void renderPlatform(int x, int y) {
-
+    g_Console.writeToBuffer(x, y, " ", 0x0F);
 }
 
 void renderFramerate() {
@@ -674,18 +674,14 @@ void loadLevelData(int number) {
         while (std::getline(level, line)) {
             perLine = line;
             for (int i = 0; i < perLine.length(); i++) {
-                if (perLine[i] == '.') {
-                    perLine[i] = ' ';
-                    g_Console.writeToBuffer(i, n, " ", 0x0F);
-                }
-                if (perLine[i] == 'C') {
+                /*if (perLine[i] == 'C') {
                     g_sChar.m_cLocation.X = i;
                     g_sChar.m_cLocation.Y = n;
-                }
-                if (perLine[i] == 'E') {
+                }*/
+                /*if (perLine[i] == 'E') {
                     g_sEnemy.m_cLocation.X = i;
                     g_sEnemy.m_cLocation.Y = n;
-                }
+                }*/
                 if (perLine[i] == 'P') {
                     renderPlatform(i, n);
                 }

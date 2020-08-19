@@ -18,6 +18,11 @@ double  g_dDeltaTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
 bool g_bPlayGame = false;
+char c1 = 203;
+char c2 = 203;
+auto c3 = std::string(1, c1) + c2;
+char c4 = 196;
+char c5 = 152;
 // bool g_bInMenu = false;
 int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
@@ -32,7 +37,7 @@ SGameChar   g_sEnemy;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
-Console g_Console(45, 15, "Ninjas, monsters n' robots");
+Console g_Console(50, 20, "Ninjas, monsters n' robots");
 
 //--------------------------------------------------------------
 // Purpose  : Initialisation function
@@ -58,8 +63,8 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sEnemy.m_cLocation.X = 40;
-    g_sEnemy.m_cLocation.Y = 14;
+    g_sEnemy.m_cLocation.X = 30;
+    g_sEnemy.m_cLocation.Y = 19;
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
     //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
@@ -279,7 +284,8 @@ bool processEverySec() {
     if (g_iElapsedTime == g_iTimeAfter) {
         return true;
     }
-    else {
+    else 
+    {
         return false;
     }
 }
@@ -319,7 +325,7 @@ void moveCharacter() {
     }
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) { //LEFT
         Beep(1440, 30);
-        g_sChar.m_cLocation.X--;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
     }
     if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
         Beep(1440, 30);
@@ -327,7 +333,7 @@ void moveCharacter() {
     }
     if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) { //RIGHT
         Beep(1440, 30);
-        g_sChar.m_cLocation.X++;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
         g_sChar.m_bActive = !g_sChar.m_bActive;
@@ -344,16 +350,28 @@ void moveCharacter() {
 void moveProjectile() {
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) {
         Beep(1440, 30);
-        if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) {
+        if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) 
+        {
             g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
             g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         }
-        for (int i = 0; i <= 20; i++) {
-            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+        for (int i = 0; i <= 20; i++)
+        {
+            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+            {
+                g_sProj.m_cLocation = g_sChar.m_cLocation;
                 break;
-            Sleep(15);
+            }
+            if (g_sChar.m_bActive)
+            {
+                Sleep(10);
+            }
+            else
+            {
+                Sleep(5);
+            }
             g_sProj.m_cLocation.X++;
-            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
@@ -512,29 +530,40 @@ void renderMap() {
     colour(0x00);
 }
 
-void renderCharacter() {
+void renderCharacter() 
+{
     // Draw the location of the character and weapon
-    char c1 = 205;
-    char c2 = 203;
-    auto c3 = std::string(1, c1) + c2;
-    char c4 = 196;
-    char c5 = 152;
-    WORD charColor = 0x4E;
+    c4 = 205;
+    // Draw the location of the character and weapon
+    WORD charColor = 0x40;
+    WORD enemyColor = 0x4F;
     if (g_sChar.m_bActive)
-        charColor = 0x2E;
+    {
+        charColor = 0x20;
+    }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
+    {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23) {
+    }
+    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23)
+    {
         c4 = 0;
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) {
+    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+    {
         i++;
-        if (i > 4) {
+        if (i > 4)
+        {
             c5 = 0;
+
         }
     }
-    g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, 0x1E);
+    if (c5 == 0)
+    {
+        enemyColor = 0x1A;
+    }
+    g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 

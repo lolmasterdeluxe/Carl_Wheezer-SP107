@@ -18,4 +18,5 @@ public:
 	int returnCharState();
 	int returnProjX();
 	int returnProjY();
+	int returnEnemies();
 };

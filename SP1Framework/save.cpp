@@ -68,8 +68,9 @@ void save::readSave() {
 	string line;
 	ifstream myfile("save.txt");
 	if (myfile.is_open()) {
-		getline(myfile, line);
-		cout << line << '\n';
+		while (getline(myfile, line)) {
+			cout << line << '\n';
+		}
 		myfile.close();
 	}
 }
@@ -123,13 +124,16 @@ int save::returnCharState() {
 	return chars;
 }
 
-int main1() {
-	save state;
-	state.defaultSave();
-	state.loadSave();
-	cout << state.returnX() << endl;
-	cout << state.returnY() << endl;
-	cout << state.returnProjX() << endl;
-	cout << state.returnProjY() << endl;
-	return 0;
+int save::returnEnemies() {
+	return enemies;
 }
+//int main1() {
+//	save state;
+//	state.defaultSave();
+//	state.loadSave();
+//	cout << state.returnX() << endl;
+//	cout << state.returnY() << endl;
+//	cout << state.returnProjX() << endl;
+//	cout << state.returnProjY() << endl;
+//	return 0;
+//}

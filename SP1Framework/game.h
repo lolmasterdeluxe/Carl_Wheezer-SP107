@@ -47,7 +47,9 @@ enum EGAMESTATES
 struct SGameChar
 {
     COORD m_cLocation;
-    bool  m_bActive;
+    double m_dHealth;
+    double m_dMana;
+    bool m_bActive;
 };
 
 void init(void);      // initialize your variables, allocate memory, etc
@@ -64,6 +66,8 @@ void clearScreen();         // clears the current screen and draw from scratch
 void renderSplashScreen();  // renders the splash screen
 void renderGame();          // renders the game stuff
 void renderMap();           // renders the map to the buffer first
+void renderHUD();
+bool processEverySec();
 void renderCharacter();     // renders the character into the buffer
 void renderFramerate();     // renders debug information, frame rate, elapsed time, etc
 void renderToScreen();      // dump the contents of the buffer to the screen, one frame worth of game

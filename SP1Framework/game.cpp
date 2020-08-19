@@ -15,6 +15,8 @@
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+int g_iElapsedTime;
+int g_iTimeAfter;
 bool g_bPlayGame = false;
 int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
@@ -38,8 +40,8 @@ Console g_Console(45, 15, "Ninjas, monsters n' robots");
 // Input    : void
 // Output   : void
 //--------------------------------------------------------------
-void init(void)
-{
+void init(void) {
+
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
 
@@ -58,6 +60,9 @@ void init(void)
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
     g_sChar.m_bActive = state.returnCharState();
+    g_sChar.m_dHealth = 20;
+    g_sChar.m_dMana = 40;
+
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 16, L"Consolas");
 
@@ -73,8 +78,8 @@ void init(void)
 // Input    : Void
 // Output   : void
 //--------------------------------------------------------------
-void shutdown(void)
-{
+void shutdown(void) {
+
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
     state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -94,8 +99,8 @@ void shutdown(void)
 // Input    : Void
 // Output   : void
 //--------------------------------------------------------------
-void getInput(void)
-{
+void getInput(void) {
+
     // resets all the keyboard events
     memset(g_skKeyEvent, 0, K_COUNT * sizeof(*g_skKeyEvent));
     // then call the console to detect input from user
@@ -115,11 +120,9 @@ void getInput(void)
 // Input    : const KEY_EVENT_RECORD& keyboardEvent - reference to a key event struct
 // Output   : void
 //--------------------------------------------------------------
-void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent)
-{
-    switch (g_eGameState)
-    {
-    case S_SPLASHSCREEN: menuKBHandler(keyboardEvent); // don't handle anything for the splash screen
+void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent) {
+    switch (g_eGameState) {
+    case S_SPLASHSCREEN: gameplayKBHandler(keyboardEvent); // handle menu keyboard event for the splash screen
         break;
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
@@ -142,10 +145,8 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent)
 // Input    : const MOUSE_EVENT_RECORD& mouseEvent - reference to a mouse event struct
 // Output   : void
 //--------------------------------------------------------------
-void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent)
-{
-    switch (g_eGameState)
-    {
+void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
+    switch (g_eGameState) {
     case S_SPLASHSCREEN: // don't handle anything for the splash screen
         break;
     case S_GAME: gameplayMouseHandler(mouseEvent); // handle gameplay mouse event
@@ -162,12 +163,11 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent)
 // Input    : const KEY_EVENT_RECORD& keyboardEvent
 // Output   : void
 //--------------------------------------------------------------
-void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent)
-{
+void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
+
     // here, we map the key to our enums
     EKEYS key = K_COUNT;
-    switch (keyboardEvent.wVirtualKeyCode)
-    {
+    switch (keyboardEvent.wVirtualKeyCode) {
     case 0x57: key = K_57; break; //W
     case 0x53: key = K_53; break; //S
     case 0x41: key = K_41; break; //A
@@ -179,25 +179,13 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent)
     // a key released event would be one with bKeyDown == false
     // if no key is pressed, no event would be fired.
     // so we are tracking if a key is either pressed, or released
-    if (key != K_COUNT)
-    {
-        g_skKeyEvent[key].keyDown = keyboardEvent.bKeyDown;
-        g_skKeyEvent[key].keyReleased = !keyboardEvent.bKeyDown;
-    }
-}
-
-void menuKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
-    EKEYS key = K_COUNT;
-    switch (keyboardEvent.wVirtualKeyCode) {
-    case VK_SPACE: key = K_SPACE; break;
-    case VK_ESCAPE: key = K_ESCAPE; break;
-    }
     if (key != K_COUNT) {
         g_skKeyEvent[key].keyDown = keyboardEvent.bKeyDown;
         g_skKeyEvent[key].keyReleased = !keyboardEvent.bKeyDown;
     }
     processUserInput();
 }
+
 //--------------------------------------------------------------
 // Purpose  : This is the mouse handler in the game state. Whenever there is a mouse event in the game state, this function will be called.
 //            
@@ -207,12 +195,9 @@ void menuKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
 // Input    : const KEY_EVENT_RECORD& keyboardEvent
 // Output   : void
 //--------------------------------------------------------------
-void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent)
-{
+void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
     if (mouseEvent.dwEventFlags & MOUSE_MOVED) // update the mouse position if there are no events
-    {
         g_mouseEvent.mousePosition = mouseEvent.dwMousePosition;
-    }
     g_mouseEvent.buttonState = mouseEvent.dwButtonState;
     g_mouseEvent.eventFlags = mouseEvent.dwEventFlags;
 }
@@ -231,14 +216,15 @@ void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent)
 // Input    : dt = deltatime
 // Output   : void
 //--------------------------------------------------------------
-void update(double dt)
-{
+void update(double dt) {
+
     // get the delta time
     g_dElapsedTime += dt;
     g_dDeltaTime = dt;
+    g_iElapsedTime = (int)round(g_dElapsedTime);
+    g_iTimeAfter = g_iElapsedTime + 1;
 
-    switch (g_eGameState)
-    {
+    switch (g_eGameState) {
     case S_SPLASHSCREEN: splashScreenWait(); // game logic for the splash screen
         break;
     case S_GAME: updateGame(); // gameplay logic when we are in the game
@@ -247,121 +233,108 @@ void update(double dt)
 }
 
 
-void splashScreenWait()    // waits for time to pass in splash screen
-{
-    if (g_bPlayGame == true) // wait for keyboard to switch to game mode, else do nothing
+void splashScreenWait() {      // waits for time to pass in splash screen
+    if (g_bPlayGame == true)   // wait for keyboard to switch to game mode, else do nothing
         g_eGameState = S_GAME;
     renderSplashScreen();
 }
 
-void updateGame()       // gameplay logic
-{
+void updateGame() {     // gameplay logic
     processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
     moveCharacter();    // moves the character, collision detection, physics, etc
     moveProjectile();   // sound can be played here too.
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+    //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
-void moveCharacter()
-{
+bool processEverySec() {
+    if (g_iElapsedTime == g_iTimeAfter) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+void moveCharacter() {
+
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //Fall
-    {
+    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //Fall
         Sleep(75);
         g_sChar.m_cLocation.Y++;
         if (GetKeyState(0x41) & 0X800)
-        {
             g_sChar.m_cLocation.X--; //fall distance (1 unit)
-        }
         if (GetKeyState(0x44) & 0X800)
-        {
             g_sChar.m_cLocation.X++; //fall distance (1 unit)
-        }
         render();
     }
-    if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) //Jump up
-    {
+    if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
         Beep(1440, 30);
-        for (int i = 0; i < 3; i++) //Control jump height (i less than value)
-        {
+        for (int i = 0; i < 3; i++) { //Control jump height (i less than value)
             Sleep(50);
             g_sChar.m_cLocation.Y--;
             render();
         }
-        if (GetKeyState(0x41) & 0X800)
-        {
+        if (GetKeyState(0x41) & 0X800) {
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //jump distance (2 units)
             render();
         }
-        if (GetKeyState(0x44) & 0X800)
-        {
+        if (GetKeyState(0x44) & 0X800) {
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //jump distance (2 units)
             render();
         }
-        if (GetKeyState(FROM_LEFT_1ST_BUTTON_PRESSED) & 0X800)
-        {
+        if (GetKeyState(FROM_LEFT_1ST_BUTTON_PRESSED) & 0X800) {
             moveProjectile();
             render();
         }
     }
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) //LEFT
-    {
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) { //LEFT
         Beep(1440, 30);
         g_sChar.m_cLocation.X--;
     }
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //DOWN
-    {
+    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
         Beep(1440, 30);
         g_sChar.m_cLocation.Y++;
     }
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) //RIGHT
-    {
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) { //RIGHT
         Beep(1440, 30);
         g_sChar.m_cLocation.X++;
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
-    {
         g_sChar.m_bActive = !g_sChar.m_bActive;
-    }
     if (g_sChar.m_bActive) status = "0";
-    else if (!g_sChar.m_bActive) status = "1";
+    else if (!g_sChar.m_bActive) { 
+        status = "1";
+        if (processEverySec()) {
+            g_sChar.m_dMana--;
+        }
+    }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
-
-void moveProjectile()
-{
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X)
-    {
+void moveProjectile() {
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) {
         Beep(1440, 30);
         if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) {
             g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
             g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         }
-        for (int i = 0; i <= 20; i++)
-        {
+        for (int i = 0; i <= 20; i++) {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
-            {
                 break;
-            }
             Sleep(15);
             g_sProj.m_cLocation.X++;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
-    {
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) {
         Beep(1440, 30);
         g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
         g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-        for (int i = 0; i <= 20; i++)
-        {
+        for (int i = 0; i <= 20; i++) {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
-            {
                 break;
-            }
             Sleep(15);
             g_sProj.m_cLocation.X--;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -370,8 +343,7 @@ void moveProjectile()
     }
 }
 
-void processUserInput()
-{
+void processUserInput() {
     // quits the game if player hits the escape key
     if (g_skKeyEvent[K_ESCAPE].keyReleased)
         g_bQuitGame = true;
@@ -387,8 +359,7 @@ void processUserInput()
 // Input    : void
 // Output   : void
 //--------------------------------------------------------------
-void render()
-{
+void render() {
     clearScreen();      // clears the current screen and draw from scratch 
     switch (g_eGameState)
     {
@@ -398,24 +369,22 @@ void render()
         break;
     }
     renderFramerate();      // renders debug information, frame rate, elapsed time, etc
-    //renderInputEvents();    // renders status of input events
+    // renderInputEvents();    // renders status of input events
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
 }
 
-void clearScreen()
-{
+void clearScreen() {
     // Clears the buffer with this colour attribute
     g_Console.clearBuffer(0x1F);
 }
 
-void renderToScreen()
-{
+void renderToScreen() {
     // Writes the buffer to the console, hence you will see what you have written
     g_Console.flushBufferToConsole();
 }
 
-void renderSplashScreen()  // renders the splash screen
-{
+void renderSplashScreen() {
+    // renders the splash screen
     clearScreen();
     COORD c = g_Console.getConsoleSize();
     c.Y /= 3;
@@ -429,21 +398,47 @@ void renderSplashScreen()  // renders the splash screen
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
 }
 
-void renderGame()
-{
+void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderCharacter();  // renders the character into the buffer
+    renderHUD();
 }
 
-void renderMap()
-{
-    // Set up sample colours, and output shadings
+void renderHUD() {
     const WORD colors[] = {
         0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
 
     COORD c;
+    c.X = 0;
+    c.Y = 1;
+    colour(colors[1]);
+    std::string healthDisplay = "Health = " + std::to_string(g_sChar.m_dHealth);
+    g_Console.writeToBuffer(c, healthDisplay, colors[0]);
+    
+    c.X = 0;
+    c.Y = 2;
+    colour(colors[1]);
+    std::string manaDisplay = "Mana = " + std::to_string(g_sChar.m_dMana);
+    g_Console.writeToBuffer(c, manaDisplay, colors[0]);
+
+    c.X = 0;
+    c.Y = 3;
+    colour(colors[1]);
+    int elapsed = (int)round(g_dElapsedTime);
+    std::string elapsedTime = "Elapsed time = " + std::to_string(elapsed);
+    g_Console.writeToBuffer(c, elapsedTime, colors[0]);
+
+}
+void renderMap() {
+    // Set up sample colours, and output shadings
+    const WORD colors[] = {
+        0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
+        0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
+    };
+
+    //COORD c;
     /*for (int i = 0; i < 12; ++i)
     {
         c.X = 5 * i;
@@ -453,8 +448,7 @@ void renderMap()
     }*/
 }
 
-void renderCharacter()
-{
+void renderCharacter() {
     // Draw the location of the character and weapon
     char c1 = 205;
     char c2 = 203;
@@ -463,23 +457,16 @@ void renderCharacter()
     char c5 = 152;
     WORD charColor = 0x4E;
     if (g_sChar.m_bActive)
-    {
         charColor = 0x2E;
-    }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
-    {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }
-    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23)
-    {
+    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23) {
         c4 = 0;
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
-    {
+    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) {
         i++;
-        if (i > 4)
-        {
+        if (i > 4) {
             c5 = 0;
         }
     }
@@ -487,8 +474,7 @@ void renderCharacter()
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
-void renderFramerate()
-{
+void renderFramerate() {
     COORD c;
     // displays the framerate
     std::ostringstream ss;
@@ -507,17 +493,14 @@ void renderFramerate()
 }
 
 // this is an example of how you would use the input events
-void renderInputEvents()
-{
+void renderInputEvents() {
     // keyboard events
     COORD startPos = { 50, 2 };
     std::ostringstream ss;
     std::string key;
-    for (int i = 0; i < K_COUNT; ++i)
-    {
+    for (int i = 0; i < K_COUNT; ++i) {
         ss.str("");
-        switch (i)
-        {
+        switch (i) {
         case K_57: key = "UP";
             break;
         case K_53: key = "DOWN";
@@ -546,21 +529,17 @@ void renderInputEvents()
     //ss << "Mouse position (" << g_mouseEvent.mousePosition.X << ", " << g_mouseEvent.mousePosition.Y << ")";
     //g_Console.writeToBuffer(g_mouseEvent.mousePosition, ss.str(), 0x59);
     //ss.str("");
-    switch (g_mouseEvent.eventFlags)
-    {
+    switch (g_mouseEvent.eventFlags) {
     case 0:
-        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
-        {
+        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
             ss.str("Left Button Pressed");
             g_Console.writeToBuffer(g_mouseEvent.mousePosition.X, g_mouseEvent.mousePosition.Y + 2, ss.str(), 0x59);
         }
-        else if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED)
-        {
+        else if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED) {
             ss.str("Right Button Pressed");
             g_Console.writeToBuffer(g_mouseEvent.mousePosition.X, g_mouseEvent.mousePosition.Y + 2, ss.str(), 0x59);
         }
-        else
-        {
+        else {
             ss.str("Some Button Pressed");
             g_Console.writeToBuffer(g_mouseEvent.mousePosition.X, g_mouseEvent.mousePosition.Y + 3, ss.str(), 0x59);
         }
@@ -579,8 +558,4 @@ void renderInputEvents()
     default:
         break;
     }
-
 }
-
-
-

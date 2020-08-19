@@ -26,7 +26,7 @@ void gotoXY(COORD c);
 // Bit 5 - BACKGROUND_GREEN         Background color contains green.
 // Bit 6 - BACKGROUND_RED           Background color contains red.
 // Bit 7 - BACKGROUND_INTENSITY     Background color is intensified.
-void colour(WORD attrib);
+void colour(WORD attrib = 0x0F);
 
 
 // Clears the screen for this console handle

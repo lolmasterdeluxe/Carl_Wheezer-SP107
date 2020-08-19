@@ -78,6 +78,8 @@ void renderMenu();
 void updateMenu();
 void updateTime(double dt);
 void saveGame();
+void renderPlatform(int x, int y);
+void loadLevelData(int number);
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

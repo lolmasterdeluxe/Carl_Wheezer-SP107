@@ -80,7 +80,7 @@ int save::loadSave() {
 	ifstream map("save.txt");
 	string posx; string posy; string projx; string projy; string charstate; string numEnemies;
 	if (map.is_open()) {
-		while (getline(map, line));
+		getline(map, line);
 		saveline = line;
 		if (saveline.length() == 8)
 			saveline = saveline + "00";

@@ -125,7 +125,7 @@ void Console::initConsole(COORD consoleSize, LPCSTR lpConsoleTitle)
 	this->m_cConsoleSize = consoleSize;
     // Use the ascii version for the consoleTitle
     SetConsoleTitleA(lpConsoleTitle);
-    SetConsoleCP(437);
+    SetConsoleCP(436);
     
     // set up screen buffer    
 	m_ciScreenDataBuffer = new CHAR_INFO[m_u32ScreenDataBufferSize];

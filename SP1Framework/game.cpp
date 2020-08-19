@@ -49,6 +49,8 @@ void init(void) {
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
 
+    loadLevelData(1);
+
     std::ifstream save;
     save.open("save.txt");
     if (!save)
@@ -67,11 +69,12 @@ void init(void) {
     g_sChar.m_dMana = 40;
 
     // sets the width, height and the font name to use in the console
-    g_Console.setConsoleFont(0, 16, L"Consolas");
+    g_Console.setConsoleFont(0, 20, L"Consolas");
 
     // remember to set your keyboard handler, so that your functions can be notified of input events
     g_Console.setKeyboardHandler(keyboardHandler);
     g_Console.setMouseHandler(mouseHandler);
+    colour(0x0F);
 }
 
 //--------------------------------------------------------------
@@ -462,7 +465,7 @@ void renderGame() {
 void renderHUD() {
     const WORD colors[] = {
         0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
-        0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
+        0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x00
     };
 
     COORD c;
@@ -481,7 +484,7 @@ void renderHUD() {
     c.X = 0;
     c.Y = 3;
     colour(colors[1]);
-    int elapsed = (int)round(g_dElapsedTime);
+    int elapsed = g_dElapsedTime;
     std::string elapsedTime = "Elapsed time = " + std::to_string(elapsed);
     g_Console.writeToBuffer(c, elapsedTime, colors[0]);
 }
@@ -490,7 +493,7 @@ void renderMenu() {
     COORD c = g_Console.getConsoleSize();
     c.Y /= 3;
     c.X = c.X / 2 - 10;
-    g_Console.writeToBuffer(c, "Pause menu", 0x03);
+    g_Console.writeToBuffer(c, "Pause menu", 0x0F);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Space> to save and exit", 0x09);
@@ -506,14 +509,7 @@ void renderMap() {
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
 
-    //COORD c;
-    /*for (int i = 0; i < 12; ++i)
-    {
-        c.X = 5 * i;
-        c.Y = i + 1;
-        colour(colors[i]);
-        g_Console.writeToBuffer(c, " °±²Û", colors[i]);
-    }*/
+    colour(0x00);
 }
 
 void renderCharacter() {
@@ -540,6 +536,10 @@ void renderCharacter() {
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, 0x1E);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+}
+
+void renderPlatform(int x, int y) {
+
 }
 
 void renderFramerate() {
@@ -625,5 +625,43 @@ void renderInputEvents() {
         break;
     default:
         break;
+    }
+}
+
+void loadLevelData(int number) {
+    int n = 0;
+    char c1 = 205;
+    char c2 = 203;
+    char c4 = 196;
+    char c5 = 152;
+    auto c3 = std::string(1, c1) + c2;
+
+    std::string levelFile;
+    std::string line; std::string perLine;
+    if (number == 1)
+        levelFile = "levelone.txt";
+    std::ifstream level(levelFile);
+    if (level.is_open()) {
+        while (std::getline(level, line)) {
+            perLine = line;
+            for (int i = 0; i < perLine.length(); i++) {
+                if (perLine[i] == '.') {
+                    perLine[i] = ' ';
+                    g_Console.writeToBuffer(i, n, " ", 0x0F);
+                }
+                if (perLine[i] == 'C') {
+                    g_sChar.m_cLocation.X = i;
+                    g_sChar.m_cLocation.Y = n;
+                }
+                if (perLine[i] == 'E') {
+                    g_sEnemy.m_cLocation.X = i;
+                    g_sEnemy.m_cLocation.Y = n;
+                }
+                if (perLine[i] == 'P') {
+                    renderPlatform(i, n);
+                }
+            }
+            n++;
+        }
     }
 }

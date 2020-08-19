@@ -25,7 +25,7 @@ void save::saveState(string posx, string posy, string charstate) {
 		charstate = "0" + charstate;
 	}
 	Map.open("save.txt");
-	savePos = posx + posy + charstate + "0000";
+	savePos = posx + posy + charstate + posx + posy;
 	Map << savePos;
 	Map.close();
 	cout << savePos << endl;
@@ -127,13 +127,3 @@ int save::returnCharState() {
 int save::returnEnemies() {
 	return enemies;
 }
-//int main1() {
-//	save state;
-//	state.defaultSave();
-//	state.loadSave();
-//	cout << state.returnX() << endl;
-//	cout << state.returnY() << endl;
-//	cout << state.returnProjX() << endl;
-//	cout << state.returnProjY() << endl;
-//	return 0;
-//}

@@ -60,6 +60,8 @@ void init(void) {
     g_sEnemy.m_cLocation.Y = 14;
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
+    //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+    //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = 20;
     g_sChar.m_dMana = 40;
@@ -83,7 +85,7 @@ void shutdown(void) {
 
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+    saveGame();
     g_Console.clearBuffer();
 }
 
@@ -154,6 +156,10 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
     case S_GAME: gameplayMouseHandler(mouseEvent); // handle gameplay mouse event
         break;
     }
+}
+
+void saveGame() {
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 //--------------------------------------------------------------
@@ -376,7 +382,7 @@ void processUserInput() {
             break;
         case S_MENU:
             g_eGameState = S_GAME;
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            saveGame();
             g_bPlayGame = true;
             break;
         }
@@ -389,7 +395,7 @@ void processUserInput() {
             g_bPlayGame = true;
             break;
         case S_MENU:
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            saveGame();
             g_bQuitGame = true;
             break;
         }

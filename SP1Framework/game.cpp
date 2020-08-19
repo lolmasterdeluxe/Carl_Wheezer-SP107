@@ -23,6 +23,8 @@ char c2 = 203;
 auto c3 = std::string(1, c1) + c2;
 char c4 = 196;
 char c5 = 152;
+
+WORD enemyColor = 0x4F;
 // bool g_bInMenu = false;
 int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
@@ -50,10 +52,9 @@ void init(void) {
 
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
-
+    
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
-
     std::ifstream save;
     save.open("save.txt");
     if (!save)
@@ -368,7 +369,7 @@ void moveProjectile() {
                 Sleep(5);
             }
             g_sProj.m_cLocation.X++;
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
@@ -379,14 +380,44 @@ void moveProjectile() {
         for (int i = 0; i <= 20; i++) {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
                 break;
-            Sleep(15);
+            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+            {
+                g_sProj.m_cLocation = g_sChar.m_cLocation;
+                break;
+            }
+            if (g_sChar.m_bActive)
+            {
+                Sleep(10);
+            }
+            else
+            {
+                Sleep(5);
+            }
             g_sProj.m_cLocation.X--;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
         }
     }
+
 }
 
+bool health(int x1, int x2, int y1, int y2)
+{
+    if (x1 == x2 && y1 == y2)
+    {
+        i++;
+        if (i > 4)
+        {
+            i = 0;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
 void processUserInput() {
     // process inputs depending on game states
     if (g_skKeyEvent[K_ESCAPE].keyReleased) {
@@ -540,7 +571,6 @@ void renderCharacter()
     c4 = 205;
     // Draw the location of the character and weapon
     WORD charColor = 0x40;
-    WORD enemyColor = 0x4F;
     if (g_sChar.m_bActive)
     {
         charColor = 0x20;
@@ -554,17 +584,10 @@ void renderCharacter()
         c4 = 0;
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+    
+    if (health(g_sProj.m_cLocation.X, g_sEnemy.m_cLocation.X, g_sProj.m_cLocation.Y, g_sEnemy.m_cLocation.Y) == true)
     {
-        i++;
-        if (i > 4)
-        {
-            c5 = 0;
-
-        }
-    }
-    if (c5 == 0)
-    {
+        c5 = 0;
         enemyColor = 0x1A;
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
@@ -576,7 +599,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(3);
-    ss << 1.0 / g_dDeltaTime << "fps";
+    ss << /*1.0 / g_dDeltaTime*/i << "shots taken";
     c.X = g_Console.getConsoleSize().X - 9;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

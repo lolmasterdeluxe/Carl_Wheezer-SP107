@@ -18,6 +18,7 @@ double  g_dDeltaTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
 bool g_bPlayGame = false;
+// bool g_bInMenu = false;
 int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
@@ -126,6 +127,7 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent) {
         break;
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
+    case S_MENU: gameplayKBHandler(keyboardEvent);
     }
 }
 
@@ -229,21 +231,31 @@ void update(double dt) {
         break;
     case S_GAME: updateGame(); // gameplay logic when we are in the game
         break;
+    case S_MENU: updateMenu();
+        break;
     }
+    processUserInput();
 }
-
 
 void splashScreenWait() {      // waits for time to pass in splash screen
     if (g_bPlayGame == true)   // wait for keyboard to switch to game mode, else do nothing
         g_eGameState = S_GAME;
     renderSplashScreen();
+    processUserInput();
 }
 
 void updateGame() {     // gameplay logic
-    processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
-    moveCharacter();    // moves the character, collision detection, physics, etc
-    moveProjectile();   // sound can be played here too.
+    if (g_bPlayGame) {
+        processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
+        moveCharacter();    // moves the character, collision detection, physics, etc
+        moveProjectile();   // sound can be played here too.
+    }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+}
+
+void updateMenu() {
+    processUserInput();
+    renderMenu();
 }
 
 bool processEverySec() {
@@ -344,11 +356,36 @@ void moveProjectile() {
 }
 
 void processUserInput() {
-    // quits the game if player hits the escape key
-    if (g_skKeyEvent[K_ESCAPE].keyReleased)
-        g_bQuitGame = true;
-    if (g_skKeyEvent[K_SPACE].keyReleased)
-        g_bPlayGame = true;
+    // process inputs depending on game states
+    if (g_skKeyEvent[K_ESCAPE].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            g_eGameState = S_MENU;
+            g_bPlayGame = false;
+            break;
+        case S_SPLASHSCREEN:
+            g_bQuitGame = true;
+            break;
+        case S_MENU:
+            g_eGameState = S_GAME;
+            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            g_bPlayGame = true;
+            break;
+        }
+    }
+    if (g_skKeyEvent[K_SPACE].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            break;
+        case S_SPLASHSCREEN:
+            g_bPlayGame = true;
+            break;
+        case S_MENU:
+            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            g_bQuitGame = true;
+            break;
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -361,14 +398,19 @@ void processUserInput() {
 //--------------------------------------------------------------
 void render() {
     clearScreen();      // clears the current screen and draw from scratch 
-    switch (g_eGameState)
-    {
-    case S_SPLASHSCREEN: renderSplashScreen();
+    switch (g_eGameState) {
+    case S_SPLASHSCREEN: 
+        renderSplashScreen();
         break;
-    case S_GAME: renderGame();
+    case S_GAME: 
+        renderGame(); 
+        renderFramerate();
+        break;
+    case S_MENU: 
+        renderMenu();
         break;
     }
-    renderFramerate();      // renders debug information, frame rate, elapsed time, etc
+    // renderFramerate();      // renders debug information, frame rate, elapsed time, etc
     // renderInputEvents();    // renders status of input events
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
 }
@@ -385,16 +427,15 @@ void renderToScreen() {
 
 void renderSplashScreen() {
     // renders the splash screen
-    clearScreen();
     COORD c = g_Console.getConsoleSize();
     c.Y /= 3;
     c.X = c.X / 2 - 9;
     g_Console.writeToBuffer(c, "Start Menu", 0x03);
     c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 20;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Space> to play", 0x09);
     c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 9;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
 }
 
@@ -429,8 +470,21 @@ void renderHUD() {
     int elapsed = (int)round(g_dElapsedTime);
     std::string elapsedTime = "Elapsed time = " + std::to_string(elapsed);
     g_Console.writeToBuffer(c, elapsedTime, colors[0]);
-
 }
+
+void renderMenu() {
+    COORD c = g_Console.getConsoleSize();
+    c.Y /= 3;
+    c.X = c.X / 2 - 10;
+    g_Console.writeToBuffer(c, "Pause menu", 0x03);
+    c.Y += 1;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    g_Console.writeToBuffer(c, "Press <Space> to save and exit", 0x09);
+    c.Y += 1;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    g_Console.writeToBuffer(c, "Press <Esc> to save and continue", 0x09);
+}
+
 void renderMap() {
     // Set up sample colours, and output shadings
     const WORD colors[] = {

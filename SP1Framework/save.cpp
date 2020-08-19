@@ -25,7 +25,7 @@ void save::saveState(string posx, string posy, string charstate) {
 		charstate = "0" + charstate;
 	}
 	Map.open("save.txt");
-	savePos = posx + posy + charstate;
+	savePos = posx + posy + charstate + "0000";
 	Map << savePos;
 	Map.close();
 	cout << savePos << endl;

@@ -1,7 +1,7 @@
 // This is the main file for the game logic and function
 //
 //
-#include "save.h"
+
 #include "game.h"
 #include "Framework\console.h"
 #include <iostream>
@@ -10,6 +10,8 @@
 #include <string>
 #include <fstream>
 
+// data naming = g_(type)(name)
+// data type = { bool(b) , int(i) , float(f) , double(d) , etc...}
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
@@ -53,6 +55,8 @@ void init(void)
     g_sChar.m_cLocation.Y = state.returnY();
     g_sEnemy.m_cLocation.X = 40;
     g_sEnemy.m_cLocation.Y = 14;
+    g_sProj.m_cLocation.X = state.returnProjX();
+    g_sProj.m_cLocation.Y = state.returnProjY();
     g_sChar.m_bActive = state.returnCharState();
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 16, L"Consolas");
@@ -115,7 +119,7 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent)
 {
     switch (g_eGameState)
     {
-    case S_SPLASHSCREEN: menuKBHandler(keyboardEvent); processUserInput();// don't handle anything for the splash screen
+    case S_SPLASHSCREEN: menuKBHandler(keyboardEvent); // don't handle anything for the splash screen
         break;
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
@@ -192,6 +196,7 @@ void menuKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
         g_skKeyEvent[key].keyDown = keyboardEvent.bKeyDown;
         g_skKeyEvent[key].keyReleased = !keyboardEvent.bKeyDown;
     }
+    processUserInput();
 }
 //--------------------------------------------------------------
 // Purpose  : This is the mouse handler in the game state. Whenever there is a mouse event in the game state, this function will be called.
@@ -244,8 +249,9 @@ void update(double dt)
 
 void splashScreenWait()    // waits for time to pass in splash screen
 {
-    if (g_bPlayGame == true) // wait for 3 seconds to switch to game mode, else do nothing
+    if (g_bPlayGame == true) // wait for keyboard to switch to game mode, else do nothing
         g_eGameState = S_GAME;
+    renderSplashScreen();
 }
 
 void updateGame()       // gameplay logic
@@ -329,8 +335,10 @@ void moveProjectile()
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X)
     {
         Beep(1440, 30);
-        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) {
+            g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+            g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        }
         for (int i = 0; i <= 20; i++)
         {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
@@ -390,7 +398,7 @@ void render()
         break;
     }
     renderFramerate();      // renders debug information, frame rate, elapsed time, etc
-    renderInputEvents();    // renders status of input events
+    //renderInputEvents();    // renders status of input events
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
 }
 
@@ -436,13 +444,13 @@ void renderMap()
     };
 
     COORD c;
-    for (int i = 0; i < 12; ++i)
+    /*for (int i = 0; i < 12; ++i)
     {
         c.X = 5 * i;
         c.Y = i + 1;
         colour(colors[i]);
         g_Console.writeToBuffer(c, " °±²Û", colors[i]);
-    }
+    }*/
 }
 
 void renderCharacter()

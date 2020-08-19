@@ -26,7 +26,6 @@ char c5 = 152;
 
 WORD enemyColor = 0x4F;
 // bool g_bInMenu = false;
-int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
 
@@ -39,7 +38,7 @@ SGameChar   g_sEnemy;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
-Console g_Console(50, 20, "Ninjas, monsters n' robots");
+Console g_Console(100, 30, "Ninjas, monsters n' robots");
 
 //--------------------------------------------------------------
 // Purpose  : Initialisation function
@@ -62,14 +61,15 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sEnemy.m_cLocation.X = 30;
-    g_sEnemy.m_cLocation.Y = 19;
+    g_sEnemy.m_cLocation.X = 50;
+    g_sEnemy.m_cLocation.Y = 29;
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
     //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = 20;
+    g_sEnemy.m_dHealth = 5;
     g_sChar.m_dMana = 40;
 
     // sets the width, height and the font name to use in the console
@@ -346,7 +346,7 @@ void moveCharacter() {
 }
 
 void moveProjectile() {
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) {
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) { //shoot to right
         Beep(1440, 30);
         if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) 
         {
@@ -373,13 +373,11 @@ void moveProjectile() {
             render();
         }
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) {
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) { //shoot to left
         Beep(1440, 30);
         g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
         g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
         for (int i = 0; i <= 20; i++) {
-            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
-                break;
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
             {
                 g_sProj.m_cLocation = g_sChar.m_cLocation;
@@ -401,19 +399,38 @@ void moveProjectile() {
 
 }
 
-bool health(int x1, int x2, int y1, int y2)
+bool health(double hp, int x1, int x2, int y1, int y2)
 {
-    if (x1 == x2 && y1 == y2)
-    {
-        i++;
-        if (i > 4)
+    
+    if (hp == g_sEnemy.m_dHealth) {
+        if (x1 == x2 && y1 == y2)
         {
-            i = 0;
-            return true;
+            {
+                g_sEnemy.m_dHealth--;
+                if (g_sEnemy.m_dHealth <= 0)
+                {
+                    g_sEnemy.m_dHealth = 0;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
-        else
-        {
-            return false;
+    if (hp == g_sChar.m_dHealth) {
+            if (x1 == x2 && y1 == y2 || x1 - 1 == x2 && y1 == y2){
+                g_sChar.m_dHealth--; 
+            }
+            if (g_sChar.m_dHealth <= 0)
+            {
+                g_sChar.m_dHealth = 0;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
     return false;
@@ -585,10 +602,17 @@ void renderCharacter()
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
     
-    if (health(g_sProj.m_cLocation.X, g_sEnemy.m_cLocation.X, g_sProj.m_cLocation.Y, g_sEnemy.m_cLocation.Y) == true)
+    if (health(g_sEnemy.m_dHealth, g_sProj.m_cLocation.X, g_sEnemy.m_cLocation.X, g_sProj.m_cLocation.Y, g_sEnemy.m_cLocation.Y) == true)
     {
         c5 = 0;
         enemyColor = 0x1A;
+    }
+    if (health(g_sChar.m_dHealth, g_sEnemy.m_cLocation.X, g_sChar.m_cLocation.X, g_sEnemy.m_cLocation.Y, g_sChar.m_cLocation.Y) == true)
+    {
+        
+        c1 = 0;
+        c2 = 0;
+        charColor = 0x1A;
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
@@ -599,8 +623,8 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(3);
-    ss << /*1.0 / g_dDeltaTime*/i << "shots taken";
-    c.X = g_Console.getConsoleSize().X - 9;
+    ss << /*1.0 / g_dDeltaTime*/g_sEnemy.m_dHealth << "shots taken";
+    c.X = g_Console.getConsoleSize().X - 16;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
 

@@ -221,20 +221,28 @@ void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 void update(double dt) {
 
     // get the delta time
-    g_dElapsedTime += dt;
+    /*g_dElapsedTime += dt;
     g_dDeltaTime = dt;
     g_iElapsedTime = (int)round(g_dElapsedTime);
-    g_iTimeAfter = g_iElapsedTime + 1;
+    g_iTimeAfter = g_iElapsedTime + 1;*/
 
     switch (g_eGameState) {
     case S_SPLASHSCREEN: splashScreenWait(); // game logic for the splash screen
         break;
-    case S_GAME: updateGame(); // gameplay logic when we are in the game
+    case S_GAME: updateGame(); updateTime(dt);// gameplay logic when we are in the game
         break;
     case S_MENU: updateMenu();
         break;
     }
     processUserInput();
+}
+
+void updateTime(double dt) {
+    g_dElapsedTime += dt;
+    g_dDeltaTime = dt;
+    g_iElapsedTime = (int)round(g_dElapsedTime);
+    g_iTimeAfter = g_iElapsedTime + 1;
+
 }
 
 void splashScreenWait() {      // waits for time to pass in splash screen

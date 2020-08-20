@@ -19,16 +19,18 @@ int *g_aPlatformsY = new int[g_iPlatforms];
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+double  g_pElapsedTime;
 double  g_eElapsedTime;
 double  g_uElapsedTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
 int i = 0;
+int j = 0;
 bool g_bPlayGame = false;
 char c1 = 203;
 char c2 = 203;
 auto c3 = std::string(1, c1) + c2;
-char c4 = 196;
+char c4 = 205;
 char c5 = 152;
 
 WORD enemyColor = 0x4F;
@@ -76,8 +78,8 @@ void init(void) {
     g_sEnemy.m_cLocation.Y = 29;
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
-    //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-    //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+    g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+    g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = 20;
     g_sEnemy.m_dHealth = 3;
@@ -270,6 +272,7 @@ void update(double dt) {
 void updateTime(double dt) {
     g_dElapsedTime += dt;
     g_dDeltaTime = dt;
+    g_pElapsedTime += dt;
     g_eElapsedTime += dt;
     g_uElapsedTime += dt;
     g_iElapsedTime = (int)round(g_dElapsedTime);
@@ -290,7 +293,7 @@ void updateGame() {     // gameplay logic
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
         moveEnemy(5, 0.5, 50); //move enemy by 5 steps back and forth from position x = 50 every 0.5 seconds
-        setUltimate(5); //Set ultimate capacity to 5
+        setUltimate(50); //Set ultimate capacity to 50
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -360,71 +363,123 @@ void moveCharacter() {
             Beep(1440, 30);
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         }
-        /*if (g_skKeyEvent[K_SPACE].keyReleased)
-            g_sChar.m_bActive = !g_sChar.m_bActive;
-        if (g_sChar.m_bActive) status = "0";
-        else if (!g_sChar.m_bActive) {
-            status = "1";
-            if (processEverySec()) {
-                g_sChar.m_dMana--;
-            }
-        }*/
-    //}
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 void moveProjectile() {
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) { //shoot to right
-        Beep(1440, 30);
-        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-        for (int i = 0; i <= 20; i++)
-        {
-            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+    
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
+    { 
+        c4 = 205;
+        if (g_pElapsedTime > 0.02) {
+            if (j != 20)
             {
-                g_sEnemy.m_dHealth--;
-                g_sProj.m_cLocation = g_sChar.m_cLocation;
-                break;
-                
-            }
-            if (g_sChar.m_bActive)
-            {
-                Sleep(15);
-            }
-            else
-            {
-                Sleep(10);
-            }
-            g_sProj.m_cLocation.X++;
-            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
-            render();
-        }
-    }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) { //shoot to left
-        Beep(1440, 30);
-        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-        for (int i = 0; i <= 20; i++) {
-            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
-            {
-                g_sEnemy.m_dHealth--;
-                g_sProj.m_cLocation = g_sChar.m_cLocation;
-                break;
-            }
-            if (g_sChar.m_bActive)
-            {
-                Sleep(15);
-            }
-            else
-            {
-                Sleep(10);
-            }
-            g_sProj.m_cLocation.X--;
-            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
-            render();
-        }
-    }
+                if (j == 1)
+                {
+                    Beep(1440, 30);
+                }
+                g_sProj.m_cLocation.X++;
+                g_pElapsedTime = 0;
+                j++;
 
+            }
+            else
+            {
+                g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+                g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+                j = 0;
+            }
+            /*if (g_sChar.m_bActive)
+            {
+                Sleep(15);
+            }
+            else
+            {
+                Sleep(10);
+            }*/
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            //render();
+        }
+    }
+    else if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X)
+    {
+        if (j > 0 && j < 20)
+        {
+            if (g_pElapsedTime > 0.02)
+            {
+                g_sProj.m_cLocation.X++;
+                g_pElapsedTime = 0;
+                j++;
+            }
+        }
+        else
+        {
+            g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+            g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+            c4 = 0;
+            j = 0;
+        }
+    }
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X) //shoot to left
+    { 
+        c4 = 205;
+        if (g_pElapsedTime > 0.02) 
+        {
+            //Beep(1440, 30);
+            if (j != 20)
+            {
+                if (j == 1)
+                {
+                    Beep(1440, 30);
+                }
+                g_sProj.m_cLocation.X--;
+                g_pElapsedTime = 0;
+                j++;
+            }
+            else
+            {
+                g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+                g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+                c4 = 0;
+                j = 0;
+            }
+            /*if (g_sChar.m_bActive)
+            {
+                Sleep(15);
+            }
+            else
+            {
+                Sleep(10);
+            }*/
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            //render();
+        }
+    }
+    else if (g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+    {
+        if (j > 0 && j < 20)
+        {
+            if (g_pElapsedTime > 0.02)
+            {
+                g_sProj.m_cLocation.X--;
+                g_pElapsedTime = 0;
+                j++;
+            }
+        }
+        else
+        {
+            g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+            g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+            c4 = 0;
+            j = 0;
+        }
+    }
+    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+    {
+        g_sEnemy.m_dHealth--;
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
 }
 
 void setUltimate(int t)
@@ -443,7 +498,7 @@ void setUltimate(int t)
     }
     else if (!g_sChar.m_bActive)
     {
-        if (g_uElapsedTime > 1)
+        if (g_uElapsedTime > 0.5)
         {
             g_uElapsedTime = 0;
             g_sChar.m_dMana--;
@@ -703,22 +758,22 @@ void renderMap() {
 void renderCharacter() 
 {
     // Draw the location of the character and weapon
-    c4 = 205;
+    
     // Draw the location of the character and weapon
     WORD charColor = 0x40; //Ultimate mode color
     if (g_sChar.m_bActive)
     {
         charColor = 0x20; //non ultimate mode
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
+    /*if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }
-    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 23 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 23)
+    }*/
+    /*if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X + 20 || g_sProj.m_cLocation.X == g_sChar.m_cLocation.X - 20)
     {
         c4 = 0;
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }
+    }*/
     
     if (g_sEnemy.m_dHealth <= 0)
     {
@@ -729,6 +784,7 @@ void renderCharacter()
     {
      
     }
+    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }

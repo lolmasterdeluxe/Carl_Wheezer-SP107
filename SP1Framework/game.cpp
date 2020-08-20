@@ -27,8 +27,9 @@ char c2 = 203;
 auto c3 = std::string(1, c1) + c2;
 char c4 = 196;
 char c5 = 152;
+
+WORD enemyColor = 0x4F;
 // bool g_bInMenu = false;
-int i = 0;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
 
@@ -42,7 +43,7 @@ SGameChar   g_sEnemy;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
-Console g_Console(50, 20, "Ninjas, monsters n' robots");
+Console g_Console(100, 30, "Ninjas, monsters n' robots");
 
 //--------------------------------------------------------------
 // Purpose  : Initialisation function
@@ -55,7 +56,7 @@ void init(void) {
 
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
-
+    
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
 
@@ -68,8 +69,8 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sEnemy.m_cLocation.X = 30;
-    g_sEnemy.m_cLocation.Y = 19;
+    g_sEnemy.m_cLocation.X = 50;
+    g_sEnemy.m_cLocation.Y = 29;
     g_sProj.m_cLocation.X = state.returnProjX();
     g_sProj.m_cLocation.Y = state.returnProjY();
     //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
@@ -282,6 +283,7 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
+        moveEnemy();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -361,44 +363,86 @@ void moveCharacter() {
 }
 
 void moveProjectile() {
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) {
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) { //shoot to right
         Beep(1440, 30);
-        if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) 
-        {
-            g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-            g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-        }
+        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         for (int i = 0; i <= 20; i++)
         {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
             {
+                g_sEnemy.m_dHealth--;
+                g_sProj.m_cLocation = g_sChar.m_cLocation;
+                break;
+                
+            }
+            if (g_sChar.m_bActive)
+            {
+                Sleep(15);
+            }
+            else
+            {
+                Sleep(10);
+            }
+            g_sProj.m_cLocation.X++;
+            //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+            render();
+        }
+    }
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) { //shoot to left
+        Beep(1440, 30);
+        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+        for (int i = 0; i <= 20; i++) {
+            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+            {
+                g_sEnemy.m_dHealth--;
                 g_sProj.m_cLocation = g_sChar.m_cLocation;
                 break;
             }
             if (g_sChar.m_bActive)
             {
-                Sleep(10);
+                Sleep(15);
             }
             else
             {
-                Sleep(5);
+                Sleep(10);
             }
-            g_sProj.m_cLocation.X++;
-            state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
-            render();
-        }
-    }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) {
-        Beep(1440, 30);
-        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-        for (int i = 0; i <= 20; i++) {
-            if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
-                break;
-            Sleep(15);
             g_sProj.m_cLocation.X--;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             render();
+        }
+    }
+
+}
+void moveEnemy()
+{
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0 || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0)
+    {
+        Sleep(100);
+        g_sChar.m_dHealth--;
+    }
+    if (g_sChar.m_dHealth <= 0)
+    {
+        g_sChar.m_dHealth = 0;
+    }
+}
+void sethealth(double hp, int n)
+{
+    if (hp == g_sEnemy.m_dHealth) 
+    {
+        g_sEnemy.m_dHealth = n;
+        if (g_sEnemy.m_dHealth <= 0)
+        {
+            g_sEnemy.m_dHealth = 0;
+        }
+    }
+    if (hp == g_sChar.m_dHealth) 
+    {
+        g_sChar.m_dHealth = n;
+        if (g_sChar.m_dHealth <= 0)
+        {
+            g_sChar.m_dHealth = 0;
         }
     }
 }
@@ -596,7 +640,6 @@ void renderCharacter()
     c4 = 205;
     // Draw the location of the character and weapon
     WORD charColor = 0x40;
-    WORD enemyColor = 0x4F;
     if (g_sChar.m_bActive)
     {
         charColor = 0x20;
@@ -610,18 +653,15 @@ void renderCharacter()
         c4 = 0;
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y)
+    
+    if (g_sEnemy.m_dHealth <= 0)
     {
-        i++;
-        if (i > 4)
-        {
-            c5 = 0;
-
-        }
-    }
-    if (c5 == 0)
-    {
+        c5 = 0;
         enemyColor = 0x1A;
+    }
+    if (g_sChar.m_dHealth <= 0)
+    {
+     
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
@@ -635,9 +675,9 @@ void renderFramerate() {
     COORD c;
     // displays the framerate
     std::ostringstream ss;
-    ss << std::fixed << std::setprecision(3);
-    ss << 1.0 / g_dDeltaTime << "fps";
-    c.X = g_Console.getConsoleSize().X - 9;
+    ss << std::fixed << std::setprecision(0);
+    ss << /*1.0 / g_dDeltaTime*/g_sEnemy.m_dHealth << "shots taken";
+    c.X = g_Console.getConsoleSize().X - 13;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
 

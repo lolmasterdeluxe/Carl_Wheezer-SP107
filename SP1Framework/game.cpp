@@ -19,6 +19,8 @@ int *g_aPlatformsY = new int[g_iPlatforms];
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+double  g_jElapsedTime;
+double  g_fElapsedTime;
 double  g_pElapsedTime;
 double  g_eElapsedTime;
 double  g_uElapsedTime;
@@ -270,11 +272,13 @@ void update(double dt) {
 }
 
 void updateTime(double dt) {
-    g_dElapsedTime += dt;
-    g_dDeltaTime = dt;
-    g_pElapsedTime += dt;
-    g_eElapsedTime += dt;
-    g_uElapsedTime += dt;
+    g_dElapsedTime += dt; //game time elapsed
+    g_dDeltaTime = dt;    //seconds between each frame (if 90fps, deltatime = 1/90)
+    g_jElapsedTime =+ dt; //jump time elapsed
+    g_fElapsedTime = +dt; //fall time elapsed
+    g_pElapsedTime += dt; //Projectile time elapsed
+    g_eElapsedTime += dt; //Enemy movement time elapsed
+    g_uElapsedTime += dt; //Ultimate meter time elapsed
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
 
@@ -366,12 +370,22 @@ void moveCharacter() {
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
-void moveProjectile() {
-    
+void moveProjectile() 
+{
+    double n = 0;
+    if (g_sChar.m_bActive)
+    {
+        n = 0.02;
+    }
+    else
+    {
+        n = 0.01;
+    }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
     { 
         c4 = 205;
-        if (g_pElapsedTime > 0.02) {
+        if (g_pElapsedTime > n) 
+        {
             if (j != 20)
             {
                 if (j == 1)
@@ -389,14 +403,7 @@ void moveProjectile() {
                 g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
                 j = 0;
             }
-            /*if (g_sChar.m_bActive)
-            {
-                Sleep(15);
-            }
-            else
-            {
-                Sleep(10);
-            }*/
+            
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
             //render();
         }
@@ -405,7 +412,7 @@ void moveProjectile() {
     {
         if (j > 0 && j < 20)
         {
-            if (g_pElapsedTime > 0.02)
+            if (g_pElapsedTime > n)
             {
                 g_sProj.m_cLocation.X++;
                 g_pElapsedTime = 0;
@@ -423,7 +430,7 @@ void moveProjectile() {
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X) //shoot to left
     { 
         c4 = 205;
-        if (g_pElapsedTime > 0.02) 
+        if (g_pElapsedTime > n) 
         {
             //Beep(1440, 30);
             if (j != 20)
@@ -459,7 +466,7 @@ void moveProjectile() {
     {
         if (j > 0 && j < 20)
         {
-            if (g_pElapsedTime > 0.02)
+            if (g_pElapsedTime > n)
             {
                 g_sProj.m_cLocation.X--;
                 g_pElapsedTime = 0;

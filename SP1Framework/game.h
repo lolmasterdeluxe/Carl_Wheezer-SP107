@@ -31,6 +31,8 @@ enum EKEYS
     K_53, //down  (A)
     K_41, //left  (S)
     K_44, //right (D)
+    K_52,  //reset (R)
+    K_ENTER, //enter (ENTER)
     K_ESCAPE,
     K_SPACE,
     K_COUNT
@@ -84,6 +86,9 @@ void updateTime(double dt);
 void saveGame();
 void renderPlatform(int x, int y);
 void loadLevelData(int number);
+void resetToLastSave();
+void resetToStart();
+void renderSavedGame();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

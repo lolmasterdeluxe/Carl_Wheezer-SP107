@@ -13,6 +13,10 @@
 // data naming = g_(type)(name)
 // data type = { bool(b) , int(i) , float(f) , double(d) , etc...}
 
+int g_iPlatforms;
+int *g_aPlatformsX = new int[g_iPlatforms];
+int *g_aPlatformsY = new int[g_iPlatforms];
+
 double  g_dElapsedTime;
 double  g_dDeltaTime;
 int g_iElapsedTime;
@@ -32,6 +36,7 @@ save state;
 // Game specific variables here
 std::string status;
 SGameChar   g_sChar;
+SGameChar   g_sCharSpawn;
 SGameChar   g_sProj;
 SGameChar   g_sEnemy;
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
@@ -70,7 +75,7 @@ void init(void) {
     //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = 20;
+    g_sChar.m_dHealth = 2;
     g_sChar.m_dMana = 40;
 
     // sets the width, height and the font name to use in the console
@@ -93,6 +98,8 @@ void shutdown(void) {
 
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+    delete[] g_aPlatformsX;
+    delete[] g_aPlatformsY;
     saveGame();
     g_Console.clearBuffer();
 }
@@ -168,6 +175,8 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 
 void saveGame() {
     state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
+    renderSavedGame();
+    Sleep(3000);
 }
 
 //--------------------------------------------------------------
@@ -188,8 +197,10 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case 0x53: key = K_53; break; //S
     case 0x41: key = K_41; break; //A
     case 0x44: key = K_44; break; //D
+    case 0x52: key = K_52; break; //R
     case VK_SPACE: key = K_SPACE; break;
     case VK_ESCAPE: key = K_ESCAPE; break;
+    case VK_RETURN: key = K_ENTER; break;
     }
     // a key pressed event would be one with bKeyDown == true
     // a key released event would be one with bKeyDown == false
@@ -277,7 +288,6 @@ void updateGame() {     // gameplay logic
 
 void updateMenu() {
     processUserInput();
-    renderMenu();
 }
 
 bool processEverySec() {
@@ -294,56 +304,59 @@ void moveCharacter() {
 
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { // Fall
-        Sleep(75);
-        g_sChar.m_cLocation.Y++;
-        if (GetKeyState(0x41) & 0X800)
-            g_sChar.m_cLocation.X--; //fall distance (1 unit)
-        if (GetKeyState(0x44) & 0X800)
-            g_sChar.m_cLocation.X++; //fall distance (1 unit)
-        render();
-    }
-    if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
-        Beep(1440, 30);
-        for (int i = 0; i < 3; i++) { // Control jump height (i less than value)
-            Sleep(50);
-            g_sChar.m_cLocation.Y--;
+
+    //for (int i = 0; i < g_iPlatforms; i++) {
+        while ((g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)) { // || ((g_sChar.m_cLocation.Y < (g_aPlatformsY[i]-1)) && (g_sChar.m_cLocation.X == g_aPlatformsX[i]))) { // Fall
+            Sleep(75);
+            g_sChar.m_cLocation.Y++;
+            if (GetKeyState(0x41) & 0X800)
+                g_sChar.m_cLocation.X--; //fall distance (1 unit)
+            if (GetKeyState(0x44) & 0X800)
+                g_sChar.m_cLocation.X++; //fall distance (1 unit)
             render();
         }
-        if (GetKeyState(0x41) & 0X800) {
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //jump distance (2 units)
-            render();
+        if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
+            Beep(1440, 30);
+            for (int i = 0; i < 3; i++) { // Control jump height (i less than value)
+                Sleep(50);
+                g_sChar.m_cLocation.Y--;
+                render();
+            }
+            if (GetKeyState(0x41) & 0X800) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //jump distance (2 units)
+                render();
+            }
+            if (GetKeyState(0x44) & 0X800) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //jump distance (2 units)
+                render();
+            }
+            if (GetKeyState(FROM_LEFT_1ST_BUTTON_PRESSED) & 0X800) {
+                moveProjectile();
+                render();
+            }
         }
-        if (GetKeyState(0x44) & 0X800) {
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //jump distance (2 units)
-            render();
+        if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) { //LEFT
+            Beep(1440, 30);
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
         }
-        if (GetKeyState(FROM_LEFT_1ST_BUTTON_PRESSED) & 0X800) {
-            moveProjectile();
-            render();
+        if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
+            Beep(1440, 30);
+            g_sChar.m_cLocation.Y++;
         }
-    }
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) { //LEFT
-        Beep(1440, 30);
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-    }
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-        Beep(1440, 30);
-        g_sChar.m_cLocation.Y++;
-    }
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) { //RIGHT
-        Beep(1440, 30);
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-    }
-    if (g_skKeyEvent[K_SPACE].keyReleased)
-        g_sChar.m_bActive = !g_sChar.m_bActive;
-    if (g_sChar.m_bActive) status = "0";
-    else if (!g_sChar.m_bActive) { 
-        status = "1";
-        if (processEverySec()) {
-            g_sChar.m_dMana--;
+        if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) { //RIGHT
+            Beep(1440, 30);
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         }
-    }
+        if (g_skKeyEvent[K_SPACE].keyReleased)
+            g_sChar.m_bActive = !g_sChar.m_bActive;
+        if (g_sChar.m_bActive) status = "0";
+        else if (!g_sChar.m_bActive) {
+            status = "1";
+            if (processEverySec()) {
+                g_sChar.m_dMana--;
+            }
+        }
+    //}
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
@@ -400,11 +413,10 @@ void processUserInput() {
             break;
         case S_SPLASHSCREEN:
             g_bQuitGame = true;
+            shutdown();
             break;
         case S_MENU:
             g_eGameState = S_GAME;
-            saveGame();
-            g_bPlayGame = true;
             break;
         }
     }
@@ -416,9 +428,32 @@ void processUserInput() {
             g_bPlayGame = true;
             break;
         case S_MENU:
-            saveGame();
             g_bQuitGame = true;
+            shutdown();
             break;
+        }
+    }
+    if (g_skKeyEvent[K_52].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            resetToStart();
+            break;
+        case S_SPLASHSCREEN:
+            break;
+        case S_MENU:
+            resetToStart();
+            g_eGameState = S_GAME;
+        }
+    }
+    if (g_skKeyEvent[K_ENTER].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            break;
+        case S_SPLASHSCREEN:
+            break;
+        case S_MENU:
+            saveGame();
+            g_eGameState = S_GAME;
         }
     }
 }
@@ -448,6 +483,16 @@ void render() {
     // renderFramerate();      // renders debug information, frame rate, elapsed time, etc
     // renderInputEvents();    // renders status of input events
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
+}
+
+void resetToLastSave() {
+    g_sChar.m_cLocation.X = state.returnX();
+    g_sChar.m_cLocation.Y = state.returnY();
+}
+
+void resetToStart() {
+    g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+    g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
 }
 
 void clearScreen() {
@@ -490,13 +535,17 @@ void renderHUD() {
     c.X = 0;
     c.Y = 1;
     colour(colors[1]);
-    std::string healthDisplay = "Health = " + std::to_string(g_sChar.m_dHealth);
+    std::string health = std::to_string(g_sChar.m_dHealth);
+    health = health.substr(0, 4);
+    std::string healthDisplay = "Health = " + health;
     g_Console.writeToBuffer(c, healthDisplay, colors[0]);
     
     c.X = 0;
     c.Y = 2;
     colour(colors[1]);
-    std::string manaDisplay = "Mana = " + std::to_string(g_sChar.m_dMana);
+    std::string mana = std::to_string(g_sChar.m_dMana);
+    mana = mana.substr(0, 4);
+    std::string manaDisplay = "Mana = " + mana;
     g_Console.writeToBuffer(c, manaDisplay, colors[0]);
 
     c.X = 0;
@@ -518,6 +567,17 @@ void renderMenu() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> to save and continue", 0x09);
+    c.Y += 1;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    g_Console.writeToBuffer(c, "Press <R> to reset", 0x09);
+}
+
+void renderSavedGame() {
+    COORD c = g_Console.getConsoleSize();
+    c.Y /= 3;
+    c.X = c.X / 2 - 10;
+    c.Y--;
+    g_Console.writeToBuffer(c, "Saved game", 0x0F);
 }
 
 void renderMap() {
@@ -658,7 +718,10 @@ void renderInputEvents() {
 }
 
 void loadLevelData(int number) {
-    int n = 0;
+    int n1 = 0;
+    int n2 = 0;
+    int m = 0;
+    int j = 1;
     char c1 = 205;
     char c2 = 203;
     char c4 = 196;
@@ -666,27 +729,49 @@ void loadLevelData(int number) {
     auto c3 = std::string(1, c1) + c2;
 
     std::string levelFile;
-    std::string line; std::string perLine;
+    std::string line1; std::string line2;
     if (number == 1)
         levelFile = "levelone.txt";
     std::ifstream level(levelFile);
     if (level.is_open()) {
-        while (std::getline(level, line)) {
-            perLine = line;
+        std::string perLine;
+        while (std::getline(level, line1)) {
+            perLine = line1;
             for (int i = 0; i < perLine.length(); i++) {
-                /*if (perLine[i] == 'C') {
-                    g_sChar.m_cLocation.X = i;
-                    g_sChar.m_cLocation.Y = n;
-                }*/
-                /*if (perLine[i] == 'E') {
-                    g_sEnemy.m_cLocation.X = i;
-                    g_sEnemy.m_cLocation.Y = n;
-                }*/
                 if (perLine[i] == 'P') {
-                    renderPlatform(i, n);
+                    renderPlatform(i, n1);
+                    m++;
+                }
+                if (perLine[i] == 'C') {
+                    g_sCharSpawn.m_cLocation.X = i;
+                    g_sCharSpawn.m_cLocation.Y = n1;
                 }
             }
-            n++;
+            n1++;
+        }
+        g_iPlatforms = m;
+        while (std::getline(level, line2)) {
+            perLine = line2;
+            for (int i = 0; i < perLine.length(); i++) {
+                if (perLine[i] == 'P') {
+                    renderPlatform(i, n2);
+                    g_aPlatformsX[j - 1] = i;
+                    g_aPlatformsY[j - 1] = n2;
+                    j++;
+                }
+            }
+            n2++;
         }
     }
 }
+
+//int main() {
+//    loadLevelData(1);
+//    for (int i = 0; i < g_iPlatforms; i++) {
+//        std::cout << g_aPlatformsX[i] << ' ' << g_aPlatformsY[i] << std::endl;
+//    }
+//    shutdown();
+//    delete[] g_aPlatformsX;
+//    delete[] g_aPlatformsY;
+//    return 0;
+//}

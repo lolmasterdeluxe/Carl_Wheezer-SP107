@@ -19,6 +19,8 @@ int *g_aPlatformsY = new int[g_iPlatforms];
 
 double  g_dElapsedTime;
 double  g_dDeltaTime;
+double  g_eElapsedTime;
+double  g_uElapsedTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
 int i = 0;
@@ -77,8 +79,9 @@ void init(void) {
     //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = 2;
-    g_sChar.m_dMana = 40;
+    g_sChar.m_dHealth = 20;
+    g_sEnemy.m_dHealth = 3;
+    g_sChar.m_dMana = 0;
 
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -267,6 +270,8 @@ void update(double dt) {
 void updateTime(double dt) {
     g_dElapsedTime += dt;
     g_dDeltaTime = dt;
+    g_eElapsedTime += dt;
+    g_uElapsedTime += dt;
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
 
@@ -284,7 +289,8 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
-        moveEnemy(1, 0.5, 50);
+        moveEnemy(5, 0.5, 50); //move enemy by 5 steps back and forth from position x = 50 every 0.5 seconds
+        setUltimate(5); //Set ultimate capacity to 5
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -309,15 +315,19 @@ void moveCharacter() {
     // providing a beep sound whenver we shift the character
 
     //for (int i = 0; i < g_iPlatforms; i++) {
-        while ((g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)) { // || ((g_sChar.m_cLocation.Y < (g_aPlatformsY[i]-1)) && (g_sChar.m_cLocation.X == g_aPlatformsX[i]))) { // Fall
-            Sleep(75);
-            g_sChar.m_cLocation.Y++;
-            if (GetKeyState(0x41) & 0X800)
-                g_sChar.m_cLocation.X--; //fall distance (1 unit)
-            if (GetKeyState(0x44) & 0X800)
-                g_sChar.m_cLocation.X++; //fall distance (1 unit)
-            render();
+    while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //Fall
+        Sleep(75);
+        g_sChar.m_cLocation.Y++;
+        if (GetKeyState(0x41) & 0X800 && g_sChar.m_cLocation.X > 2)
+        {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //fall left distance (2 unit)
         }
+        if (GetKeyState(0x44) & 0X800 && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
+        {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //fall right distance (2 unit)
+        }
+        render();
+    }
         if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
             Beep(1440, 30);
             for (int i = 0; i < 3; i++) { // Control jump height (i less than value)
@@ -350,7 +360,7 @@ void moveCharacter() {
             Beep(1440, 30);
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         }
-        if (g_skKeyEvent[K_SPACE].keyReleased)
+        /*if (g_skKeyEvent[K_SPACE].keyReleased)
             g_sChar.m_bActive = !g_sChar.m_bActive;
         if (g_sChar.m_bActive) status = "0";
         else if (!g_sChar.m_bActive) {
@@ -358,7 +368,7 @@ void moveCharacter() {
             if (processEverySec()) {
                 g_sChar.m_dMana--;
             }
-        }
+        }*/
     //}
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -416,6 +426,40 @@ void moveProjectile() {
     }
 
 }
+
+void setUltimate(int t)
+{
+    if (g_sChar.m_dMana < t && g_sChar.m_bActive) //checks if Player mana is less than 50 and is not in rage mode
+    {
+        if (g_uElapsedTime > 1) //increase mana by 1 every 1 second
+        {
+            g_uElapsedTime = 0;
+            g_sChar.m_dMana++;
+        }
+        /*if (g_sEnemy.m_dHealth == 0)
+        {
+            g_sChar.m_dMana++;
+        }*/
+    }
+    else if (!g_sChar.m_bActive)
+    {
+        if (g_uElapsedTime > 1)
+        {
+            g_uElapsedTime = 0;
+            g_sChar.m_dMana--;
+        }
+        if (g_sChar.m_dMana <= 0)
+        {
+            g_sChar.m_dMana = 0;
+            g_sChar.m_bActive = !g_sChar.m_bActive;
+        }
+    }
+    if (g_sChar.m_dMana == t && g_skKeyEvent[K_SPACE].keyReleased)
+    {
+        g_sChar.m_bActive = !g_sChar.m_bActive;
+    }
+}
+
 void moveEnemy(int n, double t, int d)
 {
     if (c5 != 0)
@@ -429,18 +473,18 @@ void moveEnemy(int n, double t, int d)
         {
             g_sChar.m_dHealth = 0;
         }
-        if (g_iElapsedTime > t)
+        if (g_eElapsedTime > t)
         {
-            if (i != 5)
+            if (i != n)
             {
-                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + n;
-                g_dElapsedTime = 0;
+                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
+                g_eElapsedTime = 0;
                 i++;
             }
             else
             {
-                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - n;
-                g_dElapsedTime = 0;
+                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 1;
+                g_eElapsedTime = 0;
                 if (g_sEnemy.m_cLocation.X <= d)
                 {
                     i = 0;
@@ -611,7 +655,7 @@ void renderHUD() {
     colour(colors[1]);
     std::string mana = std::to_string(g_sChar.m_dMana);
     mana = mana.substr(0, 4);
-    std::string manaDisplay = "Mana = " + mana;
+    std::string manaDisplay = "Ultimate = " + mana;
     g_Console.writeToBuffer(c, manaDisplay, colors[0]);
 
     c.X = 0;
@@ -661,10 +705,10 @@ void renderCharacter()
     // Draw the location of the character and weapon
     c4 = 205;
     // Draw the location of the character and weapon
-    WORD charColor = 0x40;
+    WORD charColor = 0x40; //Ultimate mode color
     if (g_sChar.m_bActive)
     {
-        charColor = 0x20;
+        charColor = 0x20; //non ultimate mode
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
     {

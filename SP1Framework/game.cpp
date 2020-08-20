@@ -269,6 +269,7 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
+        moveEnemy();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -348,25 +349,24 @@ void moveCharacter() {
 void moveProjectile() {
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) { //shoot to right
         Beep(1440, 30);
-        if (g_sProj.m_cLocation.Y != 0 && g_sProj.m_cLocation.X != 0) 
-        {
-            g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-            g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-        }
+        g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+        g_sProj.m_cLocation.X = g_sChar.m_cLocation.X + 2;
         for (int i = 0; i <= 20; i++)
         {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
             {
+                g_sEnemy.m_dHealth--;
                 g_sProj.m_cLocation = g_sChar.m_cLocation;
                 break;
+                
             }
             if (g_sChar.m_bActive)
             {
-                Sleep(10);
+                Sleep(15);
             }
             else
             {
-                Sleep(5);
+                Sleep(10);
             }
             g_sProj.m_cLocation.X++;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -380,16 +380,17 @@ void moveProjectile() {
         for (int i = 0; i <= 20; i++) {
             if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
             {
+                g_sEnemy.m_dHealth--;
                 g_sProj.m_cLocation = g_sChar.m_cLocation;
                 break;
             }
             if (g_sChar.m_bActive)
             {
-                Sleep(10);
+                Sleep(15);
             }
             else
             {
-                Sleep(5);
+                Sleep(10);
             }
             g_sProj.m_cLocation.X--;
             //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -398,43 +399,38 @@ void moveProjectile() {
     }
 
 }
-
-bool health(double hp, int x1, int x2, int y1, int y2)
+void moveEnemy()
 {
-    
-    if (hp == g_sEnemy.m_dHealth) {
-        if (x1 == x2 && y1 == y2)
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0 || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0)
+    {
+        Sleep(100);
+        g_sChar.m_dHealth--;
+    }
+    if (g_sChar.m_dHealth <= 0)
+    {
+        g_sChar.m_dHealth = 0;
+    }
+}
+void sethealth(double hp, int n)
+{
+    if (hp == g_sEnemy.m_dHealth) 
+    {
+        g_sEnemy.m_dHealth = n;
+        if (g_sEnemy.m_dHealth <= 0)
         {
-            {
-                g_sEnemy.m_dHealth--;
-                if (g_sEnemy.m_dHealth <= 0)
-                {
-                    g_sEnemy.m_dHealth = 0;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-    if (hp == g_sChar.m_dHealth) {
-            if (x1 == x2 && y1 == y2 || x1 - 1 == x2 && y1 == y2){
-                g_sChar.m_dHealth--; 
-            }
-            if (g_sChar.m_dHealth <= 0)
-            {
-                g_sChar.m_dHealth = 0;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            g_sEnemy.m_dHealth = 0;
         }
     }
-    return false;
+    if (hp == g_sChar.m_dHealth) 
+    {
+        g_sChar.m_dHealth = n;
+        if (g_sChar.m_dHealth <= 0)
+        {
+            g_sChar.m_dHealth = 0;
+        }
+    }
 }
+
 void processUserInput() {
     // process inputs depending on game states
     if (g_skKeyEvent[K_ESCAPE].keyReleased) {
@@ -602,17 +598,14 @@ void renderCharacter()
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }
     
-    if (health(g_sEnemy.m_dHealth, g_sProj.m_cLocation.X, g_sEnemy.m_cLocation.X, g_sProj.m_cLocation.Y, g_sEnemy.m_cLocation.Y) == true)
+    if (g_sEnemy.m_dHealth <= 0)
     {
         c5 = 0;
         enemyColor = 0x1A;
     }
-    if (health(g_sChar.m_dHealth, g_sEnemy.m_cLocation.X, g_sChar.m_cLocation.X, g_sEnemy.m_cLocation.Y, g_sChar.m_cLocation.Y) == true)
+    if (g_sChar.m_dHealth <= 0)
     {
-        
-        c1 = 0;
-        c2 = 0;
-        charColor = 0x1A;
+     
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
@@ -622,9 +615,9 @@ void renderFramerate() {
     COORD c;
     // displays the framerate
     std::ostringstream ss;
-    ss << std::fixed << std::setprecision(3);
+    ss << std::fixed << std::setprecision(0);
     ss << /*1.0 / g_dDeltaTime*/g_sEnemy.m_dHealth << "shots taken";
-    c.X = g_Console.getConsoleSize().X - 16;
+    c.X = g_Console.getConsoleSize().X - 13;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
 

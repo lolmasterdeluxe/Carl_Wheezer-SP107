@@ -62,7 +62,8 @@ void splashScreenWait();    // waits for time to pass in splash screen
 void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
 void moveProjectile();            // moves ranged weapon with character
-bool health(int x1, int x2, int y1, int y2, int i);
+void sethealth(double hp, int n);
+void moveEnemy();
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 
 void renderSplashScreen();  // renders the splash screen

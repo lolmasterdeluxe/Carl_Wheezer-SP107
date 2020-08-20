@@ -177,8 +177,7 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 
 void saveGame() {
     state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
-    renderSavedGame();
-    Sleep(3000);
+    //renderSavedGame();
 }
 
 //--------------------------------------------------------------
@@ -559,6 +558,8 @@ void resetToLastSave() {
 void resetToStart() {
     g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
     g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+    g_sEnemy.m_cLocation.X = 50;
+    g_sEnemy.m_cLocation.Y = 29;
 }
 
 void clearScreen() {
@@ -652,7 +653,6 @@ void renderMap() {
         0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
-
     loadLevelData(1);
 }
 

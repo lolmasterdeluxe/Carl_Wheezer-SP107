@@ -17,6 +17,7 @@ double  g_dElapsedTime;
 double  g_dDeltaTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
+int i = 0;
 bool g_bPlayGame = false;
 char c1 = 203;
 char c2 = 203;
@@ -269,7 +270,7 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
-        moveEnemy();
+        moveEnemy(1, 0.5, 50);
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -296,25 +297,29 @@ void moveCharacter() {
     while (g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //Fall
         Sleep(75);
         g_sChar.m_cLocation.Y++;
-        if (GetKeyState(0x41) & 0X800)
-            g_sChar.m_cLocation.X--; //fall distance (1 unit)
-        if (GetKeyState(0x44) & 0X800)
-            g_sChar.m_cLocation.X++; //fall distance (1 unit)
+        if (GetKeyState(0x41) & 0X800 && g_sChar.m_cLocation.X > 2)
+        {
+            g_sChar.m_cLocation.X--; //fall left distance (1 unit)
+        } 
+        if (GetKeyState(0x44) & 0X800 && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
+        {
+            g_sChar.m_cLocation.X++; //fall right distance (1 unit)
+        }
         render();
     }
     if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > 0) { //Jump up
-        Beep(1440, 30);
+        Beep(120, 30);
         for (int i = 0; i < 3; i++) { //Control jump height (i less than value)
             Sleep(50);
             g_sChar.m_cLocation.Y--;
             render();
         }
-        if (GetKeyState(0x41) & 0X800) {
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //jump distance (2 units)
+        if (GetKeyState(0x41) & 0X800 && g_sChar.m_cLocation.X > 2) {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //jump left distance(2 units)
             render();
         }
-        if (GetKeyState(0x44) & 0X800) {
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //jump distance (2 units)
+        if (GetKeyState(0x44) & 0X800 && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3) {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //jump right distance (2 units)
             render();
         }
         if (GetKeyState(FROM_LEFT_1ST_BUTTON_PRESSED) & 0X800) {
@@ -322,16 +327,16 @@ void moveCharacter() {
             render();
         }
     }
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0) { //LEFT
-        Beep(1440, 30);
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0 && g_sChar.m_cLocation.X != 1) { //LEFT
+        Beep(120, 30);
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
     }
     if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-        Beep(1440, 30);
+        Beep(120, 30);
         g_sChar.m_cLocation.Y++;
     }
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2) { //RIGHT
-        Beep(1440, 30);
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3) { //RIGHT
+        Beep(120, 30);
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
     }
     if (g_skKeyEvent[K_SPACE].keyReleased)
@@ -399,16 +404,37 @@ void moveProjectile() {
     }
 
 }
-void moveEnemy()
+void moveEnemy(int n, double t, int d)
 {
-    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0 || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && c5 != 0)
+    if (c5 != 0)
     {
-        Sleep(100);
-        g_sChar.m_dHealth--;
-    }
-    if (g_sChar.m_dHealth <= 0)
-    {
-        g_sChar.m_dHealth = 0;
+        if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
+        {
+            Sleep(100);
+            g_sChar.m_dHealth--;
+        }
+        if (g_sChar.m_dHealth <= 0)
+        {
+            g_sChar.m_dHealth = 0;
+        }
+        if (g_iElapsedTime > t)
+        {
+            if (i != 5)
+            {
+                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + n;
+                g_dElapsedTime = 0;
+                i++;
+            }
+            else
+            {
+                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - n;
+                g_dElapsedTime = 0;
+                if (g_sEnemy.m_cLocation.X <= d)
+                {
+                    i = 0;
+                }
+            }
+        }
     }
 }
 void sethealth(double hp, int n)
@@ -616,8 +642,8 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/g_sEnemy.m_dHealth << "shots taken";
-    c.X = g_Console.getConsoleSize().X - 13;
+    ss << 1.0 / g_dDeltaTime << "FPS";
+    c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
 

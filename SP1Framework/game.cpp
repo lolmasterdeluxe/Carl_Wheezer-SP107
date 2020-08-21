@@ -41,7 +41,7 @@ char c4 = 205;                     //projectile ascii
 
 char c5 = 152;                     //Enemy ascii
 
-char c6 = 232;                     //mini - Boss ascii (c6 - 12)
+char c6 = 232;                     //mini - Boss ascii (c6 - 9)
 char c7 = 232;
 auto boss1 = std::string(3, c6) + c7; //combined into 2
 char c8 = 186;
@@ -105,7 +105,7 @@ void init(void) {
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = 20;
     g_sEnemy.m_dHealth = 5;
-    g_sBossP1.m_dHealth = 100;
+    g_sBossP1.m_dHealth = 50;
     g_sChar.m_dMana = 0;
 
     // sets the width, height and the font name to use in the console
@@ -320,8 +320,8 @@ void updateGame() {     // gameplay logic
         moveProjectile();   // sound can be played here too.
         moveEnemy(5, 0.5, 50); //move enemy by 5 steps back and forth from position x = 50 every 0.5 seconds
         moveBoss(20, 0.05, 26); //movement system same as enemy but with delay at end of path
-        damage();       //find damage
-        setUltimate(5); //Set ultimate capacity to 50
+        setdamage();       //find damage
+        setUltimate(50); //Set ultimate capacity to 50
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -365,14 +365,11 @@ void moveCharacter()
                 if (checkCollision()) {
                     g_sChar.m_cLocation.Y++;
                 }
-                if (GetKeyState(0x41) & 0x800)
+                if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
                 }
-                if (checkCollision()) {
-                    g_sChar.m_cLocation.X++;
-                }
-                if (GetKeyState(0x44) & 0x800)
+                if (GetKeyState(0x44) & 0x800) //check for D input and jump right;
                 {
                     g_sChar.m_cLocation.X++;
                 }
@@ -384,7 +381,7 @@ void moveCharacter()
                 l++;
             }
         }
-        if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
+        if (l == 3 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
         {
             if (g_jElapsedTime > 0.05)
             {
@@ -393,11 +390,11 @@ void moveCharacter()
                     Beep(1440, 30);
                 }
                 g_sChar.m_cLocation.Y++;
-                if (GetKeyState(0x41) & 0x800)
+                if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
                 }
-                if (GetKeyState(0x44) & 0x800)
+                if (GetKeyState(0x44) & 0x800) //check for D input and jump right
                 {
                     g_sChar.m_cLocation.X++;
                 }
@@ -419,10 +416,10 @@ void moveCharacter()
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
         for (int x = 0; x < g_iPlatforms; x++) {
             if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
             }
         }
     }
@@ -552,31 +549,72 @@ void moveProjectile ()
             j = 0;
         }
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
-    {
-        g_sEnemy.m_dHealth--;
-        j = 0;
-        g_sProj.m_cLocation = g_sChar.m_cLocation;
-    }
 }
 
-void damage()
+void setdamage()
 {
     if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.5)
         {
-            g_sChar.m_dHealth--;
+            if (g_sEnemy.m_dHealth > 0)
+            {
+                g_sChar.m_dHealth--;
+            }
             g_hElapsedTime = 0;
         }
     }
-    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X - 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.Y - 1 == g_sChar.m_cLocation.Y)
+    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X - 1 == g_sChar.m_cLocation.X)
     {
         if (g_hElapsedTime > 0.1)
         {
-            g_sChar.m_dHealth--;
+            if (g_sBossP1.m_dHealth > 0)
+            {
+                g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
+            }
             g_hElapsedTime = 0;
         }
+    }
+    if ((g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
+    {
+        if (g_sChar.m_bActive)
+        {
+            g_sEnemy.m_dHealth--;
+        }
+        else
+        {
+            g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 5;
+        }
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+    else if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
+    {
+        if (g_sChar.m_bActive)
+        {
+            g_sBossP1.m_dHealth--;
+        }
+        else
+        {
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 5;
+        }
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+    if (g_sEnemy.m_dHealth <= 0)
+    {
+        c5 = 0;
+        enemyColor = 0x1A;
+    }
+    if (g_sBossP1.m_dHealth <= 0)
+    {
+        c6 = 0;
+        c7 = 0;
+        boss1 = std::string(3, c6) + c7;
+        c8 = 0;
+        c9 = 0;
+        boss2 = std::string(3, c8) + c9;
+        bossColor = 0x1A;
     }
     if (g_sChar.m_dHealth <= 0) {
 
@@ -645,7 +683,7 @@ void moveEnemy(int n, double t, int d)
 
 void moveBoss(int n, double t, int d)
 {
-    if (g_sBossP1.m_dHealth != 0)
+    if (g_sBossP1.m_dHealth > 0)
     {
         
         if (g_bElapsedTime > t)
@@ -891,12 +929,6 @@ void renderCharacter()
     if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }
-    
-    if (g_sEnemy.m_dHealth <= 0)
-    {
-        c5 = 0;
-        enemyColor = 0x1A;
     }
     if (g_sChar.m_dHealth <= 0)
     {

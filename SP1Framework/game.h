@@ -71,6 +71,7 @@ void moveCharacter();       // moves the character, collision detection, physics
 void moveProjectile();      // moves ranged weapon with character
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling
+void moveBoss(int n, double t, int d); //set distance and speed for boss movement
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 
 void renderSplashScreen();  // renders the splash screen

@@ -69,7 +69,7 @@ void splashScreenWait();    // waits for time to pass in splash screen
 void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
 void moveProjectile();      // moves ranged weapon with character
-void damage();
+void setdamage();
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling
 void moveBoss(int n, double t, int d); //set distance and speed for boss movement

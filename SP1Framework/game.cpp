@@ -344,17 +344,17 @@ void moveCharacter()
 {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-
     int oneStep;
-    for (int x = 0; x < g_iPlatforms; x++) {
-        if (g_skKeyEvent[K_57].keyDown)
-            if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y-1) || (g_sChar.m_cLocation.Y-1) == g_aPlatformsY[x]) //Jump up
-            {
-                l = 0;
-                l++;
-            }
-        if (l >= 1 && l < 4)
+    if (g_skKeyEvent[K_57].keyDown)
+    {
+        if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1)) //Jump up
         {
+            l = 0;
+            l++;
+        }
+    }
+    if (l >= 1 && l < 4) 
+    {
             if (g_jElapsedTime > 0.05)
             {
                 if (l == 1)
@@ -362,12 +362,15 @@ void moveCharacter()
                     Beep(1440, 30);
                 }
                 g_sChar.m_cLocation.Y--;
-                if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x]) {
+                if (checkCollision()) {
                     g_sChar.m_cLocation.Y++;
                 }
                 if (GetKeyState(0x41) & 0x800)
                 {
                     g_sChar.m_cLocation.X--;
+                }
+                if (checkCollision()) {
+                    g_sChar.m_cLocation.X++;
                 }
                 if (GetKeyState(0x44) & 0x800)
                 {
@@ -410,7 +413,6 @@ void moveCharacter()
                 g_jElapsedTime = 0;
             }
         }
-    }
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0 && g_sProj.m_cLocation.X == g_sChar.m_cLocation.X) { //LEFT
         Beep(1440, 30);
         oneStep = g_sChar.m_cLocation.X - 1;
@@ -447,7 +449,6 @@ void moveCharacter()
         }
     }
 }
-
 
 void moveProjectile ()
 {
@@ -911,6 +912,19 @@ void renderPlatform(int x, int y) {
     g_Console.writeToBuffer(x, y, " ", 0x0F);
 }
 
+bool checkCollision() {
+    bool hit = false;
+    for (int i = 0; i < g_iElapsedTime; i++) {
+        if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+            hit = true;
+        }
+        if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+            hit = true;
+        }
+    }
+    return hit;
+}
+
 void renderFramerate() {
     COORD c;
     // displays the framerate
@@ -1010,10 +1024,9 @@ void loadLevelData(int number) {
         levelFile = "levelone.txt";
     std::ifstream level;
     std::ifstream levelPtr(levelFile);
+
     level.open(levelFile);
-
     char c = level.get();
-
     while (level.good()) {
         if (c == 'P') {
             g_iPlatforms++;

@@ -12,11 +12,9 @@
 
 // data naming = g_(type)(name)
 // data type = { bool(b) , int(i) , float(f) , double(d) , etc...}
-
-int g_iPlatforms;
-int *g_aPlatformsX = new int[g_iPlatforms];
-int *g_aPlatformsY = new int[g_iPlatforms];
-
+int* g_aPlatformsX = NULL;
+int* g_aPlatformsY = NULL;
+int g_iPlatforms = 0;
 double  g_dElapsedTime;
 double  g_dDeltaTime;
 double  g_jElapsedTime;
@@ -796,7 +794,8 @@ void renderCharacter()
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
-void renderPlatform(int x, int y) {
+void renderPlatform() {
+    for (int i = 0; i < g_i)
     g_Console.writeToBuffer(x, y, " ", 0x0F);
 }
 
@@ -888,59 +887,57 @@ void renderInputEvents() {
 
 void loadLevelData(int number) {
     int n1 = 0;
-    int n2 = 0;
-    int m = 0;
-    int j = 1;
+    int y = 0;
     char c1 = 205;
     char c2 = 203;
-    char c4 = 196;
-    char c5 = 152;
     auto c3 = std::string(1, c1) + c2;
 
     std::string levelFile;
-    std::string line1; std::string line2;
+    std::string line2;
     if (number == 1)
         levelFile = "levelone.txt";
-    std::ifstream level(levelFile);
-    if (level.is_open()) {
-        std::string perLine;
-        while (std::getline(level, line1)) {
-            perLine = line1;
-            for (int i = 0; i < perLine.length(); i++) {
-                if (perLine[i] == 'P') {
-                    renderPlatform(i, n1);
-                    m++;
-                }
-                if (perLine[i] == 'C') {
-                    g_sCharSpawn.m_cLocation.X = i;
-                    g_sCharSpawn.m_cLocation.Y = n1;
-                }
-            }
-            n1++;
+    std::ifstream level;
+    std::ifstream levelPtr(levelFile);
+    level.open(levelFile);
+
+    char c = level.get();
+
+    while (level.good()) {
+        if (c == 'P') {
+            g_iPlatforms++;
         }
-        g_iPlatforms = m;
-        while (std::getline(level, line2)) {
+        c = level.get();
+    }
+    level.close();
+    int j = 1;
+    g_aPlatformsX = new int[g_iPlatforms];
+    g_aPlatformsY = new int[g_iPlatforms];
+    if (levelPtr.is_open()) {
+        std::string perLine;
+        while (std::getline(levelPtr, line2)) {
             perLine = line2;
-            for (int i = 0; i < perLine.length(); i++) {
-                if (perLine[i] == 'P') {
-                    renderPlatform(i, n2);
-                    g_aPlatformsX[j - 1] = i;
-                    g_aPlatformsY[j - 1] = n2;
+            for (int x = 0; x < perLine.length(); x++) {
+                if (perLine[x] == 'P') {
+                    for (int k = 0; k < g_iPlatforms; k++) {
+                        g_aPlatformsX[j-1] = x;
+                        g_aPlatformsY[j-1] = y;
+                    }
                     j++;
                 }
+                if (perLine[x] == 'C') {
+                    g_sCharSpawn.m_cLocation.X = x;
+                    g_sCharSpawn.m_cLocation.Y = y;
+                }
             }
-            n2++;
+            y++;
         }
     }
+    levelPtr.close();
+    /*std::cout << g_iPlatforms << std::endl;
+    for (int i = 0; i < g_iPlatforms; i++) {
+        std::cout << g_aPlatformsX[i] << ' ' << g_aPlatformsY[i] <<std::endl;
+    }
+    std::cout << g_sCharSpawn.m_cLocation.X << ' ' << g_sCharSpawn.m_cLocation.Y << std::endl;*/
+    delete[] g_aPlatformsX;
+    delete[] g_aPlatformsY;
 }
-
-//int main() {
-//    loadLevelData(1);
-//    for (int i = 0; i < g_iPlatforms; i++) {
-//        std::cout << g_aPlatformsX[i] << ' ' << g_aPlatformsY[i] << std::endl;
-//    }
-//    shutdown();
-//    delete[] g_aPlatformsX;
-//    delete[] g_aPlatformsY;
-//    return 0;
-//}

@@ -12,8 +12,8 @@
 
 // data naming = g_(type)(name)
 // data type = { bool(b) , int(i) , float(f) , double(d) , etc...}
-int* g_aPlatformsX = NULL;
-int* g_aPlatformsY = NULL;
+int* g_aPlatformsX;
+int* g_aPlatformsY;
 int g_iPlatforms = 0;
 double  g_dElapsedTime;
 double  g_dDeltaTime;
@@ -126,9 +126,9 @@ void shutdown(void) {
 
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+    saveGame();
     delete[] g_aPlatformsX;
     delete[] g_aPlatformsY;
-    saveGame();
     g_Console.clearBuffer();
 }
 
@@ -202,8 +202,7 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 }
 
 void saveGame() {
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
-    //renderSavedGame();
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status);
 }
 
 //--------------------------------------------------------------
@@ -340,74 +339,108 @@ void moveCharacter()
 {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-    //for (int i = 0; i < g_iPlatforms; i++) {
-    if (g_skKeyEvent[K_57].keyDown && g_sChar.m_cLocation.Y > g_Console.getConsoleSize().Y - 2/*&& g_sChar.m_cLocation.Y > 0*/) //Jump up
-    { 
-        l = 0;
-        l++;     
-    }
-    if (l >= 1 && l < 4)
-    {
-        if (g_jElapsedTime > 0.05)
+
+    int oneStep;
+    for (int x = 0; x < g_iPlatforms; x++) {
+        if (g_skKeyEvent[K_57].keyDown)
+            if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y-1) || (g_sChar.m_cLocation.Y-1) == g_aPlatformsY[x]) //Jump up
+            {
+                l = 0;
+                l++;
+            }
+        if (l >= 1 && l < 4)
         {
-            if (l == 1)
+            if (g_jElapsedTime > 0.05)
             {
-                Beep(1440, 30);
+                if (l == 1)
+                {
+                    Beep(1440, 30);
+                }
+                g_sChar.m_cLocation.Y--;
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x]) {
+                    g_sChar.m_cLocation.Y++;
+                }
+                if (GetKeyState(0x41) & 0x800)
+                {
+                    g_sChar.m_cLocation.X--;
+                }
+                if (GetKeyState(0x44) & 0x800)
+                {
+                    g_sChar.m_cLocation.X++;
+                }
+                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
+                {
+                    g_sProj.m_cLocation.Y--;
+                }
+                g_jElapsedTime = 0;
+                l++;
             }
-            g_sChar.m_cLocation.Y--;
-            if (GetKeyState(0x41) & 0x800)
-            {
-                g_sChar.m_cLocation.X--;
-            }
-            if (GetKeyState(0x44) & 0x800)
-            {
-                g_sChar.m_cLocation.X++;
-            }
-            if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-            {
-                g_sProj.m_cLocation.Y--;
-            }
-            g_jElapsedTime = 0;
-            l++;
         }
-    }
-    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
-    {
-        if (g_jElapsedTime > 0.05)
+        if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1)
         {
-            if (l == 1)
+            if (g_jElapsedTime > 0.05)
             {
-                Beep(1440, 30);
+                if (l == 1)
+                {
+                    Beep(1440, 30);
+                }
+                g_sChar.m_cLocation.Y++;
+                if (GetKeyState(0x41) & 0x800)
+                {
+                    g_sChar.m_cLocation.X--;
+                }
+                if (GetKeyState(0x44) & 0x800)
+                {
+                    g_sChar.m_cLocation.X++;
+                }
+                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
+                {
+                    g_sProj.m_cLocation.Y++;
+                }
+                for (int x = 0; x < g_iPlatforms; x++) {
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                        g_sChar.m_cLocation.Y--;
+                    }
+                }
+                g_jElapsedTime = 0;
             }
-            g_sChar.m_cLocation.Y++;
-            if (GetKeyState(0x41) & 0x800) 
-            {
-                g_sChar.m_cLocation.X--;
-            }
-            if (GetKeyState(0x44) & 0x800)
-            {
-                g_sChar.m_cLocation.X++;
-            }
-            if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-            {
-                g_sProj.m_cLocation.Y++;
-            }
-            g_jElapsedTime = 0;
         }
     }
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0 && g_sProj.m_cLocation.X == g_sChar.m_cLocation.X) { //LEFT
         Beep(1440, 30);
+        oneStep = g_sChar.m_cLocation.X - 1;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+        for (int x = 0; x < g_iPlatforms; x++) {
+            if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+            }
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+            }
+        }
     }
     if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
         Beep(1440, 30);
         g_sChar.m_cLocation.Y++;
+        for (int x = 0; x < g_iPlatforms; x++) {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                g_sChar.m_cLocation.Y--;
+            }
+        }
     }
     if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2 && g_sProj.m_cLocation.X == g_sChar.m_cLocation.X) { //RIGHT
         Beep(1440, 30);
+        oneStep = g_sChar.m_cLocation.X + 1;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        for (int x = 0; x < g_iPlatforms; x++) {
+            if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+            }
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+            }
+        }
     }
-    //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 
@@ -644,6 +677,7 @@ void processUserInput() {
             break;
         case S_MENU:
             g_eGameState = S_GAME;
+            g_bPlayGame = true;
             break;
         }
     }
@@ -670,6 +704,7 @@ void processUserInput() {
         case S_MENU:
             resetToStart();
             g_eGameState = S_GAME;
+            break;
         }
     }
     if (g_skKeyEvent[K_ENTER].keyReleased) {
@@ -795,7 +830,7 @@ void renderMenu() {
     g_Console.writeToBuffer(c, "Press <Space> to save and exit", 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
-    g_Console.writeToBuffer(c, "Press <Esc> to save and continue", 0x09);
+    g_Console.writeToBuffer(c, "Press <Esc> continue", 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <R> to reset", 0x09);
@@ -816,6 +851,7 @@ void renderMap() {
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
     loadLevelData(1);
+    //renderPlatform();
 }
 
 void renderCharacter() 
@@ -852,8 +888,7 @@ void renderCharacter()
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
-void renderPlatform() {
-    for (int i = 0; i < g_i)
+void renderPlatform(int x, int y) {
     g_Console.writeToBuffer(x, y, " ", 0x0F);
 }
 
@@ -979,6 +1014,7 @@ void loadLevelData(int number) {
                     for (int k = 0; k < g_iPlatforms; k++) {
                         g_aPlatformsX[j-1] = x;
                         g_aPlatformsY[j-1] = y;
+                        renderPlatform(g_aPlatformsX[j - 1], g_aPlatformsY[j - 1]);
                     }
                     j++;
                 }
@@ -991,11 +1027,4 @@ void loadLevelData(int number) {
         }
     }
     levelPtr.close();
-    /*std::cout << g_iPlatforms << std::endl;
-    for (int i = 0; i < g_iPlatforms; i++) {
-        std::cout << g_aPlatformsX[i] << ' ' << g_aPlatformsY[i] <<std::endl;
-    }
-    std::cout << g_sCharSpawn.m_cLocation.X << ' ' << g_sCharSpawn.m_cLocation.Y << std::endl;*/
-    delete[] g_aPlatformsX;
-    delete[] g_aPlatformsY;
 }

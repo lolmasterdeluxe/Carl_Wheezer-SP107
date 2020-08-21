@@ -23,7 +23,9 @@ double  g_pElapsedTime;
 double  g_eElapsedTime;
 double  g_bElapsedTime;
 double  g_jElapsedTime;
-double  g_delay;
+double  g_hElapsedTime;
+double  g_delay1;
+double  g_delay2;
 double  g_uElapsedTime;
 int g_iElapsedTime;
 int g_iTimeAfter;
@@ -298,9 +300,11 @@ void updateTime(double dt) {
     g_pElapsedTime += dt; //Projectile time elapsed
     g_eElapsedTime += dt; //Enemy movement time elapsed
     g_uElapsedTime += dt; //Ultimate meter time elapsed
+    g_hElapsedTime += dt;
     g_jElapsedTime += dt;
     g_bElapsedTime += dt;
-    g_delay += dt;
+    g_delay1 += dt;
+    g_delay2 += dt;
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
 
@@ -319,7 +323,8 @@ void updateGame() {     // gameplay logic
         moveCharacter();    // moves the character, collision detection, physics, etc
         moveProjectile();   // sound can be played here too.
         moveEnemy(5, 0.5, 50); //move enemy by 5 steps back and forth from position x = 50 every 0.5 seconds
-        moveBoss(20, 0.05, 26);
+        moveBoss(20, 0.05, 26); //movement system same as enemy but with delay at end of path
+        damage();       //find damage
         setUltimate(5); //Set ultimate capacity to 50
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -516,11 +521,35 @@ void moveProjectile ()
             j = 0;
         }
     }
-    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && c5 != 0)
+    if (g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
     {
         g_sEnemy.m_dHealth--;
         j = 0;
         g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+}
+
+void damage()
+{
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    {
+        if (g_hElapsedTime > 0.5)
+        {
+            g_sChar.m_dHealth--;
+            g_hElapsedTime = 0;
+        }
+    }
+    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X - 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.Y - 1 == g_sChar.m_cLocation.Y)
+    {
+        if (g_hElapsedTime > 0.1)
+        {
+            g_sChar.m_dHealth--;
+            g_hElapsedTime = 0;
+        }
+    }
+    if (g_sChar.m_dHealth <= 0) {
+
+        g_sChar.m_dHealth = 0;
     }
 }
 
@@ -561,15 +590,7 @@ void moveEnemy(int n, double t, int d)
 {
     if (c5 != 0)
     {
-        if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
-        {
-            Sleep(100);
-            g_sChar.m_dHealth--;
-        }
-        if (g_sChar.m_dHealth <= 0)
-        {
-            g_sChar.m_dHealth = 0;
-        }
+       
         if (g_eElapsedTime > t)
         {
             if (i != n)
@@ -595,40 +616,38 @@ void moveBoss(int n, double t, int d)
 {
     if (g_sBossP1.m_dHealth != 0)
     {
-        if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y - 1 == g_sChar.m_cLocation.Y)
-        {
-            //Sleep(100);
-            g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
-        }
-        if (g_sChar.m_dHealth <= 0){
-    
-            g_sChar.m_dHealth = 0;
-        }
+        
         if (g_bElapsedTime > t)
         {
            /*if (g_sBossP1.m_cLocation.X >= g_sChar.m_cLocation.X + 5 || g_sBossP1.m_cLocation.X <= g_sChar.m_cLocation.X - 5)*/
             /*{*/
                 if (k != n)
                 {
-                    g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
-                    g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
-                    g_bElapsedTime = 0;
-                    k++;
+                    if (g_delay1 > 5)
+                    {
+                        g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
+                        g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
+                        g_bElapsedTime = 0;
+                        k++;
+                        g_delay2 = 0;
+                    }
                 }
                 else
                 {
-                    if (g_delay > 5)
+                    if (g_delay2 > 5)
                     {
                         g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X - 2;
                         g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
                         g_bElapsedTime = 0;
-                        if (g_sBossP1.m_cLocation.X <= d)
+                        g_delay1 = 0;
+                        if (g_sBossP1.m_cLocation.X == d)
                         {
                             k = 0;
                         }
                     }
                 }
-            //}
+           //}
+          
         }
     }
 }

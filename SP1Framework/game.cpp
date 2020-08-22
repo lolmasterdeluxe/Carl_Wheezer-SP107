@@ -362,9 +362,6 @@ void moveCharacter()
                     Beep(1440, 30);
                 }
                 g_sChar.m_cLocation.Y--;
-                if (checkCollision()) {
-                    g_sChar.m_cLocation.Y++;
-                }
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
@@ -381,14 +378,10 @@ void moveCharacter()
                 l++;
             }
         }
-        if (l == 3 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
+        if (l == 3 && g_sChar.m_cLocation.Y <= g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
         {
             if (g_jElapsedTime > 0.05)
             {
-                if (l == 1)
-                {
-                    Beep(1440, 30);
-                }
                 g_sChar.m_cLocation.Y++;
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
@@ -402,11 +395,11 @@ void moveCharacter()
                 {
                     g_sProj.m_cLocation.Y++;
                 }
-                for (int x = 0; x < g_iPlatforms; x++) {
+                /*for (int x = 0; x < g_iPlatforms; x++) {
                     if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
                         g_sChar.m_cLocation.Y--;
-                    }
-                }
+                    }*/
+                //}
                 g_jElapsedTime = 0;
             }
         }
@@ -946,7 +939,7 @@ void renderPlatform(int x, int y) {
 
 bool checkCollision() {
     bool hit = false;
-    for (int i = 0; i < g_iElapsedTime; i++) {
+    for (int i = 0; i < g_iPlatforms; i++) {
         if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
@@ -1078,7 +1071,7 @@ void loadLevelData(int number) {
                     for (int k = 0; k < g_iPlatforms; k++) {
                         g_aPlatformsX[j-1] = x;
                         g_aPlatformsY[j-1] = y;
-                        renderPlatform(g_aPlatformsX[j - 1], g_aPlatformsY[j - 1]);
+                        renderPlatform(x, y);
                     }
                     j++;
                 }

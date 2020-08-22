@@ -69,6 +69,7 @@ void splashScreenWait();    // waits for time to pass in splash screen
 void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
 void moveProjectile();      // moves ranged weapon with character
+void slashAttack(double n, int i);
 void setdamage();
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling
@@ -93,7 +94,6 @@ void loadLevelData(int number);
 void resetToLastSave();
 void resetToStart();
 void renderSavedGame();
-bool checkCollision();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

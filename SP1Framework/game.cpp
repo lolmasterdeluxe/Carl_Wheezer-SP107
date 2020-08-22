@@ -108,8 +108,8 @@ void init(void) {
     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = 20;
-    g_sEnemy.m_dHealth = 5;
+    g_sChar.m_dHealth = 20000;
+    g_sEnemy.m_dHealth = 100;
     g_sBossP1.m_dHealth = 50;
     g_sChar.m_dMana = 0;
 
@@ -325,7 +325,7 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the character, collision detection, physics, etc
         //moveProjectile();   // sound can be played here too.
-        slashAttack(1, 8);    //slash forward by *8 steps, delay after slash by *1 second
+        slashAttack(1, 10);    //slash forward by *8 steps, delay after slash by *1 second
         moveEnemy(5, 0.5, 50); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
         moveBoss(20, 0.05, 26); //movement system same as enemy but with delay at end of path
         setdamage();       //find reason for damage
@@ -637,7 +637,7 @@ void slashAttack(double n, int i)
 
 void setdamage()
 {
-    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X - 1 == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.5)
         {
@@ -647,8 +647,12 @@ void setdamage()
             }
             g_hElapsedTime = 0;
         }
+        if (g_sAttackState.m_bActive == true)
+        {
+            g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1; //program recognises as 2 damage
+        }
     }
-    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X - 1 == g_sChar.m_cLocation.X)
+    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.1)
         {
@@ -657,6 +661,10 @@ void setdamage()
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
             }
             g_hElapsedTime = 0;
+        }
+        if (g_sAttackState.m_bActive == true)
+        {
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
         }
     }
     if ((g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
@@ -746,7 +754,7 @@ void moveEnemy(int n, double t, int d)
        
         if (g_eElapsedTime > t)
         {
-            if (i != n)
+            if (i < n)
             {
                 g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
                 g_eElapsedTime = 0;
@@ -760,6 +768,24 @@ void moveEnemy(int n, double t, int d)
                 {
                     i = 0;
                 }
+            }
+        }
+        if (g_mouseEvent.mousePosition.X > g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X - 4 == g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push right
+        {
+            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 2;
+            i = i + 2;
+        }
+        if (g_mouseEvent.mousePosition.X < g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X + 4 == g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push left
+        {
+            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 2;
+            i = i - 2;
+            if (g_sEnemy.m_cLocation.X - 1 == d)
+            {
+                n++;
+            }
+            else if (g_sEnemy.m_cLocation.X - 2 == d)
+            {
+                n = n + 2;
             }
         }
     }
@@ -1034,7 +1060,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << 1.0 / g_dDeltaTime << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/g_sBossP1.m_dHealth << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

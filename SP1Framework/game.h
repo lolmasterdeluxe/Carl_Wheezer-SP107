@@ -70,10 +70,11 @@ void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
 void moveProjectile();      // moves ranged weapon with character
 void slashAttack(double n, int i);
+void seraphUlt();           //Seraph combo breaker
 void setdamage();
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling
-void moveBoss(int n, double t, int d); //set distance and speed for boss movement
+void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 
 void renderSplashScreen();  // renders the splash screen

@@ -46,6 +46,7 @@ int su = 0;
 int ultiloop = 0;
 int y;
 int x;
+int slam = 0;
 float m = 0;
 
 //start/end game boolean
@@ -124,9 +125,9 @@ void init(void) {
     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = 2000;
-    g_sEnemy.m_dHealth = 5;
+    g_sEnemy.m_dHealth = 50;
     g_sBossP1.m_dHealth = 50;
-    g_sChar.m_dMana = 0;
+    g_sChar.m_dMana = 50;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
     
@@ -459,15 +460,15 @@ void moveCharacter()
             }
         }
     }
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-        /*Beep(1440, 30);*/
-        g_sChar.m_cLocation.Y++;
-        for (int x = 0; x < g_iPlatforms; x++) {
-            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.Y--;
-            }
-        }
-    }
+    //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
+    //    /*Beep(1440, 30);*/
+    //    g_sChar.m_cLocation.Y++;
+    //    for (int x = 0; x < g_iPlatforms; x++) {
+    //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+    //            g_sChar.m_cLocation.Y--;
+    //        }
+    //    }
+    //}
     if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 /*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
     {
         /*Beep(1440, 30);*/
@@ -642,6 +643,61 @@ void slashAttack(double n, int i)
     { 
         g_sChar.m_cLocation.X--;
         s++;
+    }
+    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //DOWN slam attack with S
+    { 
+        slam++;
+        l = 0;
+        for (int x = 0; x < g_iPlatforms; x++) 
+        {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) 
+            {
+                g_sChar.m_cLocation.Y--;
+            }
+        }
+    }
+    if (g_sElapsedTime > 0.02) 
+    {
+        if (slam > 0)
+        {
+            g_sAttackState.m_bActive = true;
+        }
+        if (slam >= 1 && slam < 3)
+        {
+            g_sChar.m_cLocation.Y--;
+            g_sElapsedTime = 0;
+            slam++;
+        }
+        if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+        {
+            g_sChar.m_cLocation.Y++;
+            slam++;
+            g_sElapsedTime = 0;
+        }
+        else if (slam == 6)
+        {
+            if (g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+            {
+                g_sChar.m_cLocation.Y++;
+            }
+            else
+            {
+                slam = 0;
+                if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X > g_sChar.m_cLocation.X)
+                {
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 3;
+                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth- 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                }
+                if (g_sChar.m_cLocation.X - 2 >= g_sEnemy.m_cLocation.X)
+                {
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 3;
+                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                }
+                g_sAttackState.m_bActive = false;
+            }
+        }
     }
 }
 
@@ -824,16 +880,17 @@ void seraphUlt()
                
             }
         }
-        else if (g_udElapsedTime > 1.5)
+        else if (g_udElapsedTime > 1.5 && g_udElapsedTime < 1.51)
         { 
             g_sEnemy.m_dHealth = 0;
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 25;
-            if (g_udElapsedTime > 3) 
-            {
-                l = 1;
-                g_sChar.m_dHealth = 50;
-                g_sChar.m_dMana = 0;
-            }
+        }
+        else if (g_udElapsedTime > 3)
+        {
+            l = 1;
+            g_sChar.m_dHealth = 50;
+            g_sChar.m_dMana = 0;
+
         }
     }
 }
@@ -993,6 +1050,14 @@ void moveEnemy(int n, double t, int d)
             {
                 n = n + 2;
             }
+        }
+        if (slam == 6 && g_sChar.m_cLocation.X + 2 == g_sEnemy.m_cLocation.X )
+        {
+            i = i + 3;
+        }
+        if (slam == 6 && g_sChar.m_cLocation.X - 2 == g_sEnemy.m_cLocation.X)
+        {
+            i = i - 3;
         }
     }
 }
@@ -1331,7 +1396,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/g_udElapsedTime << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/g_sBossP1.m_dHealth << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

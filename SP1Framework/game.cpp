@@ -45,6 +45,8 @@ int j = 0;
 int k = 0;
 int l = 0;
 int s = 0;
+int n = 2;
+int spd = 0; //control movement speed (used for sneak)
 int p = 0;
 int dashl = 0; //counter for dodge (left)
 int dashr = 0; //counter for dodge (right)
@@ -58,6 +60,10 @@ float m = 0;
 
 //start/end game boolean
 bool g_bPlayGame = false;
+bool g_sAttackState = false;
+bool g_sInvulnerable = false;
+bool g_sUltimate = false;
+bool g_sRage = false;
 
 char c1 = 203;                     //main player's ascii characters
 char c2 = 203;
@@ -84,14 +90,11 @@ save state;
 // Game specific variables here
 std::string status;
 SGameChar   g_sChar;
-SGameChar   g_sAttackState;
-SGameChar   g_sInvulnerable;
-SGameChar   g_sUltimate;
 SGameChar   g_sCharSpawn;
 SGameChar   g_sProj;
 SGameChar   g_sEnemy;
 SGameChar   g_sBossP1;  //Boss bottom half
-SGameChar   g_sBossP2; //Boss top half
+SGameChar   g_sBossP2;  //Boss top half
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
@@ -132,9 +135,9 @@ void init(void) {
     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = 2000;
+    g_sChar.m_dHealth = 50;
     g_sEnemy.m_dHealth = 5;
-    g_sBossP1.m_dHealth = 50;
+    g_sBossP1.m_dHealth = 100;
     g_sChar.m_dMana = 50;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
@@ -358,9 +361,11 @@ void splashScreenWait() {      // waits for time to pass in splash screen
 void updateGame() {     // gameplay logic
     if (g_bPlayGame) {
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
-        moveCharacter();    // moves the character, collision detection, physics, etc
-        //moveProjectile();   // sound can be played here too.
+        moveCharacter();    // moves the player by *2 steps, collision detection, physics, etc
+        sneakCharacter();   // Gin sneak ability
+        moveProjectile();   // sound can be played here too.
         slashAttack(0.2, 10, 3); //slash forward by *10 steps, speed of slash is *.2 seconds
+        downslam();
         dodge(5);              //dodge for Gin
         moveEnemy(5, 0.5, 50); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
         moveBoss(35, 0.05, 3, 10); //movement system same as enemy but with delay at end of path
@@ -392,14 +397,14 @@ void moveCharacter()
     int oneStep;
     for (int x = 0; x <= g_iPlatforms; x++) 
     {
-        if (g_skKeyEvent[K_57].keyDown) {
+        if (g_skKeyEvent[K_57].keyDown && g_sUltimate == false) {
             if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1) || (g_sChar.m_cLocation.Y + 1) == g_aPlatformsY[x]) //Jump up
             {
                 l = 0;
                 l++;
             }
         }
-        if (l >= 1 && l < 4) //check if player is mid air to move up to 4
+        if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
         {
             if (g_jElapsedTime > 0.05)
             {
@@ -429,7 +434,7 @@ void moveCharacter()
             }
         }
     }
-    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && g_sUltimate.m_bActive == false) //check if l is 3 and push down for gravity
+    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && g_sUltimate == false) //check if l is 3 and push down for gravity
     {
         if (g_jElapsedTime > 0.05)
         {
@@ -460,11 +465,11 @@ void moveCharacter()
         }
     }
     
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 /*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
     {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X - 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
         for (int x = 0; x < g_iPlatforms; x++) {
             if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
@@ -483,11 +488,11 @@ void moveCharacter()
     //        }
     //    }
     //}
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 /*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
     {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X + 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
         for (int x = 0; x < g_iPlatforms; x++) {
             if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
@@ -500,10 +505,40 @@ void moveCharacter()
     
 }
 
+void sneakCharacter()
+{
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    {
+        if (GetKeyState(0x53) & 0x800)
+        {
+            n = 1;
+            g_sInvulnerable = true;
+        }
+        else
+        {
+            n = 2;
+            g_sInvulnerable = false;
+        }
+    }
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    {
+        if (GetKeyState(0x53) & 0x800)
+        {
+            n = 1;
+            g_sInvulnerable = true;
+        }
+        else
+        {
+            n = 2;
+            g_sInvulnerable = false;
+        }
+    }
+}
+
 void moveProjectile ()
 {
     double n = 0;
-    if (g_sUltimate.m_bActive)
+    if (g_sRage == true)
     {
         n = 0.01;
     }
@@ -601,10 +636,10 @@ void moveProjectile ()
 
 void dodge(int i)
 {
-    g_sInvulnerable.m_bActive = false;
+    
     if (g_skKeyEvent[K_51].keyDown && g_sChar.m_cLocation.X > 2) //dodge left
     {
-        g_sInvulnerable.m_bActive = true;
+        g_sInvulnerable = true;
         dashl++;
         if (dashl >= i && g_slashdelay > 0.25)
         {
@@ -614,7 +649,6 @@ void dodge(int i)
     }
     if (g_doElapsedTime > 0.01)
     {
-        g_sInvulnerable.m_bActive = true;
         if (dashl >= 1 && dashl < i && g_sChar.m_cLocation.X > 2)
         {
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
@@ -625,11 +659,12 @@ void dodge(int i)
     }
     else
     {
+        g_sInvulnerable = false;
         dashl = 0;
     }
     if (g_skKeyEvent[K_45].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3) //dodge right
     {
-        g_sInvulnerable.m_bActive = true;
+        g_sInvulnerable = true;
         dashr++;
         if (dashr >= i && g_slashdelay > 0.25)
         {
@@ -639,7 +674,6 @@ void dodge(int i)
     }
     if (g_doElapsedTime > 0.01)
     {
-        g_sInvulnerable.m_bActive = true;
         if (dashr >= 1 && dashr <= i && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
         {
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
@@ -649,16 +683,17 @@ void dodge(int i)
     }
     else
     {
+        g_sInvulnerable = false;
         dashr = 0;
     }
 }
 
 void slashAttack(double n, int i, int j)
 {
-    g_sAttackState.m_bActive = false;
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3) //Slash right
+    g_sAttackState = false;
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate) //Slash right
     {
-        g_sAttackState.m_bActive = true;
+        g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
             if (s != i)
@@ -694,9 +729,9 @@ void slashAttack(double n, int i, int j)
             g_sChar.m_cLocation.X++;
             s++;
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2) //Slash left
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate) //Slash left
     {
-        g_sAttackState.m_bActive = true;
+        g_sAttackState = true;
         
         if (g_sElapsedTime > n)
         {
@@ -743,23 +778,28 @@ void slashAttack(double n, int i, int j)
             p = 0;
         }
     }
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && p != 3) //DOWN slam attack with S
-    { 
+}
+
+void downslam()
+{
+    g_sAttackState = false;
+    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && p != 3 && !g_sUltimate) //DOWN slam attack with S
+    {
         slam++;
         l = 0;
-        for (int x = 0; x < g_iPlatforms; x++) 
+        for (int x = 0; x < g_iPlatforms; x++)
         {
-            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) 
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
             {
                 g_sChar.m_cLocation.Y--;
             }
         }
     }
-    if (g_sElapsedTime > 0.02) 
+    if (g_sElapsedTime > 0.02)
     {
         if (slam > 0)
         {
-            g_sAttackState.m_bActive = true;
+            g_sAttackState = true;
         }
         if (slam >= 1 && slam < 3)
         {
@@ -785,7 +825,7 @@ void slashAttack(double n, int i, int j)
                 if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X > g_sChar.m_cLocation.X)
                 {
                     g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 3;
-                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth- 2;
+                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
                     g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
                     g_stun = -1;
                 }
@@ -796,7 +836,7 @@ void slashAttack(double n, int i, int j)
                     g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
                     g_stun = -1;
                 }
-                g_sAttackState.m_bActive = false;
+                g_sAttackState = false;
             }
         }
     }
@@ -804,7 +844,7 @@ void slashAttack(double n, int i, int j)
 
 void seraphUlt()
 {
-    if (g_sUltimate.m_bActive == true)
+    if (g_sUltimate == true)
     {
         g_sChar.m_dMana = 50;
         if (su != 359)
@@ -984,7 +1024,7 @@ void seraphUlt()
         else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
         { 
             g_sEnemy.m_dHealth = 0;
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 25;
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 50;
         }
         else if (g_udElapsedTime > 3)
         {
@@ -998,17 +1038,17 @@ void seraphUlt()
 
 void setdamage()
 {
-    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && g_sAttackState.m_bActive == false)
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && g_sAttackState == false)
     {
         if (g_hElapsedTime > 0.5)
         {
-            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate.m_bActive && !g_sAttackState.m_bActive && !g_sInvulnerable.m_bActive)
+            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
             {
                 g_sChar.m_dHealth--;
             }
             g_hElapsedTime = 0;
         }
-        if (g_sAttackState.m_bActive == true)
+        if (g_sAttackState == true)
         {
             g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1; //program recognises as 2 damage
         }
@@ -1017,18 +1057,18 @@ void setdamage()
     {
         if (g_hElapsedTime > 0.2)
         {
-            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate.m_bActive && !g_sAttackState.m_bActive && !g_sInvulnerable.m_bActive)
+            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
             {
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
             }
             g_hElapsedTime = 0;
         }
-        if (g_sAttackState.m_bActive == true)
+        if (g_sAttackState == true)
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
         }
     }
-    if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive) //right slash attack
+    if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState) //right slash attack
     {
         if (g_hElapsedTime > 0.2)
         {
@@ -1036,7 +1076,7 @@ void setdamage()
             g_hElapsedTime = 0;
         }
     }
-    if (g_sChar.m_cLocation.X - 2 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
+    if (g_sChar.m_cLocation.X - 2 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState) //left slash attack
     {
         if (g_hElapsedTime > 0.2)
         {
@@ -1064,7 +1104,7 @@ void setdamage()
     
     if ((g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
     {
-        if (!g_sUltimate.m_bActive)
+        if (!g_sRage)
         {
             g_sEnemy.m_dHealth--;
         }
@@ -1077,13 +1117,13 @@ void setdamage()
     }
     else if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
-        if (!g_sUltimate.m_bActive)
+        if (!g_sRage)
         {
             g_sBossP1.m_dHealth--;
         }
         else
         {
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 5;
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
         }
         j = 0;
         g_sProj.m_cLocation = g_sChar.m_cLocation;
@@ -1111,7 +1151,7 @@ void setdamage()
 
 void setUltimate(int M)
 {
-    if (g_sChar.m_dMana < M && !g_sUltimate.m_bActive) //checks if Player mana is less than 50 and is not in rage mode
+    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage) //checks if Player mana is less than 50 and is not in rage mode
     {
         if (g_uElapsedTime > 0.5) //increase mana by 1 every 1 second
         {
@@ -1123,7 +1163,7 @@ void setUltimate(int M)
             g_sChar.m_dMana++;
         }*/
     }
-    else if (g_sUltimate.m_bActive)
+    else if (g_sUltimate && g_sRage)
     {
         if (g_uElapsedTime > 0.2)
         {
@@ -1133,12 +1173,14 @@ void setUltimate(int M)
         if (g_sChar.m_dMana <= 0)
         {
             g_sChar.m_dMana = 0;
-            g_sUltimate .m_bActive = !g_sUltimate.m_bActive;
+            g_sRage = !g_sRage;
+            g_sUltimate = !g_sUltimate;
         }
     }
     if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
     {
-        g_sUltimate.m_bActive = !g_sUltimate.m_bActive;
+        g_sUltimate = !g_sUltimate;
+        g_sRage = !g_sRage;
         g_sChar.m_cLocation.X = x / 2 + 7;
         g_sChar.m_cLocation.Y = y / 2;
         su = 0;
@@ -1170,13 +1212,13 @@ void moveEnemy(int n, double t, int d)
                 }
             }
         }
-        if (g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push right
+        if (g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState == true) //push right
         {
             g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
             i = i + 1;
             stun++;
         }
-        else if (g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X - 1 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push left
+        else if (g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X - 1 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState == true) //push left
         {
             g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 1;
             i = i - 1;
@@ -1513,14 +1555,14 @@ void renderCharacter()
     
     // Draw the location of the character and weapon
     WORD charColor = 0x2E; //non - ultimate mode color
-    if (g_sUltimate.m_bActive == true)
+    if (g_sRage == true)
     {
         charColor = 0x4E; //Ultimate mode
     }
-    /*if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+    if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }*/
+    }
     if (g_sChar.m_dHealth <= 0)
     {
      

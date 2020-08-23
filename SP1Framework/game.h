@@ -70,9 +70,11 @@ void shutdown(void);      // do clean up, free memory
 void splashScreenWait();    // waits for time to pass in splash screen
 void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
+void sneakCharacter();       //Gin sneak ability
 void moveProjectile();      // moves player projectile
 void dodge(int i);               // Gin exclusive dodge
 void slashAttack(double n, int i, int j); //Slash attack
+void downslam();            //Seraph's down slam
 void seraphUlt();           //Seraph combo breaker
 void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions

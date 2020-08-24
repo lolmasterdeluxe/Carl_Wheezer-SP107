@@ -3,7 +3,6 @@
 
 #include "Framework\timer.h"
 #include "save.h"
-#include "levels.h"
 
 extern CStopWatch g_swTimer;
 extern bool g_bQuitGame;
@@ -37,9 +36,9 @@ enum EKEYS
     K_ENTER, //enter         (ENTER)
     K_ESCAPE,
     K_SPACE,
-    K_COUNT,
     K_LEFT,
-    K_RIGHT
+    K_RIGHT,
+    K_COUNT
 };
 
 // Enumeration for the different screen states
@@ -99,9 +98,9 @@ void updateTime(double dt);
 void saveGame();
 void renderPlatform();
 void loadLevelData(int number);
-void resetToLastSave();
 void resetToStart();
 void renderSavedGame();
+void deletePlatforms();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

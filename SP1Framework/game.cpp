@@ -167,8 +167,7 @@ void shutdown(void) {
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
     saveGame();
-    delete[] g_aPlatformsX;
-    delete[] g_aPlatformsY;
+    deletePlatforms();
     g_Console.clearBuffer();
 }
 
@@ -400,17 +399,17 @@ void moveCharacter() {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
     int oneStep;
-    for (int x = 0; x < g_iPlatforms; x++) 
-    {
         if (g_skKeyEvent[K_57].keyDown) {
             if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1)) //Jump up
             {
                 l = 0;
                 l++;
-                if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
-                {
                     g_sChar.m_cLocation.Y++;
-                }
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.Y--;
+                        }
+                    }
             }
         }
         if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
@@ -418,24 +417,27 @@ void moveCharacter() {
             if (g_jElapsedTime > 0.05)
             {
                 g_sChar.m_cLocation.Y--;
-                if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x]) 
-                {
-                    g_sChar.m_cLocation.Y++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.Y++;
+                    }
                 }
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
-                    {
-                        g_sChar.m_cLocation.X++;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.X++;
+                        }
                     }
                 }
                 if (GetKeyState(0x44) & 0x800) //check for D input and jump right;
                 {
                     g_sChar.m_cLocation.X++;
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
-                    {
-                        g_sChar.m_cLocation.X--;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.X--;
+                        }
                     }
                 }
                 if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
@@ -446,7 +448,6 @@ void moveCharacter() {
                 l++;
             }
         }
-    }
     if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && g_sUltimate == false) //check if l is 3 and push down for gravity
     {
         if (g_jElapsedTime > 0.05)
@@ -456,8 +457,8 @@ void moveCharacter() {
                 Beep(1440, 30);
             }
             g_sChar.m_cLocation.Y++;
-            for (int x = 0; x < g_iPlatforms; x++) {
-                if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
                 {
                     g_sChar.m_cLocation.Y--;
                 }
@@ -465,10 +466,20 @@ void moveCharacter() {
             if (GetKeyState(0x41) & 0x800) //check for A input and jump left
             {
                 g_sChar.m_cLocation.X--;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X++;
+                    }
+                }
             }
             if (GetKeyState(0x44) & 0x800) //check for D input and jump right
             {
                 g_sChar.m_cLocation.X++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X--;
+                    }
+                }
             }
             if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
             {
@@ -477,11 +488,16 @@ void moveCharacter() {
                     Beep(1440, 30);
                 }*/
                 g_sChar.m_cLocation.Y++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.Y--;
+                    }
+                }
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
-                    for (int x = 0; x < g_iPlatforms; x++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
                         {
                             g_sChar.m_cLocation.X++;
                         }
@@ -490,8 +506,8 @@ void moveCharacter() {
                 if (GetKeyState(0x44) & 0x800) //check for D input and jump right
                 {
                     g_sChar.m_cLocation.X++;
-                    for (int x = 0; x < g_iPlatforms; x++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
                         {
                             g_sChar.m_cLocation.X--;
                         }
@@ -500,12 +516,6 @@ void moveCharacter() {
                 if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
                 {
                     g_sProj.m_cLocation.Y++;
-                }
-                for (int x = 0; x < g_iPlatforms; x++) {
-                    if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
-                    {
-                        g_sChar.m_cLocation.Y--;
-                    }
                 }
                 g_jElapsedTime = 0;
             }
@@ -517,12 +527,12 @@ void moveCharacter() {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X - 1;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-        for (int x = 0; x < g_iPlatforms; x++) {
-            if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+        for (int i = 0;i< g_iPlatforms; i++) {
+            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
             }
-            else if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
             }
         }
     }
@@ -540,12 +550,12 @@ void moveCharacter() {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X + 1;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-        for (int x = 0; x < g_iPlatforms; x++) {
-            if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
-            else if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
         }
     }
@@ -1516,16 +1526,16 @@ void render() {
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
 }
 
-void resetToLastSave() {
-    g_sChar.m_cLocation.X = state.returnX();
-    g_sChar.m_cLocation.Y = state.returnY();
-}
-
 void resetToStart() {
     g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
     g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
     g_sEnemy.m_cLocation.X = 50;
     g_sEnemy.m_cLocation.Y = 29;
+}
+
+void deletePlatforms() {
+    delete[] g_aPlatformsX;
+    delete[] g_aPlatformsY;
 }
 
 void clearScreen() {
@@ -1632,10 +1642,6 @@ void renderSavedGame() {
 
 void renderMap() {
     // Set up sample colours, and output shadings
-    const WORD colors[] = {
-        0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
-        0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
-    };
     if (oneTime == 0)
         loadLevelData(1);
     oneTime = 1;
@@ -1800,10 +1806,8 @@ void loadLevelData(int number) {
             perLine = line2;
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == 'P') {
-                    for (int k = 0; k < g_iPlatforms; k++) {
-                        g_aPlatformsX[j - 1] = x;
-                        g_aPlatformsY[j - 1] = y;
-                    }
+                    g_aPlatformsX[j - 1] = x;
+                    g_aPlatformsY[j - 1] = y;
                     j++;
                 }
                 if (perLine[x] == 'C') {

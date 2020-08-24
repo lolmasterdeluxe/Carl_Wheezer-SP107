@@ -15,27 +15,55 @@
 int* g_aPlatformsX;
 int* g_aPlatformsY;
 int g_iPlatforms = 0;
-double  g_dElapsedTime;
-double  g_dDeltaTime;
-double  g_pElapsedTime;
-double  g_eElapsedTime;
-double  g_sElapsedTime;
-double  g_bElapsedTime;
-double  g_jElapsedTime;
-double  g_hElapsedTime;
-double  g_delay1;
-double  g_delay2;
-double  g_slashdelay;
-double  g_uElapsedTime;
+double  g_dElapsedTime; //delta time elapsed
+double  g_dDeltaTime;   //delta time
+double  g_pElapsedTime; //projectile elapsed time
+double  g_eElapsedTime; //enemy movement elapsed time
+double  g_sElapsedTime; //slash elapsed time
+double  g_doElapsedTime; //Dodge elapsed time
+double  g_bElapsedTime; //boss movement elapsed time
+double  g_bjElapsedTime; //boss jump elapsed time
+double  g_jElapsedTime; //player jump elapsed time
+double  g_hElapsedTime; //health elapsed time
+double  g_delay1; //boss movement delay 1
+double  g_delay2; //boss movement delay 2
+double  g_slashdelay; //slash attack delay
+double  g_stun = 2; //enemy stunned when attacked
+double  g_staminaregen; //regen stamina after slashing
+double  g_suElapsedTime; //Seraph ult elapsed time
+double  g_udElapsedTime; //Seraph ulti delay elapsed time
+double  g_uElapsedTime; //ultimate elapsed time
+
+
+//UI specific timers
 int g_iElapsedTime;
 int g_iTimeAfter;
+
+//mechanics counters
 int i = 0;
 int j = 0;
 int k = 0;
 int l = 0;
 int s = 0;
+int n = 2;
+int spd = 0; //control movement speed (used for sneak)
+int p = 0;
+int dashl = 0; //counter for dodge (left)
+int dashr = 0; //counter for dodge (right)
+int su = 0;
+int stun = 0;
+double sd = 0.2;
+int y;
+int x;
+int slam = 0;
+float m = 0;
+
+//start/end game boolean
 bool g_bPlayGame = false;
-int characterSelect;
+bool g_sAttackState = false;
+bool g_sInvulnerable = false;
+bool g_sUltimate = false;
+bool g_sRage = false;
 
 char c1 = 203;                     //main player's ascii characters
 char c2 = 203;
@@ -62,13 +90,11 @@ save state;
 // Game specific variables here
 std::string status;
 SGameChar   g_sChar;
-SGameChar   g_sAttackState;
-SGameChar   g_sUltimate;
 SGameChar   g_sCharSpawn;
 SGameChar   g_sProj;
 SGameChar   g_sEnemy;
 SGameChar   g_sBossP1;  //Boss bottom half
-SGameChar   g_sBossP2; //Boss top half
+SGameChar   g_sBossP2;  //Boss top half
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
@@ -114,6 +140,9 @@ void init(void) {
     g_sEnemy.m_dHealth = 100;
     g_sBossP1.m_dHealth = 50;
     g_sChar.m_dMana = state.returnCharMana();
+    y = g_Console.getConsoleSize().Y - 2;
+    x = g_Console.getConsoleSize().X - 2;
+    
 
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -234,6 +263,8 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case 0x41: key = K_41; break; //A
     case 0x44: key = K_44; break; //D
     case 0x52: key = K_52; break; //R
+    case 0x51: key = K_51; break; //Q
+    case 0x45: key = K_45; break; //E
     case VK_SPACE: key = K_SPACE; break;
     case VK_ESCAPE: key = K_ESCAPE; break;
     case VK_RETURN: key = K_ENTER; break;
@@ -304,13 +335,19 @@ void updateTime(double dt) {
     g_pElapsedTime += dt; //Projectile time elapsed
     g_eElapsedTime += dt; //Enemy movement time elapsed
     g_sElapsedTime += dt; //Slash movement time elapsed
+    g_doElapsedTime += dt; //Dodge time elapsed
     g_uElapsedTime += dt; //Ultimate meter time elapsed
-    g_hElapsedTime += dt;
-    g_jElapsedTime += dt;
-    g_bElapsedTime += dt;
-    g_delay1 += dt;
-    g_delay2 += dt;
-    g_slashdelay += dt;
+    g_hElapsedTime += dt; //Health meter time elapsed
+    g_jElapsedTime += dt; //Player jump time elapsed
+    g_bElapsedTime += dt; //Boss movement time elapsed
+    g_bjElapsedTime += dt; //boss jump elapsed time
+    g_suElapsedTime += dt; //Seraph ultimate time elapsed
+    g_udElapsedTime += dt; //Seraph ulti delay
+    g_delay1 += dt; //boss movement delay 1
+    g_delay2 += dt; //boss movement delay 2
+    g_slashdelay += dt; //delay after each slash (applies to melee attacks)
+    g_stun += dt; //stun enemy when hit
+    g_staminaregen += dt; //regen stamina time
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
 
@@ -326,13 +363,17 @@ void splashScreenWait() {      // waits for time to pass in splash screen
 void updateGame() {     // gameplay logic
     if (g_bPlayGame) {
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
-        moveCharacter();    // moves the character, collision detection, physics, etc
-        //moveProjectile();   // sound can be played here too.
-        slashAttack(1, 10);    //slash forward by *8 steps, delay after slash by *1 second
+        moveCharacter();    // moves the player by *2 steps, collision detection, physics, etc
+        sneakCharacter();   // Gin sneak ability
+        moveProjectile();   // sound can be played here too.
+        slashAttack(0.2, 10, 3); //slash forward by *10 steps, speed of slash is *.2 seconds
+        downslam();
+        dodge(5);              //dodge for Gin
         moveEnemy(5, 0.5, 50); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
-        moveBoss(20, 0.05, 26); //movement system same as enemy but with delay at end of path
+        moveBoss(35, 0.05, 3, 10); //movement system same as enemy but with delay at end of path
         setdamage();       //find reason for damage
         setUltimate(50); //Set ultimate capacity to *50
+        seraphUlt(); //seraph star combo breaker
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -368,9 +409,9 @@ void moveCharacter() {
                 }
             }
         }
-        if (l >= 1 && l < 4) //check if player is mid air to move up to 4
+        if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
         {
-            if (g_jElapsedTime > 0.08)
+            if (g_jElapsedTime > 0.05)
             {
                 g_sChar.m_cLocation.Y--;
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x]) 
@@ -402,10 +443,24 @@ void moveCharacter() {
             }
         }
     }
-    for (int x = 0; x < g_iPlatforms; x++) {
-        if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
+    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && g_sUltimate == false) //check if l is 3 and push down for gravity
+    {
+        if (g_jElapsedTime > 0.05)
         {
-            if (g_jElapsedTime > 0.08)
+            if (l == 1)
+            {
+                Beep(1440, 30);
+            }
+            g_sChar.m_cLocation.Y++;
+            if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+            {
+                g_sChar.m_cLocation.X--;
+            }
+            if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+            {
+                g_sChar.m_cLocation.X++;
+            }
+            if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
             {
                 /*if (l == 1)
                 {
@@ -443,11 +498,11 @@ void moveCharacter() {
         }
     }
     
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 0 /*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
     {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X - 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
         for (int x = 0; x < g_iPlatforms; x++) {
             if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
@@ -457,20 +512,20 @@ void moveCharacter() {
             }
         }
     }
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-        /*Beep(1440, 30);*/
-        g_sChar.m_cLocation.Y++;
-        for (int x = 0; x < g_iPlatforms; x++) {
-            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-                g_sChar.m_cLocation.Y--;
-            }
-        }
-    }
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 2 /*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
+    //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
+    //    /*Beep(1440, 30);*/
+    //    g_sChar.m_cLocation.Y++;
+    //    for (int x = 0; x < g_iPlatforms; x++) {
+    //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+    //            g_sChar.m_cLocation.Y--;
+    //        }
+    //    }
+    //}
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
     {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X + 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
         for (int x = 0; x < g_iPlatforms; x++) {
             if (oneStep == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
@@ -483,17 +538,46 @@ void moveCharacter() {
     
 }
 
+void sneakCharacter()
+{
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    {
+        if (GetKeyState(0x53) & 0x800)
+        {
+            n = 1;
+            g_sInvulnerable = true;
+        }
+        else
+        {
+            n = 2;
+            g_sInvulnerable = false;
+        }
+    }
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    {
+        if (GetKeyState(0x53) & 0x800)
+        {
+            n = 1;
+            g_sInvulnerable = true;
+        }
+        else
+        {
+            n = 2;
+            g_sInvulnerable = false;
+        }
+    }
+}
+
 void moveProjectile ()
 {
     double n = 0;
-    if (g_sUltimate.m_bActive)
+    if (g_sRage == true)
     {
-        n = 0.02;
+        n = 0.01;
     }
     else
     {
-        g_sEnemy.m_dHealth = 1;
-        n = 0.01;
+        n = 0.02;
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
     { 
@@ -583,12 +667,66 @@ void moveProjectile ()
     }
 }
 
-void slashAttack(double n, int i)
+void dodge(int i)
 {
-    g_sAttackState.m_bActive = false;
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X) //Slash right
+    
+    if (g_skKeyEvent[K_51].keyDown && g_sChar.m_cLocation.X > 2) //dodge left
     {
-        g_sAttackState.m_bActive = true;
+        g_sInvulnerable = true;
+        dashl++;
+        if (dashl >= i && g_slashdelay > 0.25)
+        {
+            dashl = 0;
+            g_slashdelay = 0;
+        }
+    }
+    if (g_doElapsedTime > 0.01)
+    {
+        if (dashl >= 1 && dashl < i && g_sChar.m_cLocation.X > 2)
+        {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+            g_doElapsedTime = 0;
+            dashl++;
+        }
+        
+    }
+    else
+    {
+        g_sInvulnerable = false;
+        dashl = 0;
+    }
+    if (g_skKeyEvent[K_45].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3) //dodge right
+    {
+        g_sInvulnerable = true;
+        dashr++;
+        if (dashr >= i && g_slashdelay > 0.25)
+        {
+            dashr = 0;
+            g_slashdelay = 0;
+        }
+    }
+    if (g_doElapsedTime > 0.01)
+    {
+        if (dashr >= 1 && dashr <= i && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
+        {
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+            g_doElapsedTime = 0;
+            dashr++;
+        }
+    }
+    else
+    {
+        g_sInvulnerable = false;
+        dashr = 0;
+    }
+}
+
+void slashAttack(double n, int i, int j)
+{
+    g_sAttackState = false;
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate) //Slash right
+    {
+        g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
             if (s != i)
@@ -602,28 +740,32 @@ void slashAttack(double n, int i)
                 g_sElapsedTime = 0;
                 s++;
             }
-            else if (s == i && g_slashdelay > 1)
+            else if (s == i && g_slashdelay > sd)
             {
                 s = 0;
                 g_slashdelay = 0;
+                if (sd == 2)
+                {
+                    sd = 0.2;
+                    p = 0;
+                }
+                p++;
+                if (p == 2)
+                {
+                    sd = 2;
+                }
             }
         }
     }
     if (s > 0 && s < i /*&& g_sChar.m_bActive*/ && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X)
     {
-        if (g_pElapsedTime > n)
-        {
             g_sChar.m_cLocation.X++;
-            g_sElapsedTime = 0;
-            
             s++;
-        }
-        
-
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X) //Slash right
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate) //Slash left
     {
-        g_sAttackState.m_bActive = true;
+        g_sAttackState = true;
+        
         if (g_sElapsedTime > n)
         {
             if (s != i)
@@ -637,59 +779,365 @@ void slashAttack(double n, int i)
                 s++;
 
             }
-            else if (s == i && g_slashdelay > 1)
+            else if (s == i && g_slashdelay > sd)
             {
-                g_slashdelay = 0;
                 s = 0;
-            }
-        }
+                g_slashdelay = 0;
+                if (sd == 2)
+                {
+                    sd = 0.2;
+                    p = 0;
+                }
+                p++;
+                if (p == 2)
+                {
+                    sd = 2;
+                }
+            }  
+        }  
     }
     if (s > 0 && s < i /*&& g_sChar.m_bActive*/ && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
     {
-        if (g_pElapsedTime > n)
+        g_sChar.m_cLocation.X--;
+        s++;
+    }
+    
+    if (g_staminaregen > 1 && sd != 1)
+    {
+        p--;
+        g_staminaregen = 0;
+        if (p < 0)
         {
-            g_sChar.m_cLocation.X--;
+            p = 0;
+        }
+    }
+}
+
+void downslam()
+{
+    g_sAttackState = false;
+    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && p != 3 && !g_sUltimate) //DOWN slam attack with S
+    {
+        slam++;
+        l = 0;
+        for (int x = 0; x < g_iPlatforms; x++)
+        {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+            {
+                g_sChar.m_cLocation.Y--;
+            }
+        }
+    }
+    if (g_sElapsedTime > 0.02)
+    {
+        if (slam > 0)
+        {
+            g_sAttackState = true;
+        }
+        if (slam >= 1 && slam < 3)
+        {
+            g_sChar.m_cLocation.Y--;
             g_sElapsedTime = 0;
-            s++;
+            slam++;
+        }
+        if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+        {
+            g_sChar.m_cLocation.Y++;
+            slam++;
+            g_sElapsedTime = 0;
+        }
+        else if (slam == 6)
+        {
+            if (g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+            {
+                g_sChar.m_cLocation.Y++;
+            }
+            else
+            {
+                slam = 0;
+                if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X > g_sChar.m_cLocation.X)
+                {
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 3;
+                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                    g_stun = -1;
+                }
+                if (g_sChar.m_cLocation.X - 2 >= g_sEnemy.m_cLocation.X)
+                {
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 3;
+                    g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                    g_stun = -1;
+                }
+                g_sAttackState = false;
+            }
+        }
+    }
+}
+
+void seraphUlt()
+{
+    if (g_sUltimate == true)
+    {
+        g_sChar.m_dMana = 50;
+        if (su != 359)
+        {
+            if (g_suElapsedTime > 0.02)
+            {
+                if (su < 13)
+                {
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 13 && su < 41)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 41 && su < 55)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 7;
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 55 && su < 104)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 104 && su < 118)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 7;
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 118 && su < 146)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 146 && su < 159) //ends at x = 42, y = 14
+                {
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 1;
+                    g_suElapsedTime = 0;
+                    su++;
+                    g_udElapsedTime = 0;
+                }
+                if (g_udElapsedTime > 3)
+                {
+                    if (su >= 159 && su < 173) //x = 42, y = 28
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 1;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 173 && su < 199) //x = 2, y = 2
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 199 && su < 227) //x = 2, y = 28
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 1;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 227 && su < 237)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 237 && su < 247)
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 247 && su < 257)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 257 && su < 267)
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 267 && su < 277)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 277 && su < 287)
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 287 && su < 297)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 297 && su < 307)
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 307 && su < 317)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 317 && su < 327)
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 327 && su < 337)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 337 && su < 347)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 347 && su < 356) // y = 3
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                    }
+                    if (su >= 356 && su < 359)
+                    {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 16;
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
+                        g_suElapsedTime = 0;
+                        su++;
+                        
+                    }
+                }
+                if (su == 359) 
+                {
+                    g_udElapsedTime = 0;
+                }
+               
+            }
+        }
+        else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
+        { 
+            g_sEnemy.m_dHealth = 0;
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 50;
+        }
+        else if (g_udElapsedTime > 3)
+        {
+            l = 1;
+            g_sChar.m_dHealth = 50;
+            g_sChar.m_dMana = 0;
+
         }
     }
 }
 
 void setdamage()
 {
-    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && g_sAttackState == false)
     {
         if (g_hElapsedTime > 0.5)
         {
-            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate.m_bActive && !g_sAttackState.m_bActive)
+            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
             {
                 g_sChar.m_dHealth--;
             }
             g_hElapsedTime = 0;
         }
-        if (g_sAttackState.m_bActive == true)
+        if (g_sAttackState == true)
         {
             g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1; //program recognises as 2 damage
         }
     }
-    else if (g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.Y)
+    else if ((g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X  || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
-        if (g_hElapsedTime > 0.1)
+        if (g_hElapsedTime > 0.2)
         {
-            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate.m_bActive && !g_sAttackState.m_bActive)
+            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
             {
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
             }
             g_hElapsedTime = 0;
         }
-        if (g_sAttackState.m_bActive == true)
+        if (g_sAttackState == true)
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
         }
     }
+    if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState) //right slash attack
+    {
+        if (g_hElapsedTime > 0.2)
+        {
+            g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1;
+            g_hElapsedTime = 0;
+        }
+    }
+    if (g_sChar.m_cLocation.X - 2 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState) //left slash attack
+    {
+        if (g_hElapsedTime > 0.2)
+        {
+            g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1;
+            g_hElapsedTime = 0;
+        }
+    }
+    //  Knockback slash for boss not active
+    //if (g_sChar.m_cLocation.X - 2 <= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X > g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
+    //{
+    //    if (g_hElapsedTime > 0.2)
+    //    {
+    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
+    //        g_hElapsedTime = 0;
+    //    }
+    //}
+    //if (g_sChar.m_cLocation.X + 2 >= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X < g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
+    //{
+    //    if (g_hElapsedTime > 0.2)
+    //    {
+    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
+    //        g_hElapsedTime = 0;
+    //    }
+    //}
+    
     if ((g_sProj.m_cLocation.X == g_sEnemy.m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy.m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5 != 0)
     {
-        if (!g_sUltimate.m_bActive)
+        if (!g_sRage)
         {
             g_sEnemy.m_dHealth--;
         }
@@ -702,13 +1150,13 @@ void setdamage()
     }
     else if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
-        if (!g_sUltimate.m_bActive)
+        if (!g_sRage)
         {
             g_sBossP1.m_dHealth--;
         }
         else
         {
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 5;
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
         }
         j = 0;
         g_sProj.m_cLocation = g_sChar.m_cLocation;
@@ -734,11 +1182,11 @@ void setdamage()
     }
 }
 
-void setUltimate(int t)
+void setUltimate(int M)
 {
-    if (g_sChar.m_dMana < t && !g_sUltimate.m_bActive) //checks if Player mana is less than 50 and is not in rage mode
+    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage) //checks if Player mana is less than 50 and is not in rage mode
     {
-        if (g_uElapsedTime > 1) //increase mana by 1 every 1 second
+        if (g_uElapsedTime > 0.5) //increase mana by 1 every 1 second
         {
             g_uElapsedTime = 0;
             g_sChar.m_dMana++;
@@ -748,9 +1196,9 @@ void setUltimate(int t)
             g_sChar.m_dMana++;
         }*/
     }
-    else if (g_sUltimate.m_bActive)
+    else if (g_sUltimate && g_sRage)
     {
-        if (g_uElapsedTime > 0.5)
+        if (g_uElapsedTime > 0.2)
         {
             g_uElapsedTime = 0;
             g_sChar.m_dMana--;
@@ -758,12 +1206,17 @@ void setUltimate(int t)
         if (g_sChar.m_dMana <= 0)
         {
             g_sChar.m_dMana = 0;
-            g_sChar.m_bActive = !g_sChar.m_bActive;
+            g_sRage = !g_sRage;
+            g_sUltimate = !g_sUltimate;
         }
     }
-    if (g_sChar.m_dMana == t && g_skKeyEvent[K_SPACE].keyReleased)
+    if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
     {
-        g_sUltimate.m_bActive = !g_sUltimate.m_bActive;
+        g_sUltimate = !g_sUltimate;
+        g_sRage = !g_sRage;
+        g_sChar.m_cLocation.X = x / 2 + 7;
+        g_sChar.m_cLocation.Y = y / 2;
+        su = 0;
     }
 }
 
@@ -771,34 +1224,38 @@ void moveEnemy(int n, double t, int d)
 {
     if (c5 != 0)
     {
-       
-        if (g_eElapsedTime > t)
+        if (g_stun > 2)
         {
-            if (i < n)
+            if (g_eElapsedTime > t)
             {
-                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
-                g_eElapsedTime = 0;
-                i++;
-            }
-            else
-            {
-                g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 1;
-                g_eElapsedTime = 0;
-                if (g_sEnemy.m_cLocation.X <= d)
+                if (i < n)
                 {
-                    i = 0;
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
+                    g_eElapsedTime = 0;
+                    i++;
+                }
+                else
+                {
+                    g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 1;
+                    g_eElapsedTime = 0;
+                    if (g_sEnemy.m_cLocation.X <= d)
+                    {
+                        i = 0;
+                    }
                 }
             }
         }
-        if (g_mouseEvent.mousePosition.X > g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X - 4 == g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push right
+        if (g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState == true) //push right
         {
-            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 2;
-            i = i + 2;
+            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 1;
+            i = i + 1;
+            stun++;
         }
-        if (g_mouseEvent.mousePosition.X < g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X + 4 == g_sEnemy.m_cLocation.X && g_sAttackState.m_bActive == true) //push left
+        else if (g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X - 1 <= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy.m_cLocation.X && g_sAttackState == true) //push left
         {
-            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 2;
-            i = i - 2;
+            g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 1;
+            i = i - 1;
+            stun++;
             if (g_sEnemy.m_cLocation.X - 1 == d)
             {
                 n++;
@@ -808,46 +1265,129 @@ void moveEnemy(int n, double t, int d)
                 n = n + 2;
             }
         }
+        else if (stun > 1)
+        {
+            g_stun = 0;
+            stun = 0;
+        }
+        if (slam == 6 && g_sChar.m_cLocation.X + 2 == g_sEnemy.m_cLocation.X )
+        {
+            i = i + 3;
+            
+        }
+        if (slam == 6 && g_sChar.m_cLocation.X - 2 == g_sEnemy.m_cLocation.X)
+        {
+            i = i - 3;
+        }
     }
 }
 
-void moveBoss(int n, double t, int d)
+void moveBoss(int n, double t, double t2, int d)
 {
     if (g_sBossP1.m_dHealth > 0)
     {
+        if (g_sBossP1.m_dHealth <= 25)
+        {
+            t2 = t2 / 3;
+            t = t / 2;
+        }
         
         if (g_bElapsedTime > t)
         {
-           /*if (g_sBossP1.m_cLocation.X >= g_sChar.m_cLocation.X + 5 || g_sBossP1.m_cLocation.X <= g_sChar.m_cLocation.X - 5)*/
-            /*{*/
-                if (k != n)
+            if (k != n)
+            {
+                if (g_delay1 > t2) //go to right
                 {
-                    if (g_delay1 > 5)
+                    g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
+                    g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
+                    g_bElapsedTime = 0;
+                    k++;
+                    g_delay2 = 0;
+                }
+            }
+            else
+            {
+                if (g_delay2 > t2) //go to left
+                {
+                    g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X - 2;
+                    g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
+                    g_bElapsedTime = 0;
+                    g_delay1 = 0;
+                    if (g_sBossP1.m_cLocation.X == d)
                     {
-                        g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
-                        g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
-                        g_bElapsedTime = 0;
-                        k++;
-                        g_delay2 = 0;
+                        k = 0;
                     }
                 }
-                else
-                {
-                    if (g_delay2 > 5)
-                    {
-                        g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X - 2;
-                        g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
-                        g_bElapsedTime = 0;
-                        g_delay1 = 0;
-                        if (g_sBossP1.m_cLocation.X == d)
-                        {
-                            k = 0;
-                        }
-                    }
-                }
-           //}
-          
+            }
         }
+        
+        //boss jump mechanic prototype
+        //if (m != 5)
+        //{
+        //    if (g_bjElapsedTime > 0.03)
+        //    {
+        //        if (m < 2.5 && g_sBossP1.m_cLocation.X < g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.X + 10 >= g_sChar.m_cLocation.X) //jump to right
+        //        {
+        //            g_sBossP1.m_cLocation.X++;
+        //            g_sBossP1.m_cLocation.Y--;
+        //            g_sBossP2.m_cLocation.X++;
+        //            g_sBossP2.m_cLocation.Y--;
+        //            m = m + 0.5;
+        //            g_bjElapsedTime = 0;
+        //            n = n + 5;
+        //            d = d + 5;
+        //        }
+        //        else if (m < 2.5 && g_sBossP1.m_cLocation.X > g_sChar.m_cLocation.X && g_sBossP1.m_cLocation.X - 10 <= g_sChar.m_cLocation.X ) //jump to left
+        //        {
+        //            g_sBossP1.m_cLocation.X--;
+        //            g_sBossP1.m_cLocation.Y--;
+        //            g_sBossP2.m_cLocation.X--;
+        //            g_sBossP2.m_cLocation.Y--;
+        //            m = m + 0.5;
+        //            g_bjElapsedTime = 0;
+        //        }
+        //        if (m >= 2.5 && m < 5 && g_sBossP1.m_cLocation.X <= g_sChar.m_cLocation.X)
+        //        {
+        //            g_sBossP1.m_cLocation.X++;
+        //            g_sBossP1.m_cLocation.Y++;
+        //            g_sBossP2.m_cLocation.X++;
+        //            g_sBossP2.m_cLocation.Y++;
+        //            m = m + 0.5;
+        //            g_bjElapsedTime = 0;
+        //        }
+        //        if (m >= 2.5 && m < 5 && g_sBossP1.m_cLocation.X >= g_sChar.m_cLocation.X)
+        //        {
+        //            g_sBossP1.m_cLocation.X--;
+        //            g_sBossP1.m_cLocation.Y++;
+        //            g_sBossP2.m_cLocation.X--;
+        //            g_sBossP2.m_cLocation.Y++;
+        //            m = m + 0.5;
+        //            g_bjElapsedTime = 0;
+        //        }
+        //            
+        //        if (g_sBossP1.m_cLocation.X < d)
+        //        {
+        //            n = n + 10;
+        //        }
+        //        else if (g_sBossP1.m_cLocation.X > d)
+        //        {
+        //            n = n - 10;
+        //        }
+        //        else if (g_sBossP1.m_cLocation.X < d + n)
+        //        {
+        //            n = n - 10;
+        //        }
+        //        else if (g_sBossP1.m_cLocation.X > d + n)
+        //        {
+        //            n = n + 10;
+        //        }
+        //    }
+        //      
+        //}
+        //else if (g_sBossP1.m_cLocation.X == d || g_sBossP1.m_cLocation.X == d + n)
+        //{
+        //    m = 0;
+        //}
     }
 }
 
@@ -1050,15 +1590,11 @@ void renderCharacter()
     // Draw the location of the character and weapon
     
     // Draw the location of the character and weapon
-    WORD charColor = 0x20; //non - ultimate mode color
-    if (g_sUltimate.m_bActive)
+    WORD charColor = 0x2E; //non - ultimate mode color
+    if (g_sRage == true)
     {
-        charColor = 0x40; //Ultimate mode
+        charColor = 0x4E; //Ultimate mode
     }
-    /*if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED)
-    {
-        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }*/
     if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
@@ -1095,7 +1631,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/g_sBossP1.m_dHealth << "FPS";
+    ss << 1.0 / g_dDeltaTime << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

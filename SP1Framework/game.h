@@ -27,12 +27,14 @@ struct SMouseEvent
 // Enumeration to store the control keys that your game will have
 enum EKEYS
 {
-    K_57, //up    (W)
-    K_53, //down  (A)
-    K_41, //left  (S)
-    K_44, //right (D)
-    K_52,  //reset (R)
-    K_ENTER, //enter (ENTER)
+    K_57,    //up              (W)
+    K_53,    //down            (A)
+    K_41,    //left            (S)
+    K_44,    //right           (D)
+    K_52,    //reset           (R)
+    K_51,    //Dodge backwards (Q)
+    K_45,    //Dodge forwards  (E)
+    K_ENTER, //enter         (ENTER)
     K_ESCAPE,
     K_SPACE,
     K_COUNT
@@ -68,12 +70,16 @@ void shutdown(void);      // do clean up, free memory
 void splashScreenWait();    // waits for time to pass in splash screen
 void updateGame();          // gameplay logic
 void moveCharacter();       // moves the character, collision detection, physics, etc
-void moveProjectile();      // moves ranged weapon with character
-void slashAttack(double n, int i);
-void setdamage();
+void sneakCharacter();       //Gin sneak ability
+void moveProjectile();      // moves player projectile
+void dodge(int i);               // Gin exclusive dodge
+void slashAttack(double n, int i, int j); //Slash attack
+void downslam();            //Seraph's down slam
+void seraphUlt();           //Seraph combo breaker
+void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling
-void moveBoss(int n, double t, int d); //set distance and speed for boss movement
+void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 
 void renderSplashScreen();  // renders the splash screen

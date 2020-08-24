@@ -33,7 +33,8 @@ double  g_staminaregen; //regen stamina after slashing
 double  g_suElapsedTime; //Seraph ult elapsed time
 double  g_udElapsedTime; //Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
-
+int characterSelect;
+int oneTime;
 
 //UI specific timers
 int g_iElapsedTime;
@@ -112,6 +113,7 @@ void init(void) {
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
     characterSelect = 0;
+    oneTime = 0;
     
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
@@ -268,6 +270,8 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case VK_SPACE: key = K_SPACE; break;
     case VK_ESCAPE: key = K_ESCAPE; break;
     case VK_RETURN: key = K_ENTER; break;
+    case VK_LEFT: key = K_LEFT; break;
+    case VK_RIGHT: key = K_RIGHT; break;
     }
     // a key pressed event would be one with bKeyDown == true
     // a key released event would be one with bKeyDown == false
@@ -396,7 +400,7 @@ void moveCharacter() {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
     int oneStep;
-    for (int x = 0; x <= g_iPlatforms; x++) 
+    for (int x = 0; x < g_iPlatforms; x++) 
     {
         if (g_skKeyEvent[K_57].keyDown) {
             if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1)) //Jump up
@@ -452,6 +456,12 @@ void moveCharacter() {
                 Beep(1440, 30);
             }
             g_sChar.m_cLocation.Y++;
+            for (int x = 0; x < g_iPlatforms; x++) {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+                {
+                    g_sChar.m_cLocation.Y--;
+                }
+            }
             if (GetKeyState(0x41) & 0x800) //check for A input and jump left
             {
                 g_sChar.m_cLocation.X--;
@@ -470,17 +480,21 @@ void moveCharacter() {
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
-                    {
-                        g_sChar.m_cLocation.X++;
+                    for (int x = 0; x < g_iPlatforms; x++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                        {
+                            g_sChar.m_cLocation.X++;
+                        }
                     }
                 }
                 if (GetKeyState(0x44) & 0x800) //check for D input and jump right
                 {
                     g_sChar.m_cLocation.X++;
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
-                    {
-                        g_sChar.m_cLocation.X--;
+                    for (int x = 0; x < g_iPlatforms; x++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                        {
+                            g_sChar.m_cLocation.X--;
+                        }
                     }
                 }
                 if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
@@ -1444,6 +1458,33 @@ void processUserInput() {
         case S_MENU:
             saveGame();
             g_eGameState = S_GAME;
+            break;
+        }
+    }
+    if (g_skKeyEvent[K_LEFT].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            break;
+        case S_SPLASHSCREEN:
+            characterSelect--;
+            if (characterSelect < 0)
+                characterSelect = 0;
+            break;
+        case S_MENU:
+            break;
+        }
+    }
+    if (g_skKeyEvent[K_RIGHT].keyReleased) {
+        switch (g_eGameState) {
+        case S_GAME:
+            break;
+        case S_SPLASHSCREEN:
+            characterSelect++;
+            if (characterSelect > 4)
+                characterSelect = 4;
+            break;
+        case S_MENU:
+            break;
         }
     }
 }
@@ -1500,6 +1541,7 @@ void renderToScreen() {
 void renderSplashScreen() {
     // renders the splash screen
     COORD c = g_Console.getConsoleSize();
+    string ch;
     c.Y /= 3;
     c.X = c.X / 2 - 9;
     g_Console.writeToBuffer(c, "Start Menu", 0x03);
@@ -1509,6 +1551,19 @@ void renderSplashScreen() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Arrow Keys> to switch characters", 0x09);
+    c.Y += 1;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    if (characterSelect == 0)
+        ch = "Character 1";
+    if (characterSelect == 1)
+        ch = "Character 2";
+    if (characterSelect == 2)
+        ch = "Character 3";
+    if (characterSelect == 3)
+        ch = "Character 4";
+    if (characterSelect == 4)
+        ch = "Character 5";
+    g_Console.writeToBuffer(c, ch, 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
@@ -1581,8 +1636,10 @@ void renderMap() {
         0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6
     };
-    loadLevelData(1);
-    //renderPlatform();
+    if (oneTime == 0)
+        loadLevelData(1);
+    oneTime = 1;
+    renderPlatform();
 }
 
 void renderCharacter() 
@@ -1609,8 +1666,10 @@ void renderCharacter()
     g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
-void renderPlatform(int x, int y) {
-    g_Console.writeToBuffer(x, y, " ", 0x0F);
+void renderPlatform() {
+    for (int i = 0; i < g_iPlatforms; i++) {
+        g_Console.writeToBuffer(g_aPlatformsX[i], g_aPlatformsY[i], " ", 0x0F);
+    }
 }
 
 bool checkCollision() {
@@ -1742,9 +1801,8 @@ void loadLevelData(int number) {
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == 'P') {
                     for (int k = 0; k < g_iPlatforms; k++) {
-                        g_aPlatformsX[j-1] = x;
-                        g_aPlatformsY[j-1] = y;
-                        renderPlatform(x, y);
+                        g_aPlatformsX[j - 1] = x;
+                        g_aPlatformsY[j - 1] = y;
                     }
                     j++;
                 }

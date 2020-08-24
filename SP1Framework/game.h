@@ -37,7 +37,9 @@ enum EKEYS
     K_ENTER, //enter         (ENTER)
     K_ESCAPE,
     K_SPACE,
-    K_COUNT
+    K_COUNT,
+    K_LEFT,
+    K_RIGHT
 };
 
 // Enumeration for the different screen states
@@ -95,7 +97,7 @@ void renderMenu();
 void updateMenu();
 void updateTime(double dt);
 void saveGame();
-void renderPlatform(int x, int y);
+void renderPlatform();
 void loadLevelData(int number);
 void resetToLastSave();
 void resetToStart();

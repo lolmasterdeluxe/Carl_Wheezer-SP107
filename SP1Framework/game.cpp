@@ -46,8 +46,7 @@ int j = 0;
 int k = 0;
 int l = 0;
 int s = 0;
-int n = 2;
-int spd = 0; //control movement speed (used for sneak)
+int n = 2; //control movement speed (used for movement && sneak)
 int p = 0;
 int dashl = 0; //counter for dodge (left)
 int dashr = 0; //counter for dodge (right)
@@ -65,6 +64,7 @@ bool g_sAttackState = false;
 bool g_sInvulnerable = false;
 bool g_sUltimate = false;
 bool g_sRage = false;
+bool g_sFocus = false;
 
 char c1 = 203;                     //main player's ascii characters
 char c2 = 203;
@@ -127,21 +127,22 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-    g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+    g_sChar.m_cLocation.X = 5;
+    g_sChar.m_cLocation.Y = 29;
     g_sEnemy.m_cLocation.X = state.returnEnemyX();
     g_sEnemy.m_cLocation.Y = state.returnEnemyY();
     g_sBossP1.m_cLocation.X = state.returnBossX();
     g_sBossP1.m_cLocation.Y = state.returnBossY();
     g_sBossP2.m_cLocation.X = state.returnBossX();
-    g_sBossP2.m_cLocation.Y = state.returnBossY()-1;
+    g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
     g_sChar.m_dHealth = state.returnCharHealth();
-    g_sEnemy.m_dHealth = 100;
+    g_sEnemy.m_dHealth = 5;
     g_sBossP1.m_dHealth = 50;
     g_sChar.m_dMana = state.returnCharMana();
+    g_sChar.m_dMana = 50;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
     
@@ -368,15 +369,16 @@ void updateGame() {     // gameplay logic
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
         moveCharacter();    // moves the player by *2 steps, collision detection, physics, etc
         sneakCharacter();   // Gin sneak ability
-        moveProjectile();   // sound can be played here too.
+        //moveProjectile();   // sound can be played here too.
         slashAttack(0.2, 10, 3); //slash forward by *10 steps, speed of slash is *.2 seconds
-        downslam();
+        downslam();            //Seraph down slam attack
         dodge(5);              //dodge for Gin
         moveEnemy(5, 0.5, 50); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
         moveBoss(35, 0.05, 3, 10); //movement system same as enemy but with delay at end of path
         setdamage();       //find reason for damage
         setUltimate(50); //Set ultimate capacity to *50
-        seraphUlt(); //seraph star combo breaker
+        //seraphUlt(); //seraph star combo breaker
+        focusAttack(); //Gin's focus ability
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -416,6 +418,10 @@ void moveCharacter() {
         {
             if (g_jElapsedTime > 0.05)
             {
+                /*if (l == 1)
+                {
+                    Beep(1440, 30);
+                }*/
                 g_sChar.m_cLocation.Y--;
                 for (int i = 0; i < g_iPlatforms; i++) {
                     if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
@@ -519,9 +525,10 @@ void moveCharacter() {
                 }
                 g_jElapsedTime = 0;
             }
+            g_jElapsedTime = 0;
         }
     }
-    
+
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
     {
         /*Beep(1440, 30);*/
@@ -559,12 +566,12 @@ void moveCharacter() {
             }
         }
     }
-    
+
 }
 
 void sneakCharacter()
 {
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    if (g_skKeyEvent[K_41].keyDown)
     {
         if (GetKeyState(0x53) & 0x800)
         {
@@ -577,7 +584,7 @@ void sneakCharacter()
             g_sInvulnerable = false;
         }
     }
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.Y == g_Console.getConsoleSize().Y - 1)
+    if (g_skKeyEvent[K_44].keyDown)
     {
         if (GetKeyState(0x53) & 0x800)
         {
@@ -693,16 +700,10 @@ void moveProjectile ()
 
 void dodge(int i)
 {
-    
     if (g_skKeyEvent[K_51].keyDown && g_sChar.m_cLocation.X > 2) //dodge left
     {
         g_sInvulnerable = true;
         dashl++;
-        if (dashl >= i && g_slashdelay > 0.25)
-        {
-            dashl = 0;
-            g_slashdelay = 0;
-        }
     }
     if (g_doElapsedTime > 0.01)
     {
@@ -714,8 +715,8 @@ void dodge(int i)
         }
         
     }
-    else
-    {
+    if (g_slashdelay > 0.2 && dashl >= i)
+    { 
         g_sInvulnerable = false;
         dashl = 0;
     }
@@ -723,11 +724,6 @@ void dodge(int i)
     {
         g_sInvulnerable = true;
         dashr++;
-        if (dashr >= i && g_slashdelay > 0.25)
-        {
-            dashr = 0;
-            g_slashdelay = 0;
-        }
     }
     if (g_doElapsedTime > 0.01)
     {
@@ -738,17 +734,19 @@ void dodge(int i)
             dashr++;
         }
     }
-    else
+    if (g_slashdelay > 0.5 && dashr >= i)
     {
         g_sInvulnerable = false;
         dashr = 0;
+        g_slashdelay = 0;
     }
+    
 }
 
 void slashAttack(double n, int i, int j)
 {
     g_sAttackState = false;
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate) //Slash right
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
     {
         g_sAttackState = true;
         if (g_sElapsedTime > n)
@@ -768,15 +766,15 @@ void slashAttack(double n, int i, int j)
             {
                 s = 0;
                 g_slashdelay = 0;
-                if (sd == 2)
+                if (sd == 1)
                 {
                     sd = 0.2;
                     p = 0;
                 }
                 p++;
-                if (p == 2)
+                if (p == 3)
                 {
-                    sd = 2;
+                    sd = 1;
                 }
             }
         }
@@ -786,10 +784,9 @@ void slashAttack(double n, int i, int j)
             g_sChar.m_cLocation.X++;
             s++;
     }
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate) //Slash left
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
     {
         g_sAttackState = true;
-        
         if (g_sElapsedTime > n)
         {
             if (s != i)
@@ -807,15 +804,15 @@ void slashAttack(double n, int i, int j)
             {
                 s = 0;
                 g_slashdelay = 0;
-                if (sd == 2)
+                if (sd == 1)
                 {
                     sd = 0.2;
                     p = 0;
                 }
                 p++;
-                if (p == 2)
+                if (p == 3)
                 {
-                    sd = 2;
+                    sd = 1;
                 }
             }  
         }  
@@ -839,7 +836,6 @@ void slashAttack(double n, int i, int j)
 
 void downslam()
 {
-    g_sAttackState = false;
     if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && p != 3 && !g_sUltimate) //DOWN slam attack with S
     {
         slam++;
@@ -879,14 +875,14 @@ void downslam()
             else
             {
                 slam = 0;
-                if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X > g_sChar.m_cLocation.X)
+                if (g_sChar.m_cLocation.X + 3 >= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X > g_sChar.m_cLocation.X)
                 {
                     g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 3;
                     g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
                     g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
                     g_stun = -1;
                 }
-                if (g_sChar.m_cLocation.X - 2 >= g_sEnemy.m_cLocation.X)
+                if (g_sChar.m_cLocation.X - 3 <= g_sEnemy.m_cLocation.X && g_sEnemy.m_cLocation.X < g_sChar.m_cLocation.X)
                 {
                     g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 3;
                     g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 2;
@@ -1092,29 +1088,71 @@ void seraphUlt()
         }
     }
 }
+void focusAttack()
+{
+    if (g_sFocus == true)
+    {
+        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && (g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 || g_sChar.m_cLocation.X > 2))
+        {
+            su++;
+        }
+        if (su < 25)
+        {
+            if (g_suElapsedTime > 0.001)
+            {
+                if (su >= 1 && su < 25 && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    su++;
+                    g_suElapsedTime = 0;
+                    g_slashdelay = 0;
+                }
+                
+                if (su >= 1 && su < 25 && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    su++;
+                    g_suElapsedTime = 0;
+                    g_slashdelay = 0;
+                }
+
+            }
+        }
+        else if (su >= 25 && g_slashdelay > 0.3)
+        {
+            su = 0;
+            g_sChar.m_dMana = g_sChar.m_dMana - 10;
+        }
+        
+    }
+}
 
 void setdamage()
 {
-    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y && g_sAttackState == false)
+    if (g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy.m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.5)
         {
-            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
+            if (g_sEnemy.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
             {
                 g_sChar.m_dHealth--;
             }
             g_hElapsedTime = 0;
-        }
-        if (g_sAttackState == true)
-        {
-            g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1; //program recognises as 2 damage
+            if (g_sAttackState == true)
+            {
+                g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 1; //program recognises as 2 damage
+            }
+            if (g_sFocus == true)
+            {
+                g_sEnemy.m_dHealth = g_sEnemy.m_dHealth - 5;
+            }
         }
     }
     else if ((g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X  || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.2)
         {
-            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable)
+            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
             {
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
             }
@@ -1123,6 +1161,10 @@ void setdamage()
         if (g_sAttackState == true)
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
+        }
+        if (g_sFocus == true)
+        {
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 10;
         }
     }
     if (g_sChar.m_cLocation.X + 2 >= g_sEnemy.m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy.m_cLocation.X && g_sAttackState) //right slash attack
@@ -1208,7 +1250,7 @@ void setdamage()
 
 void setUltimate(int M)
 {
-    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage) //checks if Player mana is less than 50 and is not in rage mode
+    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus) //checks if Player mana is less than 50 and is not in rage mode
     {
         if (g_uElapsedTime > 0.5) //increase mana by 1 every 1 second
         {
@@ -1220,7 +1262,7 @@ void setUltimate(int M)
             g_sChar.m_dMana++;
         }*/
     }
-    else if (g_sUltimate && g_sRage)
+    else if (g_sUltimate || g_sRage || g_sFocus)
     {
         if (g_uElapsedTime > 0.2)
         {
@@ -1230,16 +1272,18 @@ void setUltimate(int M)
         if (g_sChar.m_dMana <= 0)
         {
             g_sChar.m_dMana = 0;
-            g_sRage = !g_sRage;
-            g_sUltimate = !g_sUltimate;
+            /*g_sRage = !g_sRage;
+            g_sUltimate = !g_sUltimate;*/
+            g_sFocus = false;
         }
     }
     if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
     {
-        g_sUltimate = !g_sUltimate;
+        //g_sUltimate = !g_sUltimate;
         g_sRage = !g_sRage;
-        g_sChar.m_cLocation.X = x / 2 + 7;
-        g_sChar.m_cLocation.Y = y / 2;
+        g_sFocus = !g_sFocus;
+        //g_sChar.m_cLocation.X = x / 2 + 7;
+        //g_sChar.m_cLocation.Y = y / 2;
         su = 0;
     }
 }
@@ -1658,10 +1702,10 @@ void renderCharacter()
     {
         charColor = 0x4E; //Ultimate mode
     }
-    if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+   /* if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
-    }
+    }*/
     if (g_sChar.m_dHealth <= 0)
     {
      

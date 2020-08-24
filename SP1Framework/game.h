@@ -77,6 +77,7 @@ void dodge(int i);               // Gin exclusive dodge
 void slashAttack(double n, int i, int j); //Slash attack
 void downslam();            //Seraph's down slam
 void seraphUlt();           //Seraph combo breaker
+void focusAttack();         //Gin's focus ability
 void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d); //set distance and speed for enemy patrolling

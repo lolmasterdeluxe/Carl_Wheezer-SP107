@@ -35,6 +35,7 @@ int k = 0;
 int l = 0;
 int s = 0;
 bool g_bPlayGame = false;
+int characterSelect;
 
 char c1 = 203;                     //main player's ascii characters
 char c2 = 203;
@@ -84,6 +85,7 @@ void init(void) {
 
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
+    characterSelect = 0;
     
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
@@ -97,21 +99,21 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sEnemy.m_cLocation.X = 50;
-    g_sEnemy.m_cLocation.Y = 29;
-    g_sBossP1.m_cLocation.X = 26;
-    g_sBossP1.m_cLocation.Y = 29;
-    g_sBossP2.m_cLocation.X = 26;
-    g_sBossP2.m_cLocation.Y = 28;
-    g_sProj.m_cLocation.X = state.returnProjX();
-    g_sProj.m_cLocation.Y = state.returnProjY();
+    g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+    g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+    g_sEnemy.m_cLocation.X = state.returnEnemyX();
+    g_sEnemy.m_cLocation.Y = state.returnEnemyY();
+    g_sBossP1.m_cLocation.X = state.returnBossX();
+    g_sBossP1.m_cLocation.Y = state.returnBossY();
+    g_sBossP2.m_cLocation.X = state.returnBossX();
+    g_sBossP2.m_cLocation.Y = state.returnBossY()-1;
     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = 20000;
+    g_sChar.m_dHealth = state.returnCharHealth();
     g_sEnemy.m_dHealth = 100;
     g_sBossP1.m_dHealth = 50;
-    g_sChar.m_dMana = 0;
+    g_sChar.m_dMana = state.returnCharMana();
 
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -119,7 +121,7 @@ void init(void) {
     // remember to set your keyboard handler, so that your functions can be notified of input events
     g_Console.setKeyboardHandler(keyboardHandler);
     g_Console.setMouseHandler(mouseHandler);
-    colour(0x0F);
+    colour(0x00);
 }
 
 //--------------------------------------------------------------
@@ -209,7 +211,8 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 }
 
 void saveGame() {
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status);
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sEnemy.m_dHealth));
+    state.saveState(std::to_string(g_sEnemy.m_cLocation.X), std::to_string(g_sEnemy.m_cLocation.Y), std::to_string(g_sBossP1.m_cLocation.X), std::to_string(g_sBossP1.m_cLocation.Y));
 }
 
 //--------------------------------------------------------------
@@ -348,28 +351,27 @@ bool processEverySec() {
     }
 }
 
-void moveCharacter()
-{
+void moveCharacter() {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
     int oneStep;
     for (int x = 0; x <= g_iPlatforms; x++) 
     {
         if (g_skKeyEvent[K_57].keyDown) {
-            if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1) || (g_sChar.m_cLocation.Y + 1) == g_aPlatformsY[x]) //Jump up
+            if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1)) //Jump up
             {
                 l = 0;
                 l++;
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                {
+                    g_sChar.m_cLocation.Y++;
+                }
             }
         }
         if (l >= 1 && l < 4) //check if player is mid air to move up to 4
         {
             if (g_jElapsedTime > 0.08)
             {
-                /*if (l == 1)
-                {
-                    Beep(1440, 30);
-                }*/
                 g_sChar.m_cLocation.Y--;
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x]) 
                 {
@@ -378,10 +380,18 @@ void moveCharacter()
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                 {
                     g_sChar.m_cLocation.X--;
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    {
+                        g_sChar.m_cLocation.X++;
+                    }
                 }
                 if (GetKeyState(0x44) & 0x800) //check for D input and jump right;
                 {
                     g_sChar.m_cLocation.X++;
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    {
+                        g_sChar.m_cLocation.X--;
+                    }
                 }
                 if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
                 {
@@ -392,34 +402,44 @@ void moveCharacter()
             }
         }
     }
-    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
-    {
-        if (g_jElapsedTime > 0.08)
+    for (int x = 0; x < g_iPlatforms; x++) {
+        if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) //check if l is 3 and push down for gravity
         {
-            /*if (l == 1)
+            if (g_jElapsedTime > 0.08)
             {
-                Beep(1440, 30);
-            }*/
-            g_sChar.m_cLocation.Y++;
-            if (GetKeyState(0x41) & 0x800) //check for A input and jump left
-            {
-                g_sChar.m_cLocation.X--;
-            }
-            if (GetKeyState(0x44) & 0x800) //check for D input and jump right
-            {
-                g_sChar.m_cLocation.X++;
-            }
-            if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-            {
-                g_sProj.m_cLocation.Y++;
-            }
-            for (int x = 0; x < g_iPlatforms; x++) {
-                if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) 
+                /*if (l == 1)
                 {
-                    g_sChar.m_cLocation.Y--;
+                    Beep(1440, 30);
+                }*/
+                g_sChar.m_cLocation.Y++;
+                if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+                {
+                    g_sChar.m_cLocation.X--;
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    {
+                        g_sChar.m_cLocation.X++;
+                    }
                 }
+                if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+                {
+                    g_sChar.m_cLocation.X++;
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[x] && g_sChar.m_cLocation.X == g_aPlatformsX[x])
+                    {
+                        g_sChar.m_cLocation.X--;
+                    }
+                }
+                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
+                {
+                    g_sProj.m_cLocation.Y++;
+                }
+                for (int x = 0; x < g_iPlatforms; x++) {
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+                    {
+                        g_sChar.m_cLocation.Y--;
+                    }
+                }
+                g_jElapsedTime = 0;
             }
-            g_jElapsedTime = 0;
         }
     }
     
@@ -946,6 +966,9 @@ void renderSplashScreen() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Space> to play", 0x09);
+    c.Y += 1;
+    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    g_Console.writeToBuffer(c, "Press <Arrow Keys> to switch characters", 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);

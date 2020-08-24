@@ -1,22 +1,30 @@
 #pragma once
 #include <string>
-
+using namespace std;
 class save {
 private:
-	int x = 0; int y = 0; int projxx = 0; int projyy = 0; int state = 0;
-	int enemies = 0;
+	int x = 0; int y = 0; int enemyX = 0; int enemyY = 0; int state = 0;
+	int bossX = 0; int bossY = 0; int hp = 0; int mana = 0;
+	string charSaveState = "0"; string enemySaveState = "0";
 public:
 	save();
 	~save();
-	void saveState(std::string posx, std::string posy, std::string charstate);
-	void saveState(std::string posx, std::string posy, std::string charstate, std::string projx, std::string projy);
+	void saveState(string posx, string posy, string charstate, string health, string mana);
+	void saveState(string eX, string eY, string bX, string bY);
+	void saveState();
 	void readSave();
 	void defaultSave();
 	int loadSave();
 	int returnX();
 	int returnY();
-	int returnCharState();
-	int returnProjX();
-	int returnProjY();
-	int returnEnemies();
+	bool returnCharState();
+	int returnEnemyX();
+	int returnEnemyY();
+	int returnBossX();
+	int returnBossY();
+	int returnCharHealth();
+	int returnCharMana();
+	string returnCharSave();
+	string returnEnemySave();
+	int main1();
 };

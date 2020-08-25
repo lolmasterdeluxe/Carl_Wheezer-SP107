@@ -35,6 +35,7 @@ double  g_udElapsedTime; //Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
 int characterSelect;
 int oneTime;
+int canDo;
 
 //UI specific timers
 int g_iElapsedTime;
@@ -114,6 +115,7 @@ void init(void) {
     g_dElapsedTime = 0.0;
     characterSelect = 0;
     oneTime = 0;
+    canDo = 0;
     
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
@@ -146,7 +148,6 @@ void init(void) {
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
     
-
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
 
@@ -164,7 +165,6 @@ void init(void) {
 // Output   : void
 //--------------------------------------------------------------
 void shutdown(void) {
-
     // Reset to white text on black background
     colour(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
     saveGame();
@@ -186,7 +186,6 @@ void shutdown(void) {
 // Output   : void
 //--------------------------------------------------------------
 void getInput(void) {
-
     // resets all the keyboard events
     memset(g_skKeyEvent, 0, K_COUNT * sizeof(*g_skKeyEvent));
     // then call the console to detect input from user
@@ -242,8 +241,7 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 }
 
 void saveGame() {
-    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sEnemy.m_dHealth));
-    state.saveState(std::to_string(g_sEnemy.m_cLocation.X), std::to_string(g_sEnemy.m_cLocation.Y), std::to_string(g_sBossP1.m_cLocation.X), std::to_string(g_sBossP1.m_cLocation.Y));
+    state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sEnemy.m_dHealth), std::to_string(g_sChar.m_dMana), std::to_string(g_sEnemy.m_cLocation.X), std::to_string(g_sEnemy.m_cLocation.Y), std::to_string(g_sBossP1.m_cLocation.X), std::to_string(g_sBossP1.m_cLocation.Y));
 }
 
 //--------------------------------------------------------------
@@ -256,7 +254,6 @@ void saveGame() {
 // Output   : void
 //--------------------------------------------------------------
 void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
-
     // here, we map the key to our enums
     EKEYS key = K_COUNT;
     switch (keyboardEvent.wVirtualKeyCode) {
@@ -281,7 +278,8 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
         g_skKeyEvent[key].keyDown = keyboardEvent.bKeyDown;
         g_skKeyEvent[key].keyReleased = !keyboardEvent.bKeyDown;
     }
-    processUserInput();
+    //processUserInput();
+    canDo = 0;
 }
 
 //--------------------------------------------------------------
@@ -330,7 +328,7 @@ void update(double dt) {
     case S_MENU: updateMenu();
         break;
     }
-    processUserInput();
+    //processUserInput();
 }
 
 void updateTime(double dt) {
@@ -387,16 +385,6 @@ void updateMenu() {
     processUserInput();
 }
 
-bool processEverySec() {
-    if (g_iElapsedTime == g_iTimeAfter) {
-        return true;
-    }
-    else 
-    {
-        return false;
-    }
-}
-
 void moveCharacter() {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
@@ -406,12 +394,12 @@ void moveCharacter() {
             {
                 l = 0;
                 l++;
-                    g_sChar.m_cLocation.Y++;
-                    for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                g_sChar.m_cLocation.Y++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.Y--;
-                        }
                     }
+                }
             }
         }
         if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
@@ -528,7 +516,6 @@ void moveCharacter() {
             g_jElapsedTime = 0;
         }
     }
-
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
     {
         /*Beep(1440, 30);*/
@@ -566,7 +553,6 @@ void moveCharacter() {
             }
         }
     }
-
 }
 
 void sneakCharacter()
@@ -603,13 +589,9 @@ void moveProjectile ()
 {
     double n = 0;
     if (g_sRage == true)
-    {
         n = 0.01;
-    }
     else
-    {
         n = 0.02;
-    }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
     { 
         c4 = 205;
@@ -712,8 +694,7 @@ void dodge(int i)
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
             g_doElapsedTime = 0;
             dashl++;
-        }
-        
+        }  
     }
     if (g_slashdelay > 0.2 && dashl >= i)
     { 
@@ -740,7 +721,6 @@ void dodge(int i)
         dashr = 0;
         g_slashdelay = 0;
     }
-    
 }
 
 void slashAttack(double n, int i, int j)
@@ -1064,14 +1044,12 @@ void seraphUlt()
                         g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 3;
                         g_suElapsedTime = 0;
                         su++;
-                        
                     }
                 }
                 if (su == 359) 
                 {
                     g_udElapsedTime = 0;
                 }
-               
             }
         }
         else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
@@ -1084,10 +1062,10 @@ void seraphUlt()
             l = 1;
             g_sChar.m_dHealth = 50;
             g_sChar.m_dMana = 0;
-
         }
     }
 }
+
 void focusAttack()
 {
     if (g_sFocus == true)
@@ -1107,7 +1085,6 @@ void focusAttack()
                     g_suElapsedTime = 0;
                     g_slashdelay = 0;
                 }
-                
                 if (su >= 1 && su < 25 && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
@@ -1115,7 +1092,6 @@ void focusAttack()
                     g_suElapsedTime = 0;
                     g_slashdelay = 0;
                 }
-
             }
         }
         else if (su >= 25 && g_slashdelay > 0.3)
@@ -1359,7 +1335,6 @@ void moveBoss(int n, double t, double t2, int d)
             t2 = t2 / 3;
             t = t / 2;
         }
-        
         if (g_bElapsedTime > t)
         {
             if (k != n)
@@ -1388,7 +1363,6 @@ void moveBoss(int n, double t, double t2, int d)
                 }
             }
         }
-        
         //boss jump mechanic prototype
         //if (m != 5)
         //{
@@ -1498,8 +1472,6 @@ void processUserInput() {
         case S_SPLASHSCREEN:
             break;
         case S_MENU:
-            resetToStart();
-            g_eGameState = S_GAME;
             break;
         }
     }
@@ -1522,7 +1494,7 @@ void processUserInput() {
         case S_SPLASHSCREEN:
             characterSelect--;
             if (characterSelect < 0)
-                characterSelect = 0;
+                characterSelect = 3;
             break;
         case S_MENU:
             break;
@@ -1533,9 +1505,12 @@ void processUserInput() {
         case S_GAME:
             break;
         case S_SPLASHSCREEN:
-            characterSelect++;
-            if (characterSelect > 4)
-                characterSelect = 4;
+            if (canDo == 0) {
+                characterSelect++;
+                if (characterSelect > 3)
+                    characterSelect = 0;
+                canDo = 1;
+            }
             break;
         case S_MENU:
             break;
@@ -1573,6 +1548,22 @@ void render() {
 void resetToStart() {
     g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
     g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+    if (characterSelect == 0) {
+        g_sChar.m_dHealth = 2000;
+        g_sChar.m_dMana = 100;
+    }
+    if (characterSelect == 1) {
+        g_sChar.m_dHealth = 1000;
+        g_sChar.m_dMana = 50;
+    }
+    if (characterSelect == 2) {
+        g_sChar.m_dHealth = 2500;
+        g_sChar.m_dMana = 25;
+    }
+    if (characterSelect == 3) {
+        g_sChar.m_dHealth = 1500;
+        g_sChar.m_dMana = 0;
+    }
     g_sEnemy.m_cLocation.X = 50;
     g_sEnemy.m_cLocation.Y = 29;
 }
@@ -1608,15 +1599,13 @@ void renderSplashScreen() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     if (characterSelect == 0)
-        ch = "Character 1";
+        ch = "Dwem Guy";
     if (characterSelect == 1)
-        ch = "Character 2";
+        ch = "Seraph";
     if (characterSelect == 2)
-        ch = "Character 3";
+        ch = "Gin";
     if (characterSelect == 3)
-        ch = "Character 4";
-    if (characterSelect == 4)
-        ch = "Character 5";
+        ch = "Thorfinn";
     g_Console.writeToBuffer(c, ch, 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
@@ -1634,7 +1623,6 @@ void renderHUD() {
         0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x00
     };
-
     COORD c;
     c.X = 0;
     c.Y = 1;
@@ -1671,9 +1659,6 @@ void renderMenu() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> continue", 0x09);
-    c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 13;
-    g_Console.writeToBuffer(c, "Press <R> to reset", 0x09);
 }
 
 void renderSavedGame() {
@@ -1718,7 +1703,8 @@ void renderCharacter()
 
 void renderPlatform() {
     for (int i = 0; i < g_iPlatforms; i++) {
-        g_Console.writeToBuffer(g_aPlatformsX[i], g_aPlatformsY[i], " ", 0x0F);
+        if (g_aPlatformsX[i] >= 0 && g_aPlatformsX[i] < g_Console.getConsoleSize().X)
+            g_Console.writeToBuffer(g_aPlatformsX[i], g_aPlatformsY[i], " ", 0x0F);
     }
 }
 
@@ -1729,6 +1715,9 @@ bool checkCollision() {
             hit = true;
         }
         if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+            hit = true;
+        }
+        if (g_sChar.m_cLocation.X-1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
     }
@@ -1824,14 +1813,18 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0;
     int y = 0;
-
     std::string levelFile;
     std::string line2;
     if (number == 1)
         levelFile = "levelone.txt";
+    if (number == 2)
+        levelFile = "leveltwo.txt";
+    if (number == 3)
+        levelFile = "levelthree.txt";
+    if (number == 4)
+        levelFile = "levelfour.txt";
     std::ifstream level;
     std::ifstream levelPtr(levelFile);
-
     level.open(levelFile);
     char c = level.get();
     while (level.good()) {
@@ -1862,6 +1855,9 @@ void loadLevelData(int number) {
             y++;
         }
     }
-    
     levelPtr.close();
+}
+
+void levelEditor() {
+
 }

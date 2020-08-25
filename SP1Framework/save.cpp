@@ -7,13 +7,42 @@
 
 using namespace std;
 
+string charSaveState = "0"; string enemySaveState = "0";
+
 save::save() {
 }
 save::~save() {
+	ofstream Map;
+	Map.open("save.txt");
+	Map << (charSaveState + enemySaveState);
+	Map.close();
+	cout << "saved all!";
 }
 
-void save::saveState(string posx, string posy, string charstate, string health, string mana) {
-	string savePos;
+//void save::saveState(string posx, string posy, string charstate, string health, string mana) {
+//	if (posx.length() == 1) {
+//		posx = "0" + posx;
+//	}
+//	if (posy.length() == 1) {
+//		posy = "0" + posy;
+//	}
+//	if (charstate.length() == 1) {
+//		charstate = "0" + charstate;
+//	}
+//	if (health.length() < 4) {
+//		for (int i = 0; i < health.length(); i++) {
+//			health = "0" + health;
+//			cout << health;
+//		}
+//	}
+//	if (mana.length() == 1) {
+//		mana = "0" + mana;
+//	}
+//	charSaveState = posx + posy + charstate + health + mana;
+//	cout << "saved char!";
+//}
+
+void save::saveState(string posx, string posy, string charstate, string health, string mana, string eX, string eY, string bX, string bY) {
 	if (posx.length() == 1) {
 		posx = "0" + posx;
 	}
@@ -26,18 +55,14 @@ void save::saveState(string posx, string posy, string charstate, string health, 
 	if (health.length() < 4) {
 		for (int i = 0; i < health.length(); i++) {
 			health = "0" + health;
+			cout << health;
 		}
 	}
 	if (mana.length() == 1) {
 		mana = "0" + mana;
 	}
 	charSaveState = posx + posy + charstate + health + mana;
-	saveState();
 	cout << "saved char!";
-}
-
-void save::saveState(string eX, string eY, string bX, string bY) {
-	string savePos;
 	if (eX.length() == 1) {
 		eX = "0" + eX;
 	}
@@ -51,16 +76,16 @@ void save::saveState(string eX, string eY, string bX, string bY) {
 		bY = "0" + bY;
 	}
 	enemySaveState = eX + eY + bX + bY;
-	saveState();
+	if (charSaveState == "0")
+		charSaveState = "201500200000";
 	cout << "saved enemy!";
 }
 
 void save::saveState() {
 	ofstream Map;
-	string savePos;
+	string saveLine = charSaveState + enemySaveState;
 	Map.open("save.txt");
-	savePos = charSaveState + enemySaveState;
-	Map << savePos;
+	Map << saveLine;
 	Map.close();
 	cout << "saved all!";
 }
@@ -68,7 +93,7 @@ void save::saveState() {
 void save::defaultSave() {
 	ofstream Map;
 	Map.open("save.txt");
-	Map << "20290020005050292629";
+	Map << "20150020000050292629";
 	Map.close();
 	cout << "default saved!";
 }
@@ -100,7 +125,7 @@ int save::loadSave() {
 		getline(map, line);
 		saveline = line;
 		if (saveline.length() < 20)
-			saveline = "20290020000050292629";
+			saveline = "20150020000050292629";
 		posx = saveline.substr(0, 2);
 		posy = saveline.substr(2, 2);
 		charstate = saveline.substr(4, 2);
@@ -149,9 +174,9 @@ int save::returnEnemyY() {
 }
 
 bool save::returnCharState() {
-	bool chars = true;
+	bool chars = false;
 	if (state == 1)
-		chars = false;
+		chars = true;
 	return chars;
 }
 
@@ -168,18 +193,18 @@ int main1() {
 	ifstream s;
 
 	s.open("save.txt");
-	//if (!s)
-		//state.defaultSave();
+	if (!s)
+		state.defaultSave();
 
 	state.loadSave();
-	cout << "Char x = " << state.returnX() << " Char y = " << state.returnY() << endl;
+	cout << "Char x = " << state.returnX() << " Char y = " << state.returnY() << " Char state = " << state.returnCharState() << endl;
 	cout << "Char health = " << state.returnCharHealth() << " Char mana = " << state.returnCharMana() << endl;
 	cout << "Enemy x = " << state.returnEnemyX() << " Enemy y = " << state.returnEnemyY() << endl;
 	cout << "Boss x = " << state.returnBossX() << " Boss y = " << state.returnBossY() << endl;
 
 	// Save char state
-	state.saveState("25", "29", "0", "50", "0");
+	//state.saveState("25", "29", "00", "50", "10");
 	// Save enemy state
-	state.saveState("30", "29", "35", "29");
+	state.saveState("25", "29", "00", "50", "10", "30", "29", "35", "29");
 	return 0;
 }

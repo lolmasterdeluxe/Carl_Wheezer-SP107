@@ -94,6 +94,7 @@ void renderToScreen();      // dump the contents of the buffer to the screen, on
 void renderInputEvents();   // renders the status of input events
 void renderMenu();
 void updateMenu();
+void scroll();
 void updateTime(double dt);
 void saveGame();
 void renderPlatform();

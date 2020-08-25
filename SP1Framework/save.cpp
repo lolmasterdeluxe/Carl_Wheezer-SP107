@@ -17,6 +17,10 @@ save::~save() {
 	Map << (charSaveState + enemySaveState);
 	Map.close();
 	cout << "saved all!";*/
+	/*ofstream Map;
+	Map.open("save1.txt");
+	Map << "line1\nline2";
+	Map.close();*/
 }
 
 //void save::saveState(string posx, string posy, string charstate, string health, string mana) {
@@ -78,12 +82,13 @@ void save::saveState(string posx, string posy, string charstate, string health, 
 	enemySaveState = eX + eY + bX + bY;
 	if (charSaveState == "0")
 		charSaveState = "201500200000";
-	cout << "saved enemy!";
+	cout << "saved!" << endl;
+	saveState();
 }
 
 void save::saveState() {
 	ofstream Map;
-	string saveLine = charSaveState + enemySaveState;
+	string saveLine = charSaveState + '\n' + enemySaveState;
 	Map.open("save.txt");
 	Map << saveLine;
 	Map.close();
@@ -93,7 +98,7 @@ void save::saveState() {
 void save::defaultSave() {
 	ofstream Map;
 	Map.open("save.txt");
-	Map << "20150020000050292628";
+	Map << "201500200000\n30282628";
 	Map.close();
 	cout << "default saved!";
 }
@@ -122,20 +127,22 @@ int save::loadSave() {
 	ifstream map("save.txt");
 	string posx, posy, charstate, health, mn, ex, ey, bx, by;
 	if (map.is_open()) {
-		getline(map, line);
-		saveline = line;
-		if (saveline.length() < 20)
-			saveline = "20150020000050292628";
-		posx = saveline.substr(0, 2);
-		posy = saveline.substr(2, 2);
-		charstate = saveline.substr(4, 2);
-		health = saveline.substr(6, 4);
-		mn = saveline.substr(10, 2);
-		ex = saveline.substr(12, 2);
-		ey = saveline.substr(14, 2);
-		bx = saveline.substr(16, 2);
-		by = saveline.substr(18, 2);
-
+		while (getline(map, line)) {
+			saveline = line;
+			if (saveline.length() == 12) {
+				posx = saveline.substr(0, 2);
+				posy = saveline.substr(2, 2);
+				charstate = saveline.substr(4, 2);
+				health = saveline.substr(6, 4);
+				mn = saveline.substr(10, 2);
+			}
+			if (saveline.length() == 8) {
+				ex = saveline.substr(0, 2);
+				ey = saveline.substr(2, 2);
+				bx = saveline.substr(4, 2);
+				by = saveline.substr(6, 2);
+			}
+		}
 		x = stoi(posx);
 		y = stoi(posy);
 		enemyX = stoi(ex);

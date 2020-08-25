@@ -104,6 +104,8 @@ void resetToStart();
 void renderSavedGame();
 void deletePlatforms();
 void LEMoveChar();
+void nextLevel();
+void renderPortal();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

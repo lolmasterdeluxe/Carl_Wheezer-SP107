@@ -15,6 +15,7 @@
 int* g_aPlatformsX;
 int* g_aPlatformsY;
 int g_iPlatforms = 0;
+int level;
 double  g_dElapsedTime; //delta time elapsed
 double  g_dDeltaTime;   //delta time
 double  g_pElapsedTime; //projectile elapsed time
@@ -99,6 +100,7 @@ SGameChar   g_sChar;
 SGameChar   g_sCharSpawn;
 SGameChar   g_sProj;
 SGameChar   g_sEnemy[5];
+SGameChar   g_sPortal;
 SGameChar   g_sBossP1;  //Boss bottom half
 SGameChar   g_sBossP2;  //Boss top half
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
@@ -120,6 +122,7 @@ void init(void) {
     characterSelect = 0;
     oneTime = 0;
     canDo = 0;
+    level = 0;
     
     // sets the initial state for the game
     g_eGameState = S_SPLASHSCREEN;
@@ -161,6 +164,8 @@ void init(void) {
     g_sBossP1.m_dHealth = 50;
     g_sChar.m_dMana = state.returnCharMana();
     g_sChar.m_dMana = 50;
+    g_sPortal.m_cLocation.X = 97;
+    g_sPortal.m_cLocation.Y = 28;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
     
@@ -393,6 +398,7 @@ void updateGame() {     // gameplay logic
         setUltimate(50); //Set ultimate capacity to *50
         //seraphUlt(); //seraph star combo breaker
         focusAttack(); //Gin's focus ability
+        nextLevel();
         //LEMoveChar();
         //scroll();
     }
@@ -1673,7 +1679,7 @@ void deletePlatforms() {
 
 void clearScreen() {
     // Clears the buffer with this colour attribute
-    g_Console.clearBuffer(0x1F);
+    g_Console.clearBuffer(BACKGROUND_RED);
 }
 
 void renderToScreen() {
@@ -1732,6 +1738,7 @@ void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderCharacter();  // renders the character into the buffer
     renderHUD();
+    renderPortal();
     // renderInputEvents();
 }
 
@@ -1765,6 +1772,30 @@ void renderHUD() {
     g_Console.writeToBuffer(c, elapsedTime, colors[0]);
 }
 
+void nextLevel() {
+    if (oneTime == 0) {
+        if (level == 0)
+            loadLevelData(1);
+        if (level == 1)
+            loadLevelData(2);
+        if (level == 2)
+            loadLevelData(3);
+        if (level == 3)
+            loadLevelData(4);
+    }
+    oneTime = 1;
+    if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y) {
+        oneTime = 0;
+        level++;
+        g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+        g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+        delete[] g_aPlatformsX;
+        delete[] g_aPlatformsY;
+    }
+    if (level > 3)
+        level = 3;
+}
+
 void renderMenu() {
     COORD c = g_Console.getConsoleSize();
     c.Y /= 3;
@@ -1776,6 +1807,10 @@ void renderMenu() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> continue", 0x09);
+}
+
+void renderPortal() {
+    g_Console.writeToBuffer(g_sPortal.m_cLocation.X, g_sPortal.m_cLocation.Y, " ", 0xF0);
 }
 
 void renderSavedGame() {
@@ -1803,10 +1838,8 @@ void renderMap() {
         }
     }
     map.close();
-    if (oneTime == 0)
-        loadLevelData(1);
-    oneTime = 1;
-    renderPlatform();
+    if (level < 4)
+        renderPlatform();
 }
 
 void renderCharacter() 

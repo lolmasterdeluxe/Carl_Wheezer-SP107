@@ -12,11 +12,11 @@ string charSaveState = "0"; string enemySaveState = "0";
 save::save() {
 }
 save::~save() {
-	ofstream Map;
+	/*ofstream Map;
 	Map.open("save.txt");
 	Map << (charSaveState + enemySaveState);
 	Map.close();
-	cout << "saved all!";
+	cout << "saved all!";*/
 }
 
 //void save::saveState(string posx, string posy, string charstate, string health, string mana) {

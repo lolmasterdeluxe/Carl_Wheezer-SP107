@@ -131,8 +131,8 @@ void init(void) {
     if (!save)
         state.defaultSave();
     state.loadSave();
-    g_sChar.m_cLocation.X = state.returnX();
-    g_sChar.m_cLocation.Y = state.returnY();
+    //g_sChar.m_cLocation.X = state.returnX();
+    //g_sChar.m_cLocation.Y = state.returnY();
     g_sChar.m_cLocation.X = 2;
     g_sChar.m_cLocation.Y = 28;
     g_sEnemy[0].m_cLocation.X = 10;
@@ -1106,7 +1106,7 @@ void seraphUlt()
         }
         else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
         { 
-            for (int i = 0; i <= 5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 g_sEnemy[i].m_dHealth = 0;
             }
@@ -1683,6 +1683,24 @@ void renderToScreen() {
 
 void renderSplashScreen() {
     // renders the splash screen
+    int y = 0;
+    std::ifstream map("menu.txt"); std::string line;
+    if (map.is_open()) {
+        std::string perLine;
+        while (std::getline(map, line)) {
+            perLine = line;
+            for (int x = 0; x < perLine.length(); x++) {
+                if (perLine[x] == '.') {
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                }
+                if (perLine[x] == '8') {
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
+                }
+            }
+            y++;
+        }
+    }
+
     COORD c = g_Console.getConsoleSize();
     string ch;
     c.Y /= 3;
@@ -1793,8 +1811,6 @@ void renderMap() {
 
 void renderCharacter() 
 {
-    // Draw the location of the character and weapon
-
     // Draw the location of the character and weapon
     WORD charColor = 0x2E; //non - ultimate mode color
     if (g_sRage == true)

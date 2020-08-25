@@ -138,24 +138,24 @@ void init(void) {
     //g_sChar.m_cLocation.Y = state.returnY();
     g_sChar.m_cLocation.X = 2;
     g_sChar.m_cLocation.Y = 28;
-    g_sEnemy[0].m_cLocation.X = 10;
-    g_sEnemy[0].m_cLocation.Y = 28;
-    g_sEnemy[1].m_cLocation.X = 20;
-    g_sEnemy[1].m_cLocation.Y = 28;
-    g_sEnemy[2].m_cLocation.X = 30;
-    g_sEnemy[2].m_cLocation.Y = 28;
-    g_sEnemy[3].m_cLocation.X = 40;
-    g_sEnemy[3].m_cLocation.Y = 28;
-    g_sEnemy[4].m_cLocation.X = 55;
-    g_sEnemy[4].m_cLocation.Y = 28;
-    g_sBossP1.m_cLocation.X = state.returnBossX();
-    g_sBossP1.m_cLocation.Y = state.returnBossY();
-    g_sBossP2.m_cLocation.X = state.returnBossX();
-    g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
-    g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-    g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-    g_sChar.m_bActive = state.returnCharState();
-    g_sChar.m_dHealth = state.returnCharHealth();
+    //g_sEnemy[0].m_cLocation.X = 10;
+    //g_sEnemy[0].m_cLocation.Y = 28;
+    //g_sEnemy[1].m_cLocation.X = 20;
+    //g_sEnemy[1].m_cLocation.Y = 28;
+    //g_sEnemy[2].m_cLocation.X = 30;
+    //g_sEnemy[2].m_cLocation.Y = 28;
+    //g_sEnemy[3].m_cLocation.X = 40;
+    //g_sEnemy[3].m_cLocation.Y = 28;
+    //g_sEnemy[4].m_cLocation.X = 55;
+    //g_sEnemy[4].m_cLocation.Y = 28;
+    //g_sBossP1.m_cLocation.X = state.returnBossX();
+    //g_sBossP1.m_cLocation.Y = state.returnBossY();
+    //g_sBossP2.m_cLocation.X = state.returnBossX();
+    //g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
+    //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+    //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+    //g_sChar.m_bActive = state.returnCharState();
+    //g_sChar.m_dHealth = state.returnCharHealth();
     g_sEnemy[0].m_dHealth = 5;
     g_sEnemy[1].m_dHealth = 5;
     g_sEnemy[2].m_dHealth = 5;
@@ -1306,7 +1306,7 @@ void setdamage()
         if (g_sEnemy[i].m_dHealth <= 0)
         {
             c5[i] = 0;
-            enemyColor[i] = 0x1A;
+            enemyColor[i] = BACKGROUND_RED;
         }
     }
     if (g_sBossP1.m_dHealth <= 0)
@@ -1773,6 +1773,22 @@ void renderHUD() {
 }
 
 void nextLevel() {
+    if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y) {
+        oneTime = 0;
+        level++;
+        g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+        g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+        for (int i = 0; i < 5; i++) {
+            g_sEnemy[i].m_cLocation.X = NULL;
+            g_sEnemy[i].m_cLocation.Y = NULL;
+            g_sBossP1.m_cLocation.X = NULL;
+            g_sBossP2.m_cLocation.X = NULL;
+            g_sBossP1.m_cLocation.Y = NULL;
+            g_sBossP2.m_cLocation.Y = NULL;
+        }
+        delete[] g_aPlatformsX;
+        delete[] g_aPlatformsY;
+    }
     if (oneTime == 0) {
         if (level == 0)
             loadLevelData(1);
@@ -1782,15 +1798,7 @@ void nextLevel() {
             loadLevelData(3);
         if (level == 3)
             loadLevelData(4);
-    }
-    oneTime = 1;
-    if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y) {
-        oneTime = 0;
-        level++;
-        g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
-        g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
-        delete[] g_aPlatformsX;
-        delete[] g_aPlatformsY;
+        oneTime = 1;
     }
     if (level > 3)
         level = 3;
@@ -1978,6 +1986,8 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0;
     int y = 0;
+    int e = 0;
+    int b = 0;
     std::string levelFile;
     std::string line2;
     if (number == 0)
@@ -2017,6 +2027,17 @@ void loadLevelData(int number) {
                 if (perLine[x] == 'C') {
                     g_sCharSpawn.m_cLocation.X = x;
                     g_sCharSpawn.m_cLocation.Y = y;
+                }
+                if (perLine[x] == 'E') {
+                    g_sEnemy[e].m_cLocation.X = x;
+                    g_sEnemy[e].m_cLocation.Y = y;
+                    e++;
+                }
+                if (perLine[x] == 'B') {
+                    g_sBossP1.m_cLocation.X = x;
+                    g_sBossP1.m_cLocation.Y = y;
+                    g_sBossP2.m_cLocation.X = x;
+                    g_sBossP2.m_cLocation.Y = y - 1;
                 }
             }
             y++;

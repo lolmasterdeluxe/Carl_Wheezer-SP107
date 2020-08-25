@@ -93,7 +93,7 @@ void save::saveState() {
 void save::defaultSave() {
 	ofstream Map;
 	Map.open("save.txt");
-	Map << "20150020000050292629";
+	Map << "20150020000050292628";
 	Map.close();
 	cout << "default saved!";
 }
@@ -125,7 +125,7 @@ int save::loadSave() {
 		getline(map, line);
 		saveline = line;
 		if (saveline.length() < 20)
-			saveline = "20150020000050292629";
+			saveline = "20150020000050292628";
 		posx = saveline.substr(0, 2);
 		posy = saveline.substr(2, 2);
 		charstate = saveline.substr(4, 2);

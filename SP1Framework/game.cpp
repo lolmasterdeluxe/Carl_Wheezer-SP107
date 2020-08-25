@@ -130,7 +130,7 @@ void init(void) {
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
     g_sChar.m_cLocation.X = 5;
-    g_sChar.m_cLocation.Y = 29;
+    g_sChar.m_cLocation.Y = 28;
     g_sEnemy.m_cLocation.X = state.returnEnemyX();
     g_sEnemy.m_cLocation.Y = state.returnEnemyY();
     g_sBossP1.m_cLocation.X = state.returnBossX();
@@ -212,6 +212,7 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
     case S_MENU: gameplayKBHandler(keyboardEvent);
+        break;
     }
 }
 
@@ -292,7 +293,7 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
 // Output   : void
 //--------------------------------------------------------------
 void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
-    if (mouseEvent.dwEventFlags & MOUSE_MOVED) // update the mouse position if there are no events
+    if (MOUSE_MOVED) // update the mouse position if there are no events
         g_mouseEvent.mousePosition = mouseEvent.dwMousePosition;
     g_mouseEvent.buttonState = mouseEvent.dwButtonState;
     g_mouseEvent.eventFlags = mouseEvent.dwEventFlags;
@@ -313,7 +314,6 @@ void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 // Output   : void
 //--------------------------------------------------------------
 void update(double dt) {
-
     // get the delta time
     /*g_dElapsedTime += dt;
     g_dDeltaTime = dt;
@@ -352,13 +352,12 @@ void updateTime(double dt) {
     g_staminaregen += dt; //regen stamina time
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
-
 }
 
 void splashScreenWait() {      // waits for time to pass in splash screen
     if (g_bPlayGame == true)   // wait for keyboard to switch to game mode, else do nothing
         g_eGameState = S_GAME;
-    renderSplashScreen();
+    //renderSplashScreen();
     processUserInput();
 }
 
@@ -377,6 +376,7 @@ void updateGame() {     // gameplay logic
         setUltimate(50); //Set ultimate capacity to *50
         //seraphUlt(); //seraph star combo breaker
         focusAttack(); //Gin's focus ability
+        //LEMoveChar();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -390,14 +390,16 @@ void moveCharacter() {
     // providing a beep sound whenver we shift the character
     int oneStep;
         if (g_skKeyEvent[K_57].keyDown) {
-            if (g_sChar.m_cLocation.Y == (g_Console.getConsoleSize().Y - 1)) //Jump up
-            {
-                l = 0;
-                l++;
-                g_sChar.m_cLocation.Y++;
-                for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+            for (int j = 0; j < g_iPlatforms; j++) {
+                if (g_sChar.m_cLocation.Y+1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) //Jump up
+                {
+                    l = 0;
+                    l++;
+                    g_sChar.m_cLocation.Y++;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.Y--;
+                        }
                     }
                 }
             }
@@ -442,91 +444,93 @@ void moveCharacter() {
                 l++;
             }
         }
-    if (l == 4 && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && g_sUltimate == false) //check if l is 3 and push down for gravity
-    {
-        if (g_jElapsedTime > 0.05)
-        {
-            if (l == 1)
+        for (int j = 0; j < g_iPlatforms; j++) {
+            if (l == 4 && g_sUltimate == false && g_sChar.m_cLocation.Y+1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
             {
-                Beep(1440, 30);
-            }
-            g_sChar.m_cLocation.Y++;
-            for (int i = 0; i < g_iPlatforms; i++) {
-                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
+                if (g_jElapsedTime > 0.05)
                 {
-                    g_sChar.m_cLocation.Y--;
-                }
-            }
-            if (GetKeyState(0x41) & 0x800) //check for A input and jump left
-            {
-                g_sChar.m_cLocation.X--;
-                for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                        g_sChar.m_cLocation.X++;
+                    if (l == 1)
+                    {
+                        Beep(1440, 30);
                     }
-                }
-            }
-            if (GetKeyState(0x44) & 0x800) //check for D input and jump right
-            {
-                g_sChar.m_cLocation.X++;
-                for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                        g_sChar.m_cLocation.X--;
-                    }
-                }
-            }
-            if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-            {
-                /*if (l == 1)
-                {
-                    Beep(1440, 30);
-                }*/
-                g_sChar.m_cLocation.Y++;
-                for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                        g_sChar.m_cLocation.Y--;
-                    }
-                }
-                if (GetKeyState(0x41) & 0x800) //check for A input and jump left
-                {
-                    g_sChar.m_cLocation.X--;
+                    g_sChar.m_cLocation.Y++;
                     for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                        if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
                         {
-                            g_sChar.m_cLocation.X++;
+                            g_sChar.m_cLocation.Y--;
                         }
                     }
-                }
-                if (GetKeyState(0x44) & 0x800) //check for D input and jump right
-                {
-                    g_sChar.m_cLocation.X++;
-                    for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                    if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+                    {
+                        g_sChar.m_cLocation.X--;
+                        for (int i = 0; i < g_iPlatforms; i++) {
+                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                                g_sChar.m_cLocation.X++;
+                            }
+                        }
+                    }
+                    if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+                    {
+                        g_sChar.m_cLocation.X++;
+                        for (int i = 0; i < g_iPlatforms; i++) {
+                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                                g_sChar.m_cLocation.X--;
+                            }
+                        }
+                    }
+                    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
+                    {
+                        /*if (l == 1)
+                        {
+                            Beep(1440, 30);
+                        }*/
+                        g_sChar.m_cLocation.Y++;
+                        for (int i = 0; i < g_iPlatforms; i++) {
+                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                                g_sChar.m_cLocation.Y--;
+                            }
+                        }
+                        if (GetKeyState(0x41) & 0x800) //check for A input and jump left
                         {
                             g_sChar.m_cLocation.X--;
+                            for (int i = 0; i < g_iPlatforms; i++) {
+                                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                                {
+                                    g_sChar.m_cLocation.X++;
+                                }
+                            }
                         }
+                        if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+                        {
+                            g_sChar.m_cLocation.X++;
+                            for (int i = 0; i < g_iPlatforms; i++) {
+                                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                                {
+                                    g_sChar.m_cLocation.X--;
+                                }
+                            }
+                        }
+                        if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
+                        {
+                            g_sProj.m_cLocation.Y++;
+                        }
+                        g_jElapsedTime = 0;
                     }
+                    g_jElapsedTime = 0;
                 }
-                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-                {
-                    g_sProj.m_cLocation.Y++;
-                }
-                g_jElapsedTime = 0;
             }
-            g_jElapsedTime = 0;
         }
-    }
     if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
     {
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X - 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-        for (int i = 0;i< g_iPlatforms; i++) {
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+        for (int i = 0; i< g_iPlatforms; i++) {
             if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
             }
         }
     }
@@ -1068,6 +1072,7 @@ void seraphUlt()
 
 void focusAttack()
 {
+    int move;
     if (g_sFocus == true)
     {
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && (g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 || g_sChar.m_cLocation.X > 2))
@@ -1080,7 +1085,16 @@ void focusAttack()
             {
                 if (su >= 1 && su < 25 && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X)
                 {
-                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    move = g_sChar.m_cLocation.X + 2;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && move-1 == g_aPlatformsX[i]) {
+                            move = g_sChar.m_cLocation.X - 1;
+                        }
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && move == g_aPlatformsX[i]) {
+                            move = g_sChar.m_cLocation.X - 2;
+                        }
+                    }
+                    g_sChar.m_cLocation.X = move;
                     su++;
                     g_suElapsedTime = 0;
                     g_slashdelay = 0;
@@ -1088,6 +1102,11 @@ void focusAttack()
                 if (su >= 1 && su < 25 && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X)
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                        }
+                    }
                     su++;
                     g_suElapsedTime = 0;
                     g_slashdelay = 0;
@@ -1616,6 +1635,7 @@ void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderCharacter();  // renders the character into the buffer
     renderHUD();
+    // renderInputEvents();
 }
 
 void renderHUD() {
@@ -1671,6 +1691,21 @@ void renderSavedGame() {
 
 void renderMap() {
     // Set up sample colours, and output shadings
+    int y = 0;
+    std::ifstream map("map.txt"); std::string line;
+    if (map.is_open()) {
+        std::string perLine;
+        while (std::getline(map, line)) {
+            perLine = line;
+            for (int x = 0; x < perLine.length(); x++) {
+                if (perLine[x] == '.') {
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                }
+            }
+            y++;
+        }
+    }
+    map.close();
     if (oneTime == 0)
         loadLevelData(1);
     oneTime = 1;
@@ -1691,14 +1726,13 @@ void renderCharacter()
     {
         g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
     }*/
-    if (g_sChar.m_dHealth <= 0)
+    if (g_sChar.m_dHealth > 0)
     {
-     
+        g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
     }
     g_Console.writeToBuffer(g_sEnemy.m_cLocation, c5, enemyColor);
     g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
     g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
-    g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 }
 
 void renderPlatform() {
@@ -1735,11 +1769,11 @@ void renderFramerate() {
     g_Console.writeToBuffer(c, ss.str());
 
     // displays the elapsed time
-    ss.str("");
+    /*ss.str("");
     ss << g_dElapsedTime << "secs";
     c.X = 0;
     c.Y = 0;
-    g_Console.writeToBuffer(c, ss.str(), 0x59);
+    g_Console.writeToBuffer(c, ss.str(), 0x59);*/
 }
 
 // this is an example of how you would use the input events
@@ -1775,15 +1809,15 @@ void renderInputEvents() {
     }
 
     // mouse events    
-    //ss.str("");
-    //ss << "Mouse position (" << g_mouseEvent.mousePosition.X << ", " << g_mouseEvent.mousePosition.Y << ")";
-    //g_Console.writeToBuffer(g_mouseEvent.mousePosition, ss.str(), 0x59);
-    //ss.str("");
+    ss.str("");
+    ss << "Mouse position (" << g_mouseEvent.mousePosition.X << ", " << g_mouseEvent.mousePosition.Y << ")";
+    g_Console.writeToBuffer(g_mouseEvent.mousePosition, ss.str(), 0x59);
+    ss.str("");
     switch (g_mouseEvent.eventFlags) {
     case 0:
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
             ss.str("Left Button Pressed");
-            g_Console.writeToBuffer(g_mouseEvent.mousePosition.X, g_mouseEvent.mousePosition.Y + 2, ss.str(), 0x59);
+            g_Console.writeToBuffer(20, 20, ss.str(), 0x59);
         }
         else if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED) {
             ss.str("Right Button Pressed");
@@ -1815,6 +1849,8 @@ void loadLevelData(int number) {
     int y = 0;
     std::string levelFile;
     std::string line2;
+    if (number == 0)
+        levelFile = "tutorial.txt";
     if (number == 1)
         levelFile = "levelone.txt";
     if (number == 2)
@@ -1858,6 +1894,16 @@ void loadLevelData(int number) {
     levelPtr.close();
 }
 
-void levelEditor() {
-
+void LEMoveChar() {
+    std::ostringstream ss;
+    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+        if (g_mouseEvent.mousePosition.X == g_sChar.m_cLocation.X && g_mouseEvent.mousePosition.Y == g_sChar.m_cLocation.Y) {
+            g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X;
+            g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;
+        }
+        if (g_mouseEvent.mousePosition.X == (g_sChar.m_cLocation.X + 1) && g_mouseEvent.mousePosition.Y == g_sChar.m_cLocation.Y) {
+            g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X - 1;
+            g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;
+        }
+    }
 }

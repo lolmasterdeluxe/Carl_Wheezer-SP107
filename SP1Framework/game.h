@@ -47,7 +47,8 @@ enum EGAMESTATES
     S_SPLASHSCREEN,
     S_GAME,
     S_COUNT,
-    S_MENU
+    S_MENU,
+    S_CUTSCENE
 };
 
 // struct for the game character
@@ -101,7 +102,7 @@ void loadLevelData(int number);
 void resetToStart();
 void renderSavedGame();
 void deletePlatforms();
-void levelEditor();
+void LEMoveChar();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

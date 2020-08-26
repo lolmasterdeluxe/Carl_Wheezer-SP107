@@ -38,6 +38,7 @@ int characterSelect;
 int startMenuSelect;
 int oneTime;
 int canDo;
+int saveTimer;
 
 //UI specific timers
 int g_iElapsedTime;
@@ -125,6 +126,7 @@ void init(void) {
     oneTime = 0;
     canDo = 0;
     level = 0;
+    saveTimer = 0;
     
     // sets the initial state for the game
     g_eGameState = S_START;
@@ -1895,17 +1897,17 @@ void renderToScreen() {
 void renderNewGameOption() {
     // renders the splash screen
     COORD c = g_Console.getConsoleSize();
-    string ch;
+    string ch; string desc;
     renderMenuBackground();
     c.Y /= 3;
     c.X = c.X / 2 - 9;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Space> to play", 0x09);
     c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    c.X = g_Console.getConsoleSize().X / 2 - 23;
     g_Console.writeToBuffer(c, "Press <Arrow Keys> to switch characters", 0x09);
     c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 13;
+    c.X = g_Console.getConsoleSize().X / 2 - 8;
     if (characterSelect == 0)
         ch = "Dewm Guy";
     if (characterSelect == 1)
@@ -1915,7 +1917,22 @@ void renderNewGameOption() {
     if (characterSelect == 3)
         ch = "Thorfinn";
     g_Console.writeToBuffer(c, ch, 0x09);
-    c.Y += 1;
+    c.Y += 4;
+    c.X = 0;
+    if (characterSelect == 0) {
+        desc = "Uses a shotgun (AOE) ranged weapon, has balanced health, damage and speed, has rage metre in which when full, enters rage mode where is able to insta kill lesser enemies while doing high damage to mini - bosses and boss for a few seconds";
+    }
+    if (characterSelect == 1) {
+        desc = "Uses a buster sword (close range), High health, high damage, low speed, can charge attack, build charge metre to do special move";
+    }
+    if (characterSelect == 2) {
+        desc = "Uses a katana (close range), low health, highest damage, highest speed, can dodge backwards and through enemy, build focus metre to insta kill anything in a straight line, can sneak such that is unnoticeable and cannot be attacked by enemies";
+    }
+    if (characterSelect == 3) {
+        desc = "Uses an axe (close range) and can change to bow (long range) , highest health, balanced damage, lowest speed, spirit metre slowly builds up overtime, or when enemies slain, and is used to summon a bear spirit which can attack enemies for him, whilst becoming invincible";
+    }
+    g_Console.writeToBuffer(c, desc, 0x09);
+    c.Y += 5;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
 }
@@ -1923,10 +1940,8 @@ void renderNewGameOption() {
 void renderStartMenu() {
     COORD c = g_Console.getConsoleSize();
     renderMenuBackground();
-    c.Y /= 3;
+    c.Y /= 1.5;
     c.X = c.X / 2 - 9;
-    g_Console.writeToBuffer(c, "Start Menu", 0x03);
-    c.Y += 1;
     if (startMenuSelect == 0) {
         c.X += 1;
         g_Console.writeToBuffer(c, "New Game", 0x09);

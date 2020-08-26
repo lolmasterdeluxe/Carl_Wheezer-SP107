@@ -35,6 +35,7 @@ double  g_suElapsedTime;//Seraph ult elapsed time
 double  g_udElapsedTime;//Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
 int characterSelect;
+int startMenuSelect;
 int oneTime;
 int canDo;
 
@@ -103,7 +104,7 @@ SGameChar   g_sEnemy[5];
 SGameChar   g_sPortal;
 SGameChar   g_sBossP1;  //Boss bottom half
 SGameChar   g_sBossP2;  //Boss top half
-EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
+EGAMESTATES g_eGameState; // initial state
 
 // Console object
 Console g_Console(100, 30, "Ninjas, monsters n' robots");
@@ -116,16 +117,16 @@ Console g_Console(100, 30, "Ninjas, monsters n' robots");
 // Output   : void
 //--------------------------------------------------------------
 void init(void) {
-
     // Set precision for floating point output
     g_dElapsedTime = 0.0;
     characterSelect = 0;
+    startMenuSelect = 0;
     oneTime = 0;
     canDo = 0;
     level = 0;
     
     // sets the initial state for the game
-    g_eGameState = S_SPLASHSCREEN;
+    g_eGameState = S_START;
 
     //loadLevelData(1);
 
@@ -230,10 +231,15 @@ void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     switch (g_eGameState) {
     case S_SPLASHSCREEN: gameplayKBHandler(keyboardEvent); // handle menu keyboard event for the splash screen
         break;
+    case S_START: gameplayKBHandler(keyboardEvent);
+        break;
     case S_GAME: gameplayKBHandler(keyboardEvent); // handle gameplay keyboard event 
         break;
     case S_MENU: gameplayKBHandler(keyboardEvent);
         break;
+    case S_CUTSCENE: break;
+    case S_WIN: break;
+    case S_LOSE: break;
     }
 }
 
@@ -278,7 +284,8 @@ void saveGame() {
 //--------------------------------------------------------------
 void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     // here, we map the key to our enums
-    EKEYS key = K_COUNT;
+    EKEYS key;
+    key = K_COUNT;
     switch (keyboardEvent.wVirtualKeyCode) {
     case 0x57: key = K_57; break; //W
     case 0x53: key = K_53; break; //S
@@ -292,6 +299,8 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case VK_RETURN: key = K_ENTER; break;
     case VK_LEFT: key = K_LEFT; break;
     case VK_RIGHT: key = K_RIGHT; break;
+    case VK_UP: key = K_UP; break;
+    case VK_DOWN: key = K_DOWN; break;
     }
     // a key pressed event would be one with bKeyDown == true
     // a key released event would be one with bKeyDown == false
@@ -349,6 +358,7 @@ void update(double dt) {
         break;
     case S_MENU: updateMenu();
         break;
+    case S_START: updateStart();
     }
     //processUserInput();
 }
@@ -399,13 +409,16 @@ void updateGame() {     // gameplay logic
         //seraphUlt(); //seraph star combo breaker
         focusAttack(); //Gin's focus ability
         nextLevel();
-        //LEMoveChar();
         //scroll();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
 
 void updateMenu() {
+    processUserInput();
+}
+
+void updateStart() {
     processUserInput();
 }
 
@@ -892,42 +905,59 @@ void downslam()
         if (slam >= 1 && slam < 3)
         {
             g_sChar.m_cLocation.Y--;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                    g_sChar.m_cLocation.Y++;
+                }
+            }
             g_sElapsedTime = 0;
             slam++;
         }
-        if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
-        {
-            g_sChar.m_cLocation.Y++;
-            slam++;
-            g_sElapsedTime = 0;
-        }
-        else if (slam == 6)
-        {
-            if (g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y+1 != g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
             {
                 g_sChar.m_cLocation.Y++;
-            }
-            else
-            {
-                slam = 0;
-                for (int i = 0; i < 5; i++)
-                {
-                    if (g_sChar.m_cLocation.X + 3 >= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X > g_sChar.m_cLocation.X)
-                    {
-                        g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X + 3;
-                        g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
-                        g_stun = -1;
-                    }
-                    if (g_sChar.m_cLocation.X - 3 <= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X < g_sChar.m_cLocation.X)
-                    {
-                        g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X - 3;
-                        g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
-                        g_stun = -1;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.Y--;
                     }
                 }
-                g_sAttackState = false;
+                slam++;
+                g_sElapsedTime = 0;
+            }
+            else if (slam == 6)
+            {
+                if (g_sChar.m_cLocation.Y + 1 != g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                {
+                    g_sChar.m_cLocation.Y++;
+                    for (int i = 0; i < g_iPlatforms; i++) {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.Y--;
+                        }
+                    }
+                }
+                else
+                {
+                    slam = 0;
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (g_sChar.m_cLocation.X + 3 >= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                        {
+                            g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X + 3;
+                            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
+                            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                            g_stun = -1;
+                        }
+                        if (g_sChar.m_cLocation.X - 3 <= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                        {
+                            g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X - 3;
+                            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
+                            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                            g_stun = -1;
+                        }
+                    }
+                    g_sAttackState = false;
+                }
             }
         }
     }
@@ -1319,6 +1349,8 @@ void setdamage()
         boss2 = std::string(3, c8) + c9;
         bossColor = 0x1A;
     }
+    if (g_sChar.m_cLocation.Y > g_Console.getConsoleSize().Y)
+        g_sChar.m_dHealth--;
     if (g_sChar.m_dHealth <= 0)
     {
         g_sChar.m_dHealth = 0;
@@ -1555,6 +1587,14 @@ void processUserInput() {
             g_eGameState = S_GAME;
             g_bPlayGame = true;
             break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            break;
         }
     }
     if (g_skKeyEvent[K_SPACE].keyReleased) {
@@ -1568,6 +1608,14 @@ void processUserInput() {
             g_bQuitGame = true;
             shutdown();
             break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            break;
         }
     }
     if (g_skKeyEvent[K_52].keyReleased) {
@@ -1579,6 +1627,14 @@ void processUserInput() {
             break;
         case S_MENU:
             break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            break;
         }
     }
     if (g_skKeyEvent[K_ENTER].keyReleased) {
@@ -1588,8 +1644,21 @@ void processUserInput() {
         case S_SPLASHSCREEN:
             break;
         case S_MENU:
-            saveGame();
+            //saveGame();
             g_eGameState = S_GAME;
+            break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            if (startMenuSelect == 1)
+                g_eGameState = S_SPLASHSCREEN;
+            else if (startMenuSelect == 0)
+                g_bPlayGame = true;
+                g_eGameState = S_GAME;
             break;
         }
     }
@@ -1604,6 +1673,14 @@ void processUserInput() {
             break;
         case S_MENU:
             break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            break;
         }
     }
     if (g_skKeyEvent[K_RIGHT].keyReleased) {
@@ -1611,15 +1688,48 @@ void processUserInput() {
         case S_GAME:
             break;
         case S_SPLASHSCREEN:
-            if (canDo == 0) {
-                characterSelect++;
-                if (characterSelect > 3)
-                    characterSelect = 0;
-                canDo = 1;
-            }
+            characterSelect++;
+            if (characterSelect > 3)
+                characterSelect = 0;
             break;
         case S_MENU:
             break;
+        case S_CUTSCENE:
+            break;
+        case S_WIN:
+            break;
+        case S_LOSE:
+            break;
+        case S_START:
+            break;
+        }
+    }
+    if (g_skKeyEvent[K_UP].keyReleased) {
+        switch (g_eGameState) {
+        case S_START:
+            startMenuSelect++;
+            if (startMenuSelect > 1)
+                startMenuSelect = 1;
+        case S_SPLASHSCREEN: break;
+        case S_GAME: break;
+        case S_MENU: break;
+        case S_CUTSCENE: break;
+        case S_WIN: break;
+        case S_LOSE: break;
+        }
+    }
+    if (g_skKeyEvent[K_DOWN].keyReleased) {
+        switch (g_eGameState) {
+        case S_START:
+            startMenuSelect--;
+            if (startMenuSelect < 0)
+                startMenuSelect = 0;
+        case S_SPLASHSCREEN: break;
+        case S_GAME: break;
+        case S_MENU: break;
+        case S_CUTSCENE: break;
+        case S_WIN: break;
+        case S_LOSE: break;
         }
     }
 }
@@ -1636,7 +1746,10 @@ void render() {
     clearScreen();      // clears the current screen and draw from scratch 
     switch (g_eGameState) {
     case S_SPLASHSCREEN: 
-        renderSplashScreen();
+        renderNewGameOption();
+        break;
+    case S_START:
+        renderStartMenu();
         break;
     case S_GAME: 
         renderGame(); 
@@ -1645,6 +1758,9 @@ void render() {
     case S_MENU: 
         renderMenu();
         break;
+    case S_CUTSCENE: break;
+    case S_WIN: break;
+    case S_LOSE: break;
     }
     // renderFramerate();      // renders debug information, frame rate, elapsed time, etc
     // renderInputEvents();    // renders status of input events
@@ -1687,32 +1803,13 @@ void renderToScreen() {
     g_Console.flushBufferToConsole();
 }
 
-void renderSplashScreen() {
+void renderNewGameOption() {
     // renders the splash screen
-    int y = 0;
-    std::ifstream map("menu.txt"); std::string line;
-    if (map.is_open()) {
-        std::string perLine;
-        while (std::getline(map, line)) {
-            perLine = line;
-            for (int x = 0; x < perLine.length(); x++) {
-                if (perLine[x] == '.') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
-                }
-                if (perLine[x] == '8') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
-                }
-            }
-            y++;
-        }
-    }
-
     COORD c = g_Console.getConsoleSize();
     string ch;
+    renderMenuBackground();
     c.Y /= 3;
     c.X = c.X / 2 - 9;
-    g_Console.writeToBuffer(c, "Start Menu", 0x03);
-    c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     g_Console.writeToBuffer(c, "Press <Space> to play", 0x09);
     c.Y += 1;
@@ -1734,12 +1831,54 @@ void renderSplashScreen() {
     g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
 }
 
+void renderStartMenu() {
+    COORD c = g_Console.getConsoleSize();
+    renderMenuBackground();
+    c.Y /= 3;
+    c.X = c.X / 2 - 9;
+    g_Console.writeToBuffer(c, "Start Menu", 0x03);
+    c.Y += 1;
+    if (startMenuSelect == 0) {
+        c.X += 1;
+        g_Console.writeToBuffer(c, "New Game", 0x09);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Load Game", 0x90);
+    }
+    if (startMenuSelect == 1) {
+        c.X += 1;
+        g_Console.writeToBuffer(c, "New Game", 0x90);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Load Game", 0x09);
+    }
+}
+
+void renderMenuBackground() {
+    int y = 0;
+    std::ifstream map("menu.txt"); std::string line;
+    if (map.is_open()) {
+        std::string perLine;
+        while (std::getline(map, line)) {
+            perLine = line;
+            for (int x = 0; x < perLine.length(); x++) {
+                if (perLine[x] == '.') {
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                }
+                if (perLine[x] == '8') {
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_BLUE);
+                }
+            }
+            y++;
+        }
+    }
+}
+
 void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderCharacter();  // renders the character into the buffer
     renderHUD();
     renderPortal();
-    // renderInputEvents();
+    LEMoveChar();
+    //renderInputEvents();
 }
 
 void renderHUD() {
@@ -1773,7 +1912,7 @@ void renderHUD() {
 }
 
 void nextLevel() {
-    if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y) {
+    if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
         oneTime = 0;
         level++;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
@@ -1786,8 +1925,7 @@ void nextLevel() {
             g_sBossP1.m_cLocation.Y = NULL;
             g_sBossP2.m_cLocation.Y = NULL;
         }
-        delete[] g_aPlatformsX;
-        delete[] g_aPlatformsY;
+        deletePlatforms();
     }
     if (oneTime == 0) {
         if (level == 0)
@@ -1806,6 +1944,7 @@ void nextLevel() {
 
 void renderMenu() {
     COORD c = g_Console.getConsoleSize();
+    renderMenuBackground();
     c.Y /= 3;
     c.X = c.X / 2 - 10;
     g_Console.writeToBuffer(c, "Pause menu", 0x0F);
@@ -1826,7 +1965,7 @@ void renderSavedGame() {
     c.Y /= 3;
     c.X = c.X / 2 - 10;
     c.Y--;
-    g_Console.writeToBuffer(c, "Saved game", 0x0F);
+    g_Console.writeToBuffer(c, "Saved game", 0x09);
 }
 
 void renderMap() {
@@ -2047,8 +2186,8 @@ void loadLevelData(int number) {
 }
 
 void LEMoveChar() {
-    std::ostringstream ss;
-    if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+    if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED) {
+        g_mouseEvent.eventFlags = 0;
         if (g_mouseEvent.mousePosition.X == g_sChar.m_cLocation.X && g_mouseEvent.mousePosition.Y == g_sChar.m_cLocation.Y) {
             g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X;
             g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;

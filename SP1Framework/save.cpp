@@ -212,6 +212,6 @@ int main1() {
 	// Save char state
 	//state.saveState("25", "29", "00", "50", "10");
 	// Save enemy state
-	state.saveState("25", "29", "00", "50", "10", "30", "29", "35", "29");
+	//state.saveState("25", "29", "00", "50", "10", "30", "29", "35", "29");
 	return 0;
 }

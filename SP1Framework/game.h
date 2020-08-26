@@ -38,6 +38,8 @@ enum EKEYS
     K_SPACE,
     K_LEFT,
     K_RIGHT,
+    K_UP,
+    K_DOWN,
     K_COUNT
 };
 
@@ -48,7 +50,10 @@ enum EGAMESTATES
     S_GAME,
     S_COUNT,
     S_MENU,
-    S_CUTSCENE
+    S_CUTSCENE,
+    S_WIN,
+    S_LOSE,
+    S_START
 };
 
 // struct for the game character
@@ -85,7 +90,7 @@ void moveEnemy(int n, double t, int d); //set distance and speed for enemy patro
 void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 
-void renderSplashScreen();  // renders the splash screen
+void renderNewGameOption();  // renders the splash screen
 void renderGame();          // renders the game stuff
 void renderMap();           // renders the map to the buffer first
 void renderHUD();
@@ -106,6 +111,9 @@ void deletePlatforms();
 void LEMoveChar();
 void nextLevel();
 void renderPortal();
+void renderMenuBackground();
+void renderStartMenu();
+void updateStart();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

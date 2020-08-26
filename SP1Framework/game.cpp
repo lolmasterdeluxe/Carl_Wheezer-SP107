@@ -105,7 +105,7 @@ SGameChar   g_sEnemy[5];
 SGameChar   g_sPortal;
 SGameChar   g_sBossP1;  //Boss bottom half
 SGameChar   g_sBossP2;  //Boss top half
-EGAMESTATES g_eGameState; // initial state
+EGAMESTATES g_eGameState = S_START; // initial state
 
 // Console object
 Console g_Console(100, 30, "Portal Legends");
@@ -1736,11 +1736,16 @@ void processUserInput() {
         case S_LOSE:
             break;
         case S_START:
-            if (startMenuSelect == 1)
+            if (startMenuSelect == 1) {
                 g_eGameState = S_SPLASHSCREEN;
-            else if (startMenuSelect == 0)
+            }
+            else if (startMenuSelect == 0) {
                 g_bPlayGame = true;
                 g_eGameState = S_GAME;
+            }
+            else if (startMenuSelect == -1) {
+                g_bQuitGame = true;
+            }
             break;
         }
     }
@@ -1804,8 +1809,8 @@ void processUserInput() {
         switch (g_eGameState) {
         case S_START:
             startMenuSelect--;
-            if (startMenuSelect < 0)
-                startMenuSelect = 0;
+            if (startMenuSelect < -1)
+                startMenuSelect = -1;
         case S_SPLASHSCREEN: break;
         case S_GAME: break;
         case S_MENU: break;
@@ -1927,12 +1932,24 @@ void renderStartMenu() {
         g_Console.writeToBuffer(c, "New Game", 0x09);
         c.Y += 1;
         g_Console.writeToBuffer(c, "Load Game", 0x90);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Exit Game", 0x09);
     }
     if (startMenuSelect == 1) {
         c.X += 1;
         g_Console.writeToBuffer(c, "New Game", 0x90);
         c.Y += 1;
         g_Console.writeToBuffer(c, "Load Game", 0x09);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Exit Game", 0x09);
+    }
+    if (startMenuSelect == -1) {
+        c.X += 1;
+        g_Console.writeToBuffer(c, "New Game", 0x09);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Load Game", 0x09);
+        c.Y += 1;
+        g_Console.writeToBuffer(c, "Exit Game", 0x90);
     }
 }
 

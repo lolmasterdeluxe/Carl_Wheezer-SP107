@@ -50,7 +50,8 @@ int l = 0;       //player movement counter
 int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
 int p = 0;       //slash delay counter and down slam condition
-int bossd = 3;   //boss initial location
+int ne = 5;      //number of enemies
+int bossd = 5;   //boss initial location
 int dashl = 0;   //counter for dodge (left)
 int dashr = 0;   //counter for dodge (right)
 int su = 0;      //ultimate counter
@@ -106,7 +107,7 @@ SGameChar   g_sBossP2;  //Boss top half
 EGAMESTATES g_eGameState = S_SPLASHSCREEN; // initial state
 
 // Console object
-Console g_Console(100, 30, "Ninjas, monsters n' robots");
+Console g_Console(100, 30, "Portal Legends");
 
 //--------------------------------------------------------------
 // Purpose  : Initialisation function
@@ -136,8 +137,6 @@ void init(void) {
     state.loadSave();
     //g_sChar.m_cLocation.X = state.returnX();
     //g_sChar.m_cLocation.Y = state.returnY();
-    g_sChar.m_cLocation.X = 2;
-    g_sChar.m_cLocation.Y = 28;
     //g_sEnemy[0].m_cLocation.X = 10;
     //g_sEnemy[0].m_cLocation.Y = 28;
     //g_sEnemy[1].m_cLocation.X = 20;
@@ -156,6 +155,10 @@ void init(void) {
     //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
     //g_sChar.m_bActive = state.returnCharState();
     //g_sChar.m_dHealth = state.returnCharHealth();
+    /*g_sBossP1.m_cLocation.X = bossd;
+    g_sBossP1.m_cLocation.Y = 28;
+    g_sBossP2.m_cLocation.X = bossd;
+    g_sBossP2.m_cLocation.Y = 28 - 1;*/
     g_sEnemy[0].m_dHealth = 5;
     g_sEnemy[1].m_dHealth = 5;
     g_sEnemy[2].m_dHealth = 5;
@@ -386,18 +389,33 @@ void splashScreenWait() {      // waits for time to pass in splash screen
 void updateGame() {     // gameplay logic
     if (g_bPlayGame) {
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
-        moveCharacter();    // moves the player by *2 steps, collision detection, physics, etc
-        sneakCharacter();   // Gin sneak ability
-        moveProjectile();   // sound can be played here too.
-        //slashAttack(0.2, 10, 3); //slash forward by *10 steps, speed of slash is *.2 seconds
-        downslam();            //Seraph down slam attack
-        dodge(5);              //dodge for Gin
-        moveEnemy(5, 0.5, 5); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
-        moveBoss(30, 0.05, bossd, 10); //movement system same as enemy but with delay at end of path
+        moveCharacter(2);    // moves the player by *2 steps, collision detection, physics, etc
+        if (characterSelect == 0)  //Dewm Guy
+        {
+            moveProjectile(); //sound can be played here too.
+            setUltimate(50); //Set ultimate capacity to *50
+        }
+        if (characterSelect == 1) { //Seraph
+            slashAttack(0.2, 10); //slash forward by *10 steps, speed of slash is *.2 seconds
+            downslam();            //Seraph down slam attack
+            seraphUlt(); //seraph star combo breaker
+            setUltimate(50); //Set ultimate capacity to *50
+        }
+        if (characterSelect == 2) { //Gin
+            slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
+            sneakCharacter();   // Gin sneak ability
+            dodge(5);           //dodge for Gin (10 steps)
+            focusAttack(); //Gin's focus ability
+            setUltimate(75); //Set ultimate capacity to *50
+        }
+        if (characterSelect == 3)
+        {
+
+        }
+        moveEnemy(5, 0.5, 5, 0); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveBoss(45, 0.05, 2, bossd); //movement system same as enemy but with delay at end of path
         setdamage();       //find reason for damage
-        setUltimate(50); //Set ultimate capacity to *50
-        //seraphUlt(); //seraph star combo breaker
-        focusAttack(); //Gin's focus ability
+        seraphUlt(); //seraph star combo breaker
         nextLevel();
         //LEMoveChar();
         //scroll();
@@ -436,13 +454,13 @@ void updateMenu() {
 //
 //}
 
-void moveCharacter() {
+void moveCharacter(int n) {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
     int oneStep;
         if (g_skKeyEvent[K_57].keyDown) {
             for (int j = 0; j < g_iPlatforms; j++) {
-                if (g_sChar.m_cLocation.Y+1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) //Jump up
+                if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) //Jump up
                 {
                     l = 0;
                     l++;
@@ -487,16 +505,12 @@ void moveCharacter() {
                         }
                     }
                 }
-                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-                {
-                    g_sProj.m_cLocation.Y--;
-                }
                 g_jElapsedTime = 0;
                 l++;
             }
         }
         for (int j = 0; j < g_iPlatforms; j++) {
-            if (l == 4 && g_sUltimate == false && g_sChar.m_cLocation.Y+1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
+            if (l >= 4 && g_sUltimate == false && g_sChar.m_cLocation.Y - 1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
             {
                 if (g_jElapsedTime > 0.05)
                 {
@@ -561,53 +575,49 @@ void moveCharacter() {
                                 }
                             }
                         }
-                        if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-                        {
-                            g_sProj.m_cLocation.Y++;
-                        }
                         g_jElapsedTime = 0;
                     }
                     g_jElapsedTime = 0;
                 }
             }
         }
-    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)*/) //LEFT
-    {
-        /*Beep(1440, 30);*/
-        oneStep = g_sChar.m_cLocation.X - 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
-        for (int i = 0; i< g_iPlatforms; i++) {
-            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-            }
-            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-            }
-        }
-    }
-    //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-    //    /*Beep(1440, 30);*/
-    //    g_sChar.m_cLocation.Y++;
-    //    for (int x = 0; x < g_iPlatforms; x++) {
-    //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-    //            g_sChar.m_cLocation.Y--;
-    //        }
-    //    }
-    //}
-    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false/*&& g_sProj.m_cLocation.X == g_sChar.m_cLocation.X*/) //RIGHT
-    {
-        /*Beep(1440, 30);*/
-        oneStep = g_sChar.m_cLocation.X + 1;
-        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-        for (int i = 0; i < g_iPlatforms; i++) {
-            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-            }
-            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+        if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false) //LEFT
+        {
+            /*Beep(1440, 30);*/
+            oneStep = g_sChar.m_cLocation.X - n;
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+                }
+                else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+                }
             }
         }
-    }
+        //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
+        //    /*Beep(1440, 30);*/
+        //    g_sChar.m_cLocation.Y++;
+        //    for (int x = 0; x < g_iPlatforms; x++) {
+        //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+        //            g_sChar.m_cLocation.Y--;
+        //        }
+        //    }
+        //}
+        if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false) //RIGHT
+        {
+            /*Beep(1440, 30);*/
+            oneStep = g_sChar.m_cLocation.X + n;
+            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+                }
+                else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+                }
+            }
+        }
 }
 
 void sneakCharacter()
@@ -741,6 +751,12 @@ void dodge(int i)
     {
         g_sInvulnerable = true;
         dashl++;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                g_sInvulnerable = false;
+            }
+        }
     }
     if (g_doElapsedTime > 0.01)
     {
@@ -749,6 +765,12 @@ void dodge(int i)
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
             g_doElapsedTime = 0;
             dashl++;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    g_sInvulnerable = false;
+                }
+            }
         }  
     }
     if (g_slashdelay > 0.2 && dashl >= i)
@@ -760,17 +782,29 @@ void dodge(int i)
     {
         g_sInvulnerable = true;
         dashr++;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]){
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                g_sInvulnerable = false;
+            }
+        }
     }
     if (g_doElapsedTime > 0.01)
     {
-        if (dashr >= 1 && dashr <= i && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
+        if (dashr >= 1 && dashr < i && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3)
         {
             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
             g_doElapsedTime = 0;
             dashr++;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    g_sInvulnerable = false;
+                }
+            }
         }
     }
-    if (g_slashdelay > 0.5 && dashr >= i)
+    if (g_slashdelay > 0.2 && dashr >= i)
     {
         g_sInvulnerable = false;
         dashr = 0;
@@ -778,7 +812,7 @@ void dodge(int i)
     }
 }
 
-void slashAttack(double n, int i, int j)
+void slashAttack(double n, int i)
 {
     g_sAttackState = false;
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
@@ -788,14 +822,15 @@ void slashAttack(double n, int i, int j)
         {
             if (s != i)
             {
-               
-                /*if (s == 1)
-                {
-                    Beep(1440, 30);
-                }*/
                 g_sChar.m_cLocation.X++;
                 g_sElapsedTime = 0;
                 s++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+                        g_sAttackState = false;
+                    }
+                }
             }
             else if (s == i && g_slashdelay > sd)
             {
@@ -818,6 +853,12 @@ void slashAttack(double n, int i, int j)
     {
             g_sChar.m_cLocation.X++;
             s++;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+                    g_sAttackState = false;
+                }
+            }
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
     {
@@ -833,7 +874,12 @@ void slashAttack(double n, int i, int j)
                 g_sChar.m_cLocation.X--;
                 g_sElapsedTime = 0;
                 s++;
-
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        g_sAttackState = false;
+                    }
+                }
             }
             else if (s == i && g_slashdelay > sd)
             {
@@ -856,6 +902,12 @@ void slashAttack(double n, int i, int j)
     {
         g_sChar.m_cLocation.X--;
         s++;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                g_sAttackState = false;
+            }
+        }
     }
     
     if (g_staminaregen > 1 && sd != 1)
@@ -871,15 +923,15 @@ void slashAttack(double n, int i, int j)
 
 void downslam()
 {
-    if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1 && p != 3 && !g_sUltimate) //DOWN slam attack with S
+    if (g_skKeyEvent[K_53].keyDown && p != 3 && !g_sUltimate) //DOWN slam attack with S
     {
-        slam++;
         l = 0;
+        slam++;
         for (int x = 0; x < g_iPlatforms; x++)
         {
-            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+            if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[x])
             {
-                g_sChar.m_cLocation.Y--;
+                slam--;
             }
         }
     }
@@ -894,41 +946,56 @@ void downslam()
             g_sChar.m_cLocation.Y--;
             g_sElapsedTime = 0;
             slam++;
+            for (int x = 0; x < g_iPlatforms; x++)
+            {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x])
+                {
+                    g_sChar.m_cLocation.Y++;
+                }
+            }
         }
-        if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+        for (int i = 0; i < g_iPlatforms; i++) 
         {
-            g_sChar.m_cLocation.Y++;
-            slam++;
-            g_sElapsedTime = 0;
-        }
-        else if (slam == 6)
-        {
-            if (g_sChar.m_cLocation.Y != g_Console.getConsoleSize().Y - 1)
+            if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y > g_aPlatformsY[x])
             {
                 g_sChar.m_cLocation.Y++;
+                slam++;
+                g_sElapsedTime = 0;
             }
-            else
-            {
-                slam = 0;
-                for (int i = 0; i < 5; i++)
+        }
+        if (slam >= 6)
+        {
+           for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.Y > g_aPlatformsY[i] && g_sChar.m_cLocation.X > g_aPlatformsX[i])
                 {
-                    if (g_sChar.m_cLocation.X + 3 >= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X > g_sChar.m_cLocation.X)
-                    {
-                        g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X + 3;
-                        g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
-                        g_stun = -1;
-                    }
-                    if (g_sChar.m_cLocation.X - 3 <= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X < g_sChar.m_cLocation.X)
-                    {
-                        g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X - 3;
-                        g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
-                        g_stun = -1;
-                    }
+                    g_sChar.m_cLocation.Y++;
+                    g_sElapsedTime = 0;
+                    l = 1;
+                    break;
                 }
-                g_sAttackState = false;
+                
             }
+            for (int i = 0; i < 5; i++)
+            {
+                if (g_sChar.m_cLocation.X + 3 >= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                {
+                    g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X + 3;
+                    g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                    g_stun = -1;
+                }
+                if (g_sChar.m_cLocation.X - 3 <= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                {
+                    g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X - 3;
+                    g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                    g_stun = -1;
+                }
+            }
+            slam = 0;
+            
+            g_sAttackState = false;
+            
         }
     }
 }
@@ -1112,7 +1179,7 @@ void seraphUlt()
         }
         else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
         { 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < ne; i++)
             {
                 g_sEnemy[i].m_dHealth = 0;
             }
@@ -1198,7 +1265,7 @@ void focusUlt()
 
 void setdamage()
 {
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < ne; i++)
     {
         if (g_sEnemy[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy[i].m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
         {
@@ -1275,7 +1342,7 @@ void setdamage()
     //        g_hElapsedTime = 0;
     //    }
     //}
-    for (int i = 0; i < 5; i++)  //check projectile damage
+    for (int i = 0; i < ne; i++)  //check projectile damage
     {
         if ((g_sProj.m_cLocation.X == g_sEnemy[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5[i] != 0)
         {
@@ -1306,7 +1373,7 @@ void setdamage()
         if (g_sEnemy[i].m_dHealth <= 0)
         {
             c5[i] = 0;
-            enemyColor[i] = BACKGROUND_RED;
+            enemyColor[i] = 0x4A;
         }
     }
     if (g_sBossP1.m_dHealth <= 0)
@@ -1349,26 +1416,45 @@ void setUltimate(int M)
         if (g_sChar.m_dMana <= 0)
         {
             g_sChar.m_dMana = 0;
-            g_sRage = !g_sRage;
-            //g_sUltimate = !g_sUltimate;
-            //g_sFocus = false;
+            if (characterSelect == 0)
+            {
+                g_sRage = !g_sRage;
+            }
+            if (characterSelect == 1)
+            {
+                g_sUltimate = !g_sUltimate;
+            }
+            if (characterSelect == 2)
+            {
+                g_sFocus = !g_sFocus;
+            }
         }
     }
     if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
     {
-        //g_sUltimate = !g_sUltimate;
-        g_sRage = !g_sRage;
-        //g_sFocus = !g_sFocus;
-        //g_sChar.m_cLocation.X = x / 2 + 7;
-        //g_sChar.m_cLocation.Y = y / 2;
+        if (characterSelect == 0)
+        {
+            g_sRage = !g_sRage;
+        }
+        if (characterSelect == 1)
+        {
+            g_sChar.m_cLocation.X = x / 2 + 7;
+            g_sChar.m_cLocation.Y = y / 2;
+            g_sUltimate = !g_sUltimate;
+        }
+        if (characterSelect == 2)
+        {
+            g_sFocus = !g_sFocus;
+        }
         su = 0;
     }
+
 }
 
-void moveEnemy(int n, double t, int d)
+void moveEnemy(int n, double t, int d, int e)
 {
 
-    if (c5[0] != 0 && !g_sUltimate && !g_sFocus)
+    if (c5[e] != 0 && !g_sUltimate && !g_sFocus)
     {
         if (g_stun > 2)
         {
@@ -1376,15 +1462,15 @@ void moveEnemy(int n, double t, int d)
             {
                 if (i < k)
                 {
-                    g_sEnemy[0].m_cLocation.X = g_sEnemy[0].m_cLocation.X + 1;
+                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
                     g_eElapsedTime = 0;
                     i++;
                 }
                 else
                 {
-                    g_sEnemy[0].m_cLocation.X = g_sEnemy[0].m_cLocation.X - 1;
+                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
                     g_eElapsedTime = 0;
-                    if (g_sEnemy[0].m_cLocation.X <= d)
+                    if (g_sEnemy[e].m_cLocation.X <= d)
                     {
                         i = 0;
                     }
@@ -1392,7 +1478,7 @@ void moveEnemy(int n, double t, int d)
             }
         }
 
-        for (int k = 0; k < 5; k++)
+        for (int k = 0; k < ne; k++)
         {
             if (g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X + 2 >= g_sEnemy[k].m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy[k].m_cLocation.X && g_sAttackState == true) //push right
             {
@@ -1654,20 +1740,22 @@ void render() {
 void resetToStart() {
     g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
     g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
-    if (characterSelect == 0) {
-        g_sChar.m_dHealth = 2000;
-        g_sChar.m_dMana = 100;
+    l = 1;
+    if (characterSelect == 0) { //Dewm Guy
+        g_sChar.m_dHealth = 25;
+        g_sChar.m_dMana = 0;
+
     }
-    if (characterSelect == 1) {
-        g_sChar.m_dHealth = 1000;
-        g_sChar.m_dMana = 50;
+    if (characterSelect == 1) { //Seraph
+        g_sChar.m_dHealth = 50;
+        g_sChar.m_dMana = 0;
     }
-    if (characterSelect == 2) {
-        g_sChar.m_dHealth = 2500;
-        g_sChar.m_dMana = 25;
+    if (characterSelect == 2) { //Gin
+        g_sChar.m_dHealth = 20;
+        g_sChar.m_dMana = 0;
     }
-    if (characterSelect == 3) {
-        g_sChar.m_dHealth = 1500;
+    if (characterSelect == 3) { //Thorfinn
+        g_sChar.m_dHealth = 55;
         g_sChar.m_dMana = 0;
     }
 }
@@ -1697,7 +1785,7 @@ void renderSplashScreen() {
             perLine = line;
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == '.') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                    g_Console.writeToBuffer(x, y, " ", 0X0000);
                 }
                 if (perLine[x] == '8') {
                     g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
@@ -1709,7 +1797,7 @@ void renderSplashScreen() {
 
     COORD c = g_Console.getConsoleSize();
     string ch;
-    c.Y /= 3;
+    c.Y = 18;
     c.X = c.X / 2 - 9;
     g_Console.writeToBuffer(c, "Start Menu", 0x03);
     c.Y += 1;
@@ -1721,7 +1809,7 @@ void renderSplashScreen() {
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
     if (characterSelect == 0)
-        ch = "Dwem Guy";
+        ch = "Dewm Guy";
     if (characterSelect == 1)
         ch = "Seraph";
     if (characterSelect == 2)
@@ -1744,32 +1832,32 @@ void renderGame() {
 
 void renderHUD() {
     const WORD colors[] = {
-        0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F,
+        0x0A, 0x0B, 0x0C, 0x4D, 0x5E, 0x6F,
         0xA1, 0xB2, 0xC3, 0xD4, 0xE5, 0xF6, 0x00
     };
     COORD c;
-    c.X = 0;
-    c.Y = 1;
+    c.X = 1;
+    c.Y = 0;
     colour(colors[1]);
     std::string health = std::to_string(g_sChar.m_dHealth);
     health = health.substr(0, 4);
     std::string healthDisplay = "Health = " + health;
     g_Console.writeToBuffer(c, healthDisplay, colors[0]);
     
-    c.X = 0;
-    c.Y = 2;
+    c.X = 17;
+    c.Y = 0;
     colour(colors[1]);
     std::string mana = std::to_string(g_sChar.m_dMana);
     mana = mana.substr(0, 4);
     std::string manaDisplay = "Ultimate = " + mana;
-    g_Console.writeToBuffer(c, manaDisplay, colors[0]);
+    g_Console.writeToBuffer(c, manaDisplay, colors[1]);
 
-    c.X = 0;
-    c.Y = 3;
+    c.X = 35;
+    c.Y = 0;
     colour(colors[1]);
     int elapsed = g_dElapsedTime;
     std::string elapsedTime = "Elapsed time = " + std::to_string(elapsed);
-    g_Console.writeToBuffer(c, elapsedTime, colors[0]);
+    g_Console.writeToBuffer(c, elapsedTime, colors[2]);
 }
 
 void nextLevel() {
@@ -1791,17 +1879,19 @@ void nextLevel() {
     }
     if (oneTime == 0) {
         if (level == 0)
-            loadLevelData(1);
+            loadLevelData(0);
         if (level == 1)
-            loadLevelData(2);
+            loadLevelData(1);
         if (level == 2)
-            loadLevelData(3);
+            loadLevelData(2);
         if (level == 3)
+            loadLevelData(3);
+        if (level == 4)
             loadLevelData(4);
         oneTime = 1;
     }
-    if (level > 3)
-        level = 3;
+    if (level > 4)
+        level = 4;
 }
 
 void renderMenu() {
@@ -1850,28 +1940,75 @@ void renderMap() {
         renderPlatform();
 }
 
-void renderCharacter() 
+void renderCharacter()
 {
     // Draw the location of the character and weapon
-    WORD charColor = 0x2E; //non - ultimate mode color
+
+    // Draw the location of the character and weapon
+    WORD charColor; //non - ultimate mode color
     if (g_sRage == true)
     {
         charColor = 0x4E; //Ultimate mode
     }
+    if (g_sUltimate == true)
+    {
+        charColor = 0x1A;
+    }
+    if (g_sFocus == true)
+    {
+        charColor = 0x9B;
+    }
     if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
     {
-        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1F);
+        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
     }
-    if (g_sChar.m_dHealth > 0)
-    {
-        g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
-    }
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < ne; i++)
     {
         g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
+        /*if (c5[i] == 0)
+        {
+            if (g_uSpawn > 3)
+            {
+                c5[i] = 152;
+                enemyColor[i] = 0x4F;
+                g_sEnemy[i].m_dHealth = 5;
+                g_uSpawn = 0;
+            }
+        }*/
+
     }
     g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
     g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+    if (g_sChar.m_dHealth > 0) //ASCII Designs
+    {
+        if (characterSelect == 0) //Dewm Guy
+        {
+            charColor = 0x2E;
+            c1 = 203;
+            c2 = 203;
+            g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+        }
+        if (characterSelect == 1) //Seraph
+        {
+            charColor = 0x0E; //F for white
+            c1 = 210;
+            c2 = 215;
+            c3 = std::string(1, c1) + c2;
+            g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+        }
+        if (characterSelect == 2) //Gin
+        {
+            charColor = 0x1F;
+            c1 = 234;
+            c2 = 234;
+            c3 = std::string(1, c1) + c2;
+            g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+        }
+        if (characterSelect == 3)
+        {
+            g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+        }
+    }
 }
 
 void renderPlatform() {
@@ -1887,10 +2024,10 @@ bool checkCollision() {
         if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
-        if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+        if (g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
-        if (g_sChar.m_cLocation.X-1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+        if (g_sChar.m_cLocation.X - 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
     }
@@ -1902,7 +2039,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << 1.0 / g_dDeltaTime << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/g_sChar.m_cLocation.Y << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

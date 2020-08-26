@@ -33,6 +33,7 @@ enum EKEYS
     K_52,    //reset           (R)
     K_51,    //Dodge backwards (Q)
     K_45,    //Dodge forwards  (E)
+    K_55,    //Gin's Ult       (U)
     K_ENTER, //enter         (ENTER)
     K_ESCAPE,
     K_SPACE,
@@ -84,6 +85,7 @@ void slashAttack(double n, int i); //Slash attack
 void downslam();            //Seraph's down slam
 void seraphUlt();           //Seraph combo breaker
 void focusAttack();         //Gin's focus ability
+void focusUlt();            //Gin's focus ultimate
 void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d, int e); //set distance and speed for enemy patrolling

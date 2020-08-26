@@ -46,6 +46,7 @@ int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
 int p = 0;       //slash delay counter and down slam condition
 int ne = 5;      //number of enemies
+int fe = 0.01;   //Focus delay
 int bossd = 5;   //boss initial location
 int dashl = 0;   //counter for dodge (left)
 int dashr = 0;   //counter for dodge (right)
@@ -150,7 +151,7 @@ void init(void) {
     g_sEnemy[2].m_dHealth = 5;
     g_sEnemy[3].m_dHealth = 5;
     g_sEnemy[4].m_dHealth = 5;
-    g_sBossP1.m_dHealth = 50;
+    g_sBossP1.m_dHealth = 100;
     g_sChar.m_dMana = state.returnCharMana();
     g_sChar.m_dMana = 50;
     g_sPortal.m_cLocation.X = 97;
@@ -282,6 +283,7 @@ void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent) {
     case 0x52: key = K_52; break; //R
     case 0x51: key = K_51; break; //Q
     case 0x45: key = K_45; break; //E
+    case 0x55: key = K_55; break; //U
     case VK_SPACE: key = K_SPACE; break;
     case VK_ESCAPE: key = K_ESCAPE; break;
     case VK_RETURN: key = K_ENTER; break;
@@ -387,30 +389,30 @@ void updateGame() {     // gameplay logic
         moveCharacter(2);    // moves the player by *2 steps, collision detection, physics, etc
         if (characterSelect == 0)  //Dewm Guy
         {
-            moveProjectile(); //sound can be played here too.
-            setUltimate(50); //Set ultimate capacity to *50
+            moveProjectile(); //Shooting mechanic
+            setUltimate(50);  //Set ultimate capacity to *50
         }
         if (characterSelect == 1) { //Seraph
-            slashAttack(0.2, 10); //slash forward by *10 steps, speed of slash is *.2 seconds
-            downslam();            //Seraph down slam attack
-            seraphUlt(); //seraph star combo breaker
-            setUltimate(50); //Set ultimate capacity to *50
+            slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
+            downslam();             //Seraph down slam attack
+            seraphUlt();            //seraph star combo breaker
+            setUltimate(50);        //Set ultimate capacity to *50
         }
         if (characterSelect == 2) { //Gin
             slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
-            sneakCharacter();   // Gin sneak ability
-            dodge(5);           //dodge for Gin (10 steps)
-            focusAttack(); //Gin's focus ability
-            setUltimate(75); //Set ultimate capacity to *50
+            sneakCharacter();     // Gin sneak ability
+            dodge(5);             //dodge for Gin (10 steps)
+            focusAttack();        //Gin's focus ability
+            focusUlt();           //Gin's focus ultimate
+            setUltimate(75);      //Set ultimate capacity to *50
         }
         if (characterSelect == 3)
         {
 
         }
-        moveEnemy(5, 0.5, 5, 0); //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
-        moveBoss(45, 0.05, 2, bossd); //movement system same as enemy but with delay at end of path
-        setdamage();       //find reason for damage
-        seraphUlt(); //seraph star combo breaker
+        moveEnemy(5, 0.5, 5, 0);  //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
+        setdamage();              //find reason for damage              /
         nextLevel();
         //scroll();
         //LEMoveChar();
@@ -457,33 +459,71 @@ void moveCharacter(int n) {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
     int oneStep;
-        if (g_skKeyEvent[K_57].keyDown) {
-            for (int j = 0; j < g_iPlatforms; j++) {
-                if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) //Jump up
-                {
-                    l = 0;
-                    l++;
-                    g_sChar.m_cLocation.Y++;
-                    for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                            g_sChar.m_cLocation.Y--;
-                        }
+    if (g_skKeyEvent[K_57].keyDown) {
+        for (int j = 0; j < g_iPlatforms; j++) {
+            if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) //Jump up
+            {
+                l = 0;
+                l++;
+                g_sChar.m_cLocation.Y++;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.Y--;
                     }
                 }
             }
         }
-        if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
+    }
+    if (l >= 1 && l < 4 && g_sUltimate == false) //check if player is mid air to move up to 4
+    {
+        if (g_jElapsedTime > 0.05)
+        {
+            /*if (l == 1)
+            {
+                Beep(1440, 30);
+            }*/
+            g_sChar.m_cLocation.Y--;
+            for (int i = 0; i < g_iPlatforms; i++) {
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                    g_sChar.m_cLocation.Y++;
+                }
+            }
+            if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+            {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    }
+                }
+            }
+            if (GetKeyState(0x44) & 0x800) //check for D input and jump right;
+            {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                for (int i = 0; i < g_iPlatforms; i++) {
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    }
+                }
+            }
+            g_jElapsedTime = 0;
+            l++;
+        }
+    }
+    for (int j = 0; j < g_iPlatforms; j++) {
+        if (l >= 4 && g_sUltimate == false && g_sChar.m_cLocation.Y - 1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
         {
             if (g_jElapsedTime > 0.05)
             {
-                /*if (l == 1)
+                if (l == 1)
                 {
                     Beep(1440, 30);
-                }*/
-                g_sChar.m_cLocation.Y--;
+                }
+                g_sChar.m_cLocation.Y++;
                 for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                        g_sChar.m_cLocation.Y++;
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
+                    {
+                        g_sChar.m_cLocation.Y--;
                     }
                 }
                 if (GetKeyState(0x41) & 0x800) //check for A input and jump left
@@ -491,132 +531,94 @@ void moveCharacter(int n) {
                     g_sChar.m_cLocation.X--;
                     for (int i = 0; i < g_iPlatforms; i++) {
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                            g_sChar.m_cLocation.X++;
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
                         }
                     }
                 }
-                if (GetKeyState(0x44) & 0x800) //check for D input and jump right;
+                if (GetKeyState(0x44) & 0x800) //check for D input and jump right
                 {
                     g_sChar.m_cLocation.X++;
                     for (int i = 0; i < g_iPlatforms; i++) {
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                            g_sChar.m_cLocation.X--;
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
                         }
                     }
                 }
-                g_jElapsedTime = 0;
-                l++;
-            }
-        }
-        for (int j = 0; j < g_iPlatforms; j++) {
-            if (l >= 4 && g_sUltimate == false && g_sChar.m_cLocation.Y - 1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
-            {
-                if (g_jElapsedTime > 0.05)
+                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
                 {
-                    if (l == 1)
+                    /*if (l == 1)
                     {
                         Beep(1440, 30);
-                    }
+                    }*/
                     g_sChar.m_cLocation.Y++;
                     for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
-                        {
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.Y--;
                         }
                     }
-                    if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+                    if (GetKeyState(0x41) & 0x800) //check for A input and fall left
                     {
-                        g_sChar.m_cLocation.X--;
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                         for (int i = 0; i < g_iPlatforms; i++) {
-                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                                g_sChar.m_cLocation.X++;
+                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                            {
+                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                             }
                         }
                     }
-                    if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+                    if (GetKeyState(0x44) & 0x800) //check for D input and fall right
                     {
-                        g_sChar.m_cLocation.X++;
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                         for (int i = 0; i < g_iPlatforms; i++) {
-                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                                g_sChar.m_cLocation.X--;
+                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                            {
+                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                             }
                         }
-                    }
-                    if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-                    {
-                        /*if (l == 1)
-                        {
-                            Beep(1440, 30);
-                        }*/
-                        g_sChar.m_cLocation.Y++;
-                        for (int i = 0; i < g_iPlatforms; i++) {
-                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                                g_sChar.m_cLocation.Y--;
-                            }
-                        }
-                        if (GetKeyState(0x41) & 0x800) //check for A input and jump left
-                        {
-                            g_sChar.m_cLocation.X--;
-                            for (int i = 0; i < g_iPlatforms; i++) {
-                                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
-                                {
-                                    g_sChar.m_cLocation.X++;
-                                }
-                            }
-                        }
-                        if (GetKeyState(0x44) & 0x800) //check for D input and jump right
-                        {
-                            g_sChar.m_cLocation.X++;
-                            for (int i = 0; i < g_iPlatforms; i++) {
-                                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
-                                {
-                                    g_sChar.m_cLocation.X--;
-                                }
-                            }
-                        }
-                        g_jElapsedTime = 0;
                     }
                     g_jElapsedTime = 0;
                 }
+                g_jElapsedTime = 0;
             }
         }
-        if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false) //LEFT
-        {
-            /*Beep(1440, 30);*/
-            oneStep = g_sChar.m_cLocation.X - n;
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-            for (int i = 0; i < g_iPlatforms; i++) {
-                if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                }
-                else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                }
+    }
+    if (g_skKeyEvent[K_41].keyDown && g_sChar.m_cLocation.X > 2 && g_sUltimate == false) //LEFT
+    {
+        /*Beep(1440, 30);*/
+        oneStep = g_sChar.m_cLocation.X - n;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+            }
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
             }
         }
-        //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
-        //    /*Beep(1440, 30);*/
-        //    g_sChar.m_cLocation.Y++;
-        //    for (int x = 0; x < g_iPlatforms; x++) {
-        //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
-        //            g_sChar.m_cLocation.Y--;
-        //        }
-        //    }
-        //}
-        if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false) //RIGHT
-        {
-            /*Beep(1440, 30);*/
-            oneStep = g_sChar.m_cLocation.X + n;
-            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-            for (int i = 0; i < g_iPlatforms; i++) {
-                if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                }
-                else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                }
+    }
+    //if (g_skKeyEvent[K_53].keyDown && g_sChar.m_cLocation.Y < g_Console.getConsoleSize().Y - 1) { //DOWN
+    //    /*Beep(1440, 30);*/
+    //    g_sChar.m_cLocation.Y++;
+    //    for (int x = 0; x < g_iPlatforms; x++) {
+    //        if (g_sChar.m_cLocation.X == g_aPlatformsX[x] && g_sChar.m_cLocation.Y == g_aPlatformsY[x]) {
+    //            g_sChar.m_cLocation.Y--;
+    //        }
+    //    }
+    //}
+    if (g_skKeyEvent[K_44].keyDown && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && g_sUltimate == false) //RIGHT
+    {
+        /*Beep(1440, 30);*/
+        oneStep = g_sChar.m_cLocation.X + n;
+        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+        for (int i = 0; i < g_iPlatforms; i++) {
+            if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+            }
+            else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
         }
+    }
 }
 
 void sneakCharacter()
@@ -1202,6 +1204,7 @@ void seraphUlt()
             l = 1;
             g_sChar.m_dHealth = 50;
             g_sChar.m_dMana = 0;
+            g_sUltimate = false;
         }
     }
 }
@@ -1262,16 +1265,190 @@ void focusAttack()
     }
 }
 
-void focusUlt()
+void focusUlt() //Gin's Focus ultimate
 {
-    if (g_sFocus == true)
+    if (g_sFocus == true && g_skKeyEvent[K_55].keyReleased)
     {
-        if (g_skKeyEvent[K_SPACE].keyReleased)
+        g_sUltimate = true;
+        g_sChar.m_cLocation.X = 3;
+        g_sFocus = false;
+    }
+    if (g_sUltimate == true)
+    {
+        if (g_sChar.m_dMana > 25)
         {
-            su++;
+
+            for (int i = 0; i < g_iPlatforms; i++)
+            {
+                if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[i])
+                {
+                    su++;
+                    break;
+                }
+            }
+        }
+        if (su < 1095) //slash back and forth 10 times at light speed
+        {
+            g_sChar.m_dMana = 75;
+            if (g_suElapsedTime > fe)
+            {
+                if (su < 55)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 55 && su < 110)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 110 && su < 165)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 165 && su < 220)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 220 && su < 275)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 275 && su < 330)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 330 && su < 385)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                    fe = 0.005;
+                }
+                if (su >= 385 && su < 440)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 440 && su < 495)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 495 && su < 550)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 550 && su < 605)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 605 && su < 660)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 660 && su < 715)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 715 && su < 770)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 770 && su < 825)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 825 && su < 880)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 880 && su < 935)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+
+                }
+                if (su >= 935 && su < 990)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 990 && su < 1045)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+                if (su >= 1045 && su < 1095)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 3;
+                    g_suElapsedTime = 0;
+                    su++;
+                }
+
+            }
+        }
+        else
+        {
+            if (su == 1095 && g_udElapsedTime != 0)
+            {
+                g_udElapsedTime = 0;
+                su++;
+            }
+            if (g_udElapsedTime > 3 && g_udElapsedTime < 3 + g_dDeltaTime)
+            {
+                for (int i = 0; i < ne; i++)
+                {
+                    if (g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
+                    {
+                        g_sEnemy[i].m_dHealth = 0;
+                    }
+                }
+                if (g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
+                {
+                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 50;
+                }
+
+            }
+            if (g_udElapsedTime > 4)
+            {
+                l = 1;
+                g_sUltimate = false;
+                g_sChar.m_dMana = 0;
+            }
         }
 
     }
+
 }
 
 
@@ -1410,7 +1587,7 @@ void setUltimate(int M)
 {
     if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus) //checks if Player mana is less than 50 and is not in rage mode
     {
-        if (g_uElapsedTime > 0.5) //increase mana by 1 every 1 second
+        if (g_uElapsedTime > 0.5) //increase mana by 1 every * second
         {
             g_uElapsedTime = 0;
             g_sChar.m_dMana++;
@@ -1422,7 +1599,7 @@ void setUltimate(int M)
     }
     else if (g_sUltimate || g_sRage || g_sFocus)
     {
-        if (g_uElapsedTime > 0.2)
+        if (g_uElapsedTime > 0.5)
         {
             g_uElapsedTime = 0;
             g_sChar.m_dMana--;
@@ -1536,7 +1713,7 @@ void moveBoss(int n, double t, double t2, int d)
 {
     if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sFocus)
     {
-        if (g_sBossP1.m_dHealth <= 25)
+        if (g_sBossP1.m_dHealth <= 50)
         {
             t2 = t2 / 3;
             t = t / 2;
@@ -1562,7 +1739,7 @@ void moveBoss(int n, double t, double t2, int d)
                     g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
                     g_bElapsedTime = 0;
                     g_delay1 = 0;
-                    if (g_sBossP1.m_cLocation.X == d)
+                    if (g_sBossP1.m_cLocation.X <= d)
                     {
                         k = 0;
                     }
@@ -1900,7 +2077,7 @@ void renderToScreen() {
 void renderNewGameOption() {
     // renders the splash screen
     COORD c = g_Console.getConsoleSize();
-    string ch; string desc;
+    string ch; string desc; WORD color;
     renderMenuBackground();
     c.Y /= 3;
     c.X = c.X / 2 - 9;
@@ -1911,19 +2088,27 @@ void renderNewGameOption() {
     g_Console.writeToBuffer(c, "Arrow Keys to switch characters", 0x09);
     c.Y += 1;
     c.X = g_Console.getConsoleSize().X / 2 - 8;
-    if (characterSelect == 0)
+    if (characterSelect == 0) {
         ch = "Dewm Guy";
-    if (characterSelect == 1)
+        color = 0x0C;
+    }
+    if (characterSelect == 1) {
         ch = "Seraph";
-    if (characterSelect == 2)
+        color = 0x09;
+    }
+    if (characterSelect == 2) {
         ch = "Gin";
-    if (characterSelect == 3)
+        color = 0x0E;
+    }
+    if (characterSelect == 3) {
         ch = "Thorfinn";
-    g_Console.writeToBuffer(c, ch, 0x09);
+        color = 0x0B;
+    }
+    g_Console.writeToBuffer(c, ch, color);
     c.Y += 4;
     c.X = 0;
     if (characterSelect == 0) {
-        desc = "Uses a shotgun (AOE) ranged weapon, has balanced health, damage and speed, has rage metre in which when full, enters rage mode where is able to insta kill lesser enemies while doing high damage to mini - bosses and boss for a few seconds";
+        desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the ice of   Elsa, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
     }
     if (characterSelect == 1) {
         desc = "Uses a buster sword (close range), High health, high damage, low speed, can charge attack, build charge metre to do special move";
@@ -1934,10 +2119,10 @@ void renderNewGameOption() {
     if (characterSelect == 3) {
         desc = "Uses an axe (close range) and can change to bow (long range) , highest health, balanced damage, lowest speed, spirit metre slowly builds up overtime, or when enemies slain, and is used to summon a bear spirit which can attack enemies for him, whilst becoming invincible";
     }
-    g_Console.writeToBuffer(c, desc, 0x09);
-    c.Y += 5;
+    g_Console.writeToBuffer(c, desc, color);
+    c.Y += 8;
     c.X = g_Console.getConsoleSize().X / 2 - 13;
-    g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x09);
+    g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x0F);
 }
 
 void renderStartMenu() {
@@ -1947,27 +2132,27 @@ void renderStartMenu() {
     c.X = c.X / 2 - 9;
     if (startMenuSelect == 0) {
         c.X += 1;
-        g_Console.writeToBuffer(c, "New Game", 0x09);
+        g_Console.writeToBuffer(c, "New Game", 0x0F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Load Game", 0x90);
+        g_Console.writeToBuffer(c, "Load Game", 0x9F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Exit Game", 0x09);
+        g_Console.writeToBuffer(c, "Exit Game", 0x0F);
     }
     if (startMenuSelect == 1) {
         c.X += 1;
-        g_Console.writeToBuffer(c, "New Game", 0x90);
+        g_Console.writeToBuffer(c, "New Game", 0x9F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Load Game", 0x09);
+        g_Console.writeToBuffer(c, "Load Game", 0x0F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Exit Game", 0x09);
+        g_Console.writeToBuffer(c, "Exit Game", 0x0F);
     }
     if (startMenuSelect == -1) {
         c.X += 1;
-        g_Console.writeToBuffer(c, "New Game", 0x09);
+        g_Console.writeToBuffer(c, "New Game", 0x0F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Load Game", 0x09);
+        g_Console.writeToBuffer(c, "Load Game", 0x0F);
         c.Y += 1;
-        g_Console.writeToBuffer(c, "Exit Game", 0x90);
+        g_Console.writeToBuffer(c, "Exit Game", 0x9F);
     }
 }
 
@@ -1980,10 +2165,10 @@ void renderMenuBackground() {
             perLine = line;
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == '.') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                    g_Console.writeToBuffer(x, y, " ", 0X0000);
                 }
                 if (perLine[x] == '8') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_BLUE);
+                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
                 }
             }
             y++;
@@ -2036,14 +2221,6 @@ void nextLevel() {
         level++;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
         g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
-        for (int i = 0; i < 5; i++) {
-            g_sEnemy[i].m_cLocation.X = NULL;
-            g_sEnemy[i].m_cLocation.Y = NULL;
-            g_sBossP1.m_cLocation.X = NULL;
-            g_sBossP2.m_cLocation.X = NULL;
-            g_sBossP1.m_cLocation.Y = NULL;
-            g_sBossP2.m_cLocation.Y = NULL;
-        }
         deletePlatforms();
     }
     if (oneTime == 0) {
@@ -2136,25 +2313,13 @@ void renderCharacter()
 
     // Draw the location of the character and weapon
     WORD charColor; //non - ultimate mode color
-    if (g_sRage == true)
-    {
-        charColor = 0x4E; //Ultimate mode
-    }
-    if (g_sUltimate == true)
-    {
-        charColor = 0x1A;
-    }
-    if (g_sFocus == true)
-    {
-        charColor = 0x9B;
-    }
-    if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
-    {
-        g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
-    }
+
     for (int i = 0; i < ne; i++)
     {
-        g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
+        if (level == 0)
+        {
+            g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
+        }
         /*if (c5[i] == 0)
         {
             if (g_uSpawn > 3)
@@ -2165,30 +2330,63 @@ void renderCharacter()
                 g_uSpawn = 0;
             }
         }*/
-
     }
-    g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
-    g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+    if (level == 0)
+    {
+        g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
+        g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+    }
     if (g_sChar.m_dHealth > 0) //ASCII Designs
     {
         if (characterSelect == 0) //Dewm Guy
         {
-            charColor = 0x2E;
+            if (g_sRage == true)
+            {
+                charColor = 0x4E; //Ultimate mode
+            }
+            else
+            {
+                charColor = 0x2E;
+            }
             c1 = 203;
             c2 = 203;
+            if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+            {
+                g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
+            }
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+
         }
         if (characterSelect == 1) //Seraph
         {
-            charColor = 0x0E; //F for white
+            if (g_sUltimate == true)
+            {
+                charColor = 0x0F;
+            }
+            else
+            {
+                charColor = 0x0E; //F for white
+            }
+
             c1 = 210;
-            c2 = 215;
+            c2 = 197;
             c3 = std::string(1, c1) + c2;
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
         }
         if (characterSelect == 2) //Gin
         {
-            charColor = 0x1F;
+            if (g_sFocus == true)
+            {
+                charColor = 0x1A;
+            }
+            else if (g_sUltimate == true)
+            {
+                charColor = 0x0A;
+            }
+            else
+            {
+                charColor = 0x1F;
+            }
             c1 = 234;
             c2 = 234;
             c3 = std::string(1, c1) + c2;
@@ -2229,7 +2427,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/g_sChar.m_cLocation.Y << "FPS";
+    ss << 1.0 / g_dDeltaTime << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -2365,6 +2563,11 @@ void loadLevelData(int number) {
                     g_sBossP1.m_cLocation.Y = y;
                     g_sBossP2.m_cLocation.X = x;
                     g_sBossP2.m_cLocation.Y = y - 1;
+                }
+                if (perLine[x] == 'O')
+                {
+                    g_sPortal.m_cLocation.X = x;
+                    g_sPortal.m_cLocation.Y = y;
                 }
             }
             y++;

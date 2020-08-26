@@ -31,6 +31,7 @@ double  g_staminaregen; //regen stamina after slashing
 double  g_suElapsedTime;//Seraph ult elapsed time
 double  g_udElapsedTime;//Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
+double  g_cElapsedTime; //Cutscene Elapsed time
 int characterSelect; int startMenuSelect; int pauseMenuSelect;
 int oneTime; int canDo; int saveTimer;  int level;
 
@@ -46,6 +47,7 @@ int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
 int p = 0;       //slash delay counter and down slam condition
 int ne = 5;      //number of enemies
+int obj = 29;   //number of objects
 int fe = 0.01;   //Focus delay
 int bossd = 5;   //boss initial location
 int dashl = 0;   //counter for dodge (left)
@@ -53,6 +55,7 @@ int dashr = 0;   //counter for dodge (right)
 int su = 0;      //ultimate counter
 int f = 0;       //focus counter
 int stun = 0;    //stun counter
+int cut = 0;     //Cutscene counter
 double sd = 0.2; //slash delay time elapsed condition
 
 //mechanic for Seraph's ult
@@ -65,6 +68,8 @@ int slam = 0; //slam down attack counter
 bool g_bPlayGame = false; bool g_sAttackState = false;
 bool g_sInvulnerable = false; bool g_sUltimate = false;
 bool g_sRage = false; bool g_sFocus = false;
+bool g_sCutscene = false; bool collide = false;
+
 
 char c1 = 203;                     //main player's ascii characters
 char c2 = 203;
@@ -72,7 +77,8 @@ auto c3 = std::string(1, c1) + c2; //combined into 2
 
 char c4 = 205;                     //projectile ascii
 
-char c5[5] = { 152, 152, 152, 152, 152 };                     //Enemy ascii
+char c5[5] = { 157, 157, 157, 157, 157 };  //Enemy ascii
+char c0[30] = { };
 
 char c6 = 232;                     //mini - Boss ascii (c6 - 9)
 char c7 = 232;
@@ -83,6 +89,8 @@ auto boss2 = std::string(3, c8) + c9;
 
 WORD enemyColor[5] = { 0x4F, 0x4F, 0x4F, 0x4F, 0x4F };
 WORD bossColor = 0x4E;
+WORD BGcolor;
+WORD ObjColor[30] = {};
 // bool g_bInMenu = false;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
@@ -93,8 +101,11 @@ std::string status;
 SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj;
 SGameChar   g_sEnemy[5];
 SGameChar   g_sPortal;
-SGameChar   g_sBossP1;  //Boss bottom half
-SGameChar   g_sBossP2;  //Boss top half
+SGameChar   g_sBossP1;       //Boss bottom half
+SGameChar   g_sBossP2;       //Boss top half
+SGameChar   g_sNPC;          //NPC
+SGameChar   g_sObj[30];      //Any obj
+SGameChar   g_sPrimeObj[2];  //Obj used in cutscenes
 EGAMESTATES g_eGameState = S_START; // initial state
 
 // Console object
@@ -146,11 +157,14 @@ void init(void) {
     g_sBossP1.m_cLocation.Y = 28;
     g_sBossP2.m_cLocation.X = bossd;
     g_sBossP2.m_cLocation.Y = 28 - 1;*/
-    g_sEnemy[0].m_dHealth = 5;
-    g_sEnemy[1].m_dHealth = 5;
-    g_sEnemy[2].m_dHealth = 5;
-    g_sEnemy[3].m_dHealth = 5;
-    g_sEnemy[4].m_dHealth = 5;
+    for (int i = 0; i <= ne; i++)
+    {
+        g_sEnemy[i].m_dHealth = 5;
+    }
+    for (int i = 0; i <= obj; i++)
+    {
+        g_sObj[i].m_dHealth = 5;
+    }
     g_sBossP1.m_dHealth = 100;
     g_sChar.m_dMana = state.returnCharMana();
     g_sChar.m_dMana = 50;
@@ -367,6 +381,7 @@ void updateTime(double dt) {
     g_bjElapsedTime += dt; //boss jump elapsed time
     g_suElapsedTime += dt; //Seraph ultimate time elapsed
     g_udElapsedTime += dt; //Seraph ulti delay
+    g_cElapsedTime += dt; //Cutscene elapsed time
     g_delay1 += dt; //boss movement delay 1
     g_delay2 += dt; //boss movement delay 2
     g_slashdelay += dt; //delay after each slash (applies to melee attacks)
@@ -386,17 +401,30 @@ void splashScreenWait() {      // waits for time to pass in splash screen
 void updateGame() {     // gameplay logic
     if (g_bPlayGame) {
         processUserInput(); // checks if you should change states or do something else with the game, e.g. pause, exit
-        moveCharacter(2);    // moves the player by *2 steps, collision detection, physics, etc
+
+        if (g_sCutscene == false)
+        {
+            moveCharacter(2); // moves the player by *2 steps, collision detection, physics, etc
+        }
         if (characterSelect == 0)  //Dewm Guy
         {
-            moveProjectile(); //Shooting mechanic
-            setUltimate(50);  //Set ultimate capacity to *50
+            if (level == 0)
+            {
+                DewmIntro();
+            }
+            if (level >= 2 && g_sCutscene == false)
+            {
+                moveProjectile(); //Shooting mechanic
+                setUltimate(50);  //Set ultimate capacity to *50
+            }
+
         }
         if (characterSelect == 1) { //Seraph
             slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
             downslam();             //Seraph down slam attack
             seraphUlt();            //seraph star combo breaker
             setUltimate(50);        //Set ultimate capacity to *50
+            moveCharacter(2);       // moves the player by *2 steps, collision detection, physics, etc
         }
         if (characterSelect == 2) { //Gin
             slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
@@ -405,6 +433,7 @@ void updateGame() {     // gameplay logic
             focusAttack();        //Gin's focus ability
             focusUlt();           //Gin's focus ultimate
             setUltimate(75);      //Set ultimate capacity to *50
+            moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
         }
         if (characterSelect == 3)
         {
@@ -415,7 +444,6 @@ void updateGame() {     // gameplay logic
         setdamage();              //find reason for damage              /
         nextLevel();
         //scroll();
-        //LEMoveChar();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
 }
@@ -455,9 +483,11 @@ void updateStart() {
 //
 //}
 
-void moveCharacter(int n) {
+void moveCharacter(int n)
+{
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
+
     int oneStep;
     if (g_skKeyEvent[K_57].keyDown) {
         for (int j = 0; j < g_iPlatforms; j++) {
@@ -466,10 +496,11 @@ void moveCharacter(int n) {
                 l = 0;
                 l++;
                 g_sChar.m_cLocation.Y++;
-                for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                        g_sChar.m_cLocation.Y--;
-                    }
+            }
+            for (int i = 0; i < g_iPlatforms; i++)
+            {
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                    g_sChar.m_cLocation.Y--;
                 }
             }
         }
@@ -488,12 +519,32 @@ void moveCharacter(int n) {
                     g_sChar.m_cLocation.Y++;
                 }
             }
+            for (int i = 0; i <= obj; i++)
+            {
+                if (g_sObj[i].m_dHealth > 0)
+                {
+                    if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                    {
+                        g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y++;
+                    }
+                }
+            }
             if (GetKeyState(0x41) & 0x800) //check for A input and jump left
             {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                 for (int i = 0; i < g_iPlatforms; i++) {
                     if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    }
+                }
+                for (int i = 0; i <= obj; i++)
+                {
+                    if (g_sObj[i].m_dHealth > 0)
+                    {
+                        if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        {
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                        }
                     }
                 }
             }
@@ -505,6 +556,18 @@ void moveCharacter(int n) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                     }
                 }
+                for (int i = 0; i <= obj; i++)
+                {
+                    if (g_sObj[i].m_dHealth > 0)
+                    {
+                        if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        {
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                        }
+                    }
+                }
+
+
             }
             g_jElapsedTime = 0;
             l++;
@@ -526,7 +589,17 @@ void moveCharacter(int n) {
                         g_sChar.m_cLocation.Y--;
                     }
                 }
-                if (GetKeyState(0x41) & 0x800) //check for A input and jump left
+                for (int i = 0; i <= obj; i++)
+                {
+                    if (g_sObj[i].m_dHealth > 0)
+                    {
+                        if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        {
+                            g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                        }
+                    }
+                }
+                if (GetKeyState(0x41) & 0x800) //check for A input and fall left
                 {
                     g_sChar.m_cLocation.X--;
                     for (int i = 0; i < g_iPlatforms; i++) {
@@ -534,8 +607,18 @@ void moveCharacter(int n) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
                         }
                     }
+                    for (int i = 0; i <= obj; i++)
+                    {
+                        if (g_sObj[i].m_dHealth > 0)
+                        {
+                            if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                            {
+                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                            }
+                        }
+                    }
                 }
-                if (GetKeyState(0x44) & 0x800) //check for D input and jump right
+                if (GetKeyState(0x44) & 0x800) //check for D input and fall right
                 {
                     g_sChar.m_cLocation.X++;
                     for (int i = 0; i < g_iPlatforms; i++) {
@@ -543,42 +626,19 @@ void moveCharacter(int n) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
                         }
                     }
-                }
-                if (g_sProj.m_cLocation.X == g_sChar.m_cLocation.X)
-                {
-                    /*if (l == 1)
+                    for (int i = 0; i <= obj; i++)
                     {
-                        Beep(1440, 30);
-                    }*/
-                    g_sChar.m_cLocation.Y++;
-                    for (int i = 0; i < g_iPlatforms; i++) {
-                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                            g_sChar.m_cLocation.Y--;
-                        }
-                    }
-                    if (GetKeyState(0x41) & 0x800) //check for A input and fall left
-                    {
-                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-                        for (int i = 0; i < g_iPlatforms; i++) {
-                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                        if (g_sObj[i].m_dHealth > 0)
+                        {
+                            if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
-                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
                             }
                         }
                     }
-                    if (GetKeyState(0x44) & 0x800) //check for D input and fall right
-                    {
-                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-                        for (int i = 0; i < g_iPlatforms; i++) {
-                            if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
-                            {
-                                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-                            }
-                        }
-                    }
-                    g_jElapsedTime = 0;
                 }
                 g_jElapsedTime = 0;
+                l++;
             }
         }
     }
@@ -593,6 +653,16 @@ void moveCharacter(int n) {
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+            }
+        }
+        for (int i = 0; i <= obj; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
+                }
             }
         }
     }
@@ -618,7 +688,18 @@ void moveCharacter(int n) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
         }
+        for (int i = 0; i <= obj; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+                }
+            }
+        }
     }
+
 }
 
 void sneakCharacter()
@@ -1545,24 +1626,41 @@ void setdamage()
             }
             j = 0;
             g_sProj.m_cLocation = g_sChar.m_cLocation;
-        }
-        else if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
-        {
-            if (!g_sRage)
-            {
-                g_sBossP1.m_dHealth--;
-            }
-            else
-            {
-                g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
-            }
-            j = 0;
-            g_sProj.m_cLocation = g_sChar.m_cLocation;
+
         }
         if (g_sEnemy[i].m_dHealth <= 0)
         {
             c5[i] = 0;
             enemyColor[i] = 0x4A;
+        }
+    }
+    if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
+    {
+        if (!g_sRage)
+        {
+            g_sBossP1.m_dHealth--;
+        }
+        else
+        {
+            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+        }
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+    for (int i = 0; i <= obj; i++)
+    {
+        if ((g_sProj.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sObj[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c0[i] != 0)
+        {
+            if (!g_sRage)
+            {
+                g_sObj[i].m_dHealth--;
+            }
+            else
+            {
+                g_sObj[i].m_dHealth = g_sObj[i].m_dHealth - 5;
+            }
+            j = 0;
+            g_sProj.m_cLocation = g_sChar.m_cLocation;
         }
     }
     if (g_sBossP1.m_dHealth <= 0)
@@ -1813,6 +1911,73 @@ void moveBoss(int n, double t, double t2, int d)
         //{
         //    m = 0;
         //}
+    }
+}
+
+void DewmIntro()
+{
+    if (level == 0)
+    {
+        if (g_skKeyEvent[K_SPACE].keyReleased && g_sCutscene == false)
+        {
+            g_sCutscene = true;
+            cut++;
+        }
+        /*g_sChar.m_cLocation.X = 26;
+        g_sChar.m_cLocation.Y = 48;*/
+        if (cut < 27 && g_sCutscene == true)
+        {
+            if (g_cElapsedTime > 0.01)
+            {
+                if (cut >= 1 && cut < 10)
+                {
+                    for (int i = 0; i <= 1; i++)
+                    {
+                        g_sPrimeObj[i].m_cLocation.Y = g_sPrimeObj[i].m_cLocation.Y - 3;
+                        g_sPrimeObj[i].m_cLocation.X = g_sPrimeObj[i].m_cLocation.X - 2;
+                    }
+                    cut++;
+                    g_cElapsedTime = 0;
+                }
+                if (cut >= 10 && cut < 19)
+                {
+                    for (int i = 0; i <= 1; i++)
+                    {
+                        g_sPrimeObj[i].m_cLocation.Y = g_sPrimeObj[i].m_cLocation.Y + 3;
+                        g_sPrimeObj[i].m_cLocation.X = g_sPrimeObj[i].m_cLocation.X - 1;
+                        if (cut == 18)
+                        {
+                            g_sPrimeObj[i].m_cLocation.Y = g_sPrimeObj[i].m_cLocation.Y + 1;
+                        }
+                    }
+                    cut++;
+                    g_cElapsedTime = 0;
+                }
+
+            }
+            if (g_cElapsedTime > 0.05)
+            {
+                if (cut >= 19 && cut < 23)
+                {
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 2;
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    cut++;
+                    g_cElapsedTime = 0;
+                }
+                if (cut >= 23 && cut < 27)
+                {
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 2;
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    cut++;
+                    g_cElapsedTime = 0;
+                }
+            }
+        }
+        else
+        {
+            g_sCutscene = false;
+        }
+
     }
 }
 
@@ -2178,10 +2343,11 @@ void renderMenuBackground() {
 
 void renderGame() {
     renderMap();        // renders the map to the buffer first
+    renderObj();        // renders obj under char
     renderCharacter();  // renders the character into the buffer
     renderHUD();
     renderPortal();
-    //LEMoveChar();
+    LEMoveChar();
     //renderInputEvents();
 }
 
@@ -2204,8 +2370,26 @@ void renderHUD() {
     colour(colors[1]);
     std::string mana = std::to_string(g_sChar.m_dMana);
     mana = mana.substr(0, 4);
-    std::string manaDisplay = "Ultimate = " + mana;
-    g_Console.writeToBuffer(c, manaDisplay, colors[1]);
+    if (characterSelect == 0)
+    {
+        std::string manaDisplay = "Rage = " + mana;
+        g_Console.writeToBuffer(c, manaDisplay, colors[1]);
+    }
+    if (characterSelect == 1)
+    {
+        std::string manaDisplay = "Ultimate = " + mana;
+        g_Console.writeToBuffer(c, manaDisplay, colors[1]);
+    }
+    if (characterSelect == 2)
+    {
+        std::string manaDisplay = "Focus = " + mana;
+        g_Console.writeToBuffer(c, manaDisplay, colors[1]);
+    }
+    if (characterSelect == 3)
+    {
+        std::string manaDisplay = "Spirit = " + mana;
+        g_Console.writeToBuffer(c, manaDisplay, colors[1]);
+    }
 
     c.X = 35;
     c.Y = 0;
@@ -2234,10 +2418,16 @@ void nextLevel() {
             loadLevelData(3);
         if (level == 4)
             loadLevelData(4);
+        if (level == 5)
+            loadLevelData(5);
+        if (level == 6)
+            loadLevelData(6);
+        if (level == 7)
+            loadLevelData(7);
         oneTime = 1;
     }
-    if (level > 4)
-        level = 4;
+    if (level > 7)
+        level = 7;
 }
 
 void renderMenu() {
@@ -2296,7 +2486,7 @@ void renderMap() {
             perLine = line;
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == '.') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_RED);
+                    g_Console.writeToBuffer(x, y, " ", BGcolor);
                 }
             }
             y++;
@@ -2314,12 +2504,12 @@ void renderCharacter()
     // Draw the location of the character and weapon
     WORD charColor; //non - ultimate mode color
 
-    for (int i = 0; i < ne; i++)
+    for (int i = 0; i < ne; i++) //Enemy
     {
-        if (level == 0)
-        {
+        /*if (level == 0)
+        {*
             g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
-        }
+        //}
         /*if (c5[i] == 0)
         {
             if (g_uSpawn > 3)
@@ -2331,10 +2521,11 @@ void renderCharacter()
             }
         }*/
     }
-    if (level == 0)
+
+    if (level == 4)
     {
-        g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
-        g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+        /*g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
+        g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);*/
     }
     if (g_sChar.m_dHealth > 0) //ASCII Designs
     {
@@ -2342,17 +2533,20 @@ void renderCharacter()
         {
             if (g_sRage == true)
             {
-                charColor = 0x4E; //Ultimate mode
+                charColor = 0x40; //Ultimate mode
             }
             else
             {
-                charColor = 0x2E;
+                charColor = 0x20;
             }
             c1 = 203;
             c2 = 203;
-            if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+            if (level >= 2)
             {
-                g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
+                if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+                {
+                    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8E);
+                }
             }
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
 
@@ -2395,6 +2589,62 @@ void renderCharacter()
         if (characterSelect == 3)
         {
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
+        }
+    }
+}
+
+void renderObj()
+{
+    if (level == 0)
+    {
+        for (int i = 0; i <= 3; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                c0[i] = 221;
+                ObjColor[i] = 0x00;
+            }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+            g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x00);
+        }
+    }
+    if (level == 2)
+    {
+        for (int i = 0; i <= 4; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                c0[i] = 237;
+                ObjColor[i] = 0x40;
+            }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+        }
+    }
+    if (level == 3)
+    {
+        for (int i = 5; i <= obj; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                c0[i] = 219;
+                ObjColor[i] = 0x40;
+            }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
         }
     }
 }
@@ -2513,18 +2763,37 @@ void loadLevelData(int number) {
     int y = 0;
     int e = 0;
     int b = 0;
+    int o = 0;
+    int po = 0;
     std::string levelFile;
     std::string line2;
-    if (number == 0)
-        levelFile = "tutorial.txt";
-    if (number == 1)
+    if (number == 0) {
+        BGcolor = 0x80;
+        levelFile = "tutorial_1.txt";
+    }
+    if (number == 1) {
+        levelFile = "tutorial_2.txt";
+    }
+    if (number == 2) {
+        levelFile = "tutorial_3.txt";
+    }
+    if (number == 3) {
+        levelFile = "Intro.txt";
+        o = 5;
+    }
+    if (number == 4) {
+        BGcolor = 0x40;
         levelFile = "levelone.txt";
-    if (number == 2)
-        levelFile = "leveltwo.txt";
-    if (number == 3)
+    }
+    if (number == 5) {
+        levelFile = "levelone.txt";
+    }
+    if (number == 6) {
         levelFile = "levelthree.txt";
-    if (number == 4)
+    }
+    if (number == 7) {
         levelFile = "levelfour.txt";
+    }
     std::ifstream level;
     std::ifstream levelPtr(levelFile);
     level.open(levelFile);
@@ -2553,10 +2822,25 @@ void loadLevelData(int number) {
                     g_sCharSpawn.m_cLocation.X = x;
                     g_sCharSpawn.m_cLocation.Y = y;
                 }
-                if (perLine[x] == 'E') {
-                    g_sEnemy[e].m_cLocation.X = x;
-                    g_sEnemy[e].m_cLocation.Y = y;
-                    e++;
+                if (perLine[x] == '1') {
+                    g_sEnemy[0].m_cLocation.X = x;
+                    g_sEnemy[0].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '2') {
+                    g_sEnemy[1].m_cLocation.X = x;
+                    g_sEnemy[1].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '3') {
+                    g_sEnemy[2].m_cLocation.X = x;
+                    g_sEnemy[2].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '4') {
+                    g_sEnemy[3].m_cLocation.X = x;
+                    g_sEnemy[3].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '5') {
+                    g_sEnemy[4].m_cLocation.X = x;
+                    g_sEnemy[4].m_cLocation.Y = y;
                 }
                 if (perLine[x] == 'B') {
                     g_sBossP1.m_cLocation.X = x;
@@ -2568,6 +2852,23 @@ void loadLevelData(int number) {
                 {
                     g_sPortal.m_cLocation.X = x;
                     g_sPortal.m_cLocation.Y = y;
+                }
+                if (perLine[x] == 'N')
+                {
+                    g_sNPC.m_cLocation.X = x;
+                    g_sNPC.m_cLocation.Y = y;
+                }
+                if (perLine[x] == 'Q')
+                {
+                    g_sObj[o].m_cLocation.X = x;
+                    g_sObj[o].m_cLocation.Y = y;
+                    o++;
+                }
+                if (perLine[x] == 'q')
+                {
+                    g_sPrimeObj[po].m_cLocation.X = x;
+                    g_sPrimeObj[po].m_cLocation.Y = y;
+                    po++;
                 }
             }
             y++;

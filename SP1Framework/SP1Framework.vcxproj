@@ -93,8 +93,16 @@
     <ClInclude Include="save.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Intro.txt" />
+    <Text Include="lvlDewm1.txt" />
+    <Text Include="lvlDewm2.txt" />
+    <Text Include="lvlDewm3.txt" />
+    <Text Include="lvlDewm4.txt" />
     <Text Include="map.txt" />
     <Text Include="save.txt" />
+    <Text Include="tutorial_1.txt" />
+    <Text Include="tutorial_2.txt" />
+    <Text Include="tutorial_3.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

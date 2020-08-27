@@ -64,5 +64,29 @@
     <Text Include="save.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="Intro.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="tutorial_1.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="tutorial_2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="tutorial_3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlDewm1.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlDewm2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlDewm3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlDewm4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

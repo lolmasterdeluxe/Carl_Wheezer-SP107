@@ -16,7 +16,7 @@ int* g_aPlatformsX; int* g_aPlatformsY; int g_iPlatforms = 0;
 double  g_dElapsedTime; //delta time elapsed
 double  g_dDeltaTime;   //delta time
 double  g_pElapsedTime; //projectile elapsed time
-double  g_eElapsedTime; //enemy movement elapsed time
+double  g_eElapsedTime[10] = { }; //enemy movement elapsed time
 double  g_sElapsedTime; //slash elapsed time
 double  g_doElapsedTime;//Dodge elapsed time
 double  g_bElapsedTime; //boss movement elapsed time
@@ -33,20 +33,20 @@ double  g_udElapsedTime;//Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
 double  g_cElapsedTime; //Cutscene Elapsed time
 int characterSelect; int startMenuSelect; int pauseMenuSelect;
-int oneTime; int canDo; int saveTimer;  int level; int steps;
+int oneTime; int canDo; int saveTimer;  int level;
 
 //UI specific timers
 int g_iElapsedTime; int g_iTimeAfter;
 
 //mechanics counters
-int i = 0;       //enemy movement counter
+int i[10] = {0,0,0,0,0,0,0,0,0,0}; //enemy movement counter
 int j = 0;       //projectile counter
 int k = 0;       //boss movement counter
 int l = 0;       //player movement counter
 int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
 int p = 0;       //slash delay counter and down slam condition
-int ne = 5;      //number of enemies
+int ne = 10;      //number of enemies
 int obj = 29;   //number of objects
 int fe = 0.01;   //Focus delay
 int bossd = 5;   //boss initial location
@@ -78,7 +78,7 @@ auto c3 = std::string(1, c1) + c2; //combined into 2
 
 char c4 = 205;                     //projectile ascii
 
-char c5[5] = { 157, 157, 157, 157, 157 };  //Enemy ascii
+char c5[10] = { };  //Enemy ascii
 char c0[30] = { };                         //Object Ascii
 char NPC[9] = { };                         //NPC ascii
 
@@ -89,7 +89,7 @@ char c8 = 186;
 char c9 = 186;
 auto boss2 = std::string(3, c8) + c9;
 
-WORD enemyColor[5] = { 0x4F, 0x4F, 0x4F, 0x4F, 0x4F };
+WORD enemyColor[10] = { };
 WORD bossColor = 0x4E;
 WORD BGcolor;
 WORD ObjColor[30] = {};
@@ -102,7 +102,7 @@ save state;
 // Game specific variables here
 std::string status;
 SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj;
-SGameChar   g_sEnemy[5];
+SGameChar   g_sEnemy[10];
 SGameChar   g_sPortal;
 SGameChar   g_sBossP1;       //Boss bottom half
 SGameChar   g_sBossP2;       //Boss top half
@@ -138,8 +138,6 @@ void init(void) {
     state.loadSave();
     g_sChar.m_cLocation.X = state.returnX();
     g_sChar.m_cLocation.Y = state.returnY();
-    g_sChar.m_cLocation.X = 20;
-    g_sChar.m_cLocation.Y = 15;
     //g_sBossP1.m_cLocation.X = state.returnBossX();
     //g_sBossP1.m_cLocation.Y = state.returnBossY();
     //g_sBossP2.m_cLocation.X = state.returnBossX();
@@ -167,7 +165,6 @@ void init(void) {
     g_sPortal.m_cLocation.Y = 28;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
-    steps = 0;
     
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -265,7 +262,7 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
         break;
     case S_GAME: gameplayMouseHandler(mouseEvent); // handle gameplay mouse event
         break;
-    case S_EDITOR: gameplayMouseHandler(mouseEvent); break; // handle mouse event for editor
+    case S_EDITOR: break;
     }
 }
 
@@ -375,7 +372,10 @@ void updateTime(double dt) {
     g_dElapsedTime += dt; //game time elapsed
     g_dDeltaTime = dt;    //seconds between each frame (if 90fps, deltatime = 1/90)
     g_pElapsedTime += dt; //Projectile time elapsed
-    g_eElapsedTime += dt; //Enemy movement time elapsed
+    for (int i = 0; i <= 9; i++)
+    {
+        g_eElapsedTime[i] += dt; //Enemy movement time elapsed
+    }
     g_sElapsedTime += dt; //Slash movement time elapsed
     g_doElapsedTime += dt; //Dodge time elapsed
     g_uElapsedTime += dt; //Ultimate meter time elapsed
@@ -409,7 +409,6 @@ void updateGame() {     // gameplay logic
         if (g_sCutscene == false)
         {
             moveCharacter(2); // moves the player by *2 steps, collision detection, physics, etc
-            //scroll();
         }
         if (characterSelect == 0)  //Dewm Guy
         {
@@ -426,6 +425,19 @@ void updateGame() {     // gameplay logic
                 moveProjectile(); //Shooting mechanic
                 setUltimate(50);  //Set ultimate capacity to *50
             }
+            if (level == 4)
+            {
+                moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+                moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
+                moveEnemy(i[2], 'l', 19, 0.7, 89, 2);
+                moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
+                moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
+                moveEnemy(i[5], 'r', 17, 0.1, 38, 5);
+                moveEnemy(i[6], 'l', 22, 0.5, 79, 6);
+                moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
+                moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
+                moveEnemy(i[9], 'l', 20, 0.1, 90 , 9);
+            }
 
         }
         if (characterSelect == 1) { //Seraph
@@ -433,7 +445,7 @@ void updateGame() {     // gameplay logic
             downslam();             //Seraph down slam attack
             seraphUlt();            //seraph star combo breaker
             setUltimate(50);        //Set ultimate capacity to *50
-            //moveCharacter(2);       // moves the player by *2 steps, collision detection, physics, etc
+            moveCharacter(2);       // moves the player by *2 steps, collision detection, physics, etc
         }
         if (characterSelect == 2) { //Gin
             slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
@@ -442,20 +454,16 @@ void updateGame() {     // gameplay logic
             focusAttack();        //Gin's focus ability
             focusUlt();           //Gin's focus ultimate
             setUltimate(75);      //Set ultimate capacity to *50
-            //moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
+            moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
         }
-        if (characterSelect == 3) {
-            setUltimate(100);
-            //moveCharacter(2);
+        if (characterSelect == 3)
+        {
+
         }
-        if (characterSelect == 4) {
-            setUltimate(75);
-            //moveCharacter(2);
-        }
-        moveEnemy(5, 0.5, 5, 0);  //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
+        
         moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
         setdamage();              //find reason for damage              /
-        nextLevel();              //check for next level conditions
+        nextLevel();
         if (godMode)
             LEMoveChar();
         //scroll();
@@ -517,7 +525,7 @@ void moveCharacter(int n)
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y--;
                 }
-                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y--;
                 }
             }
@@ -536,7 +544,7 @@ void moveCharacter(int n)
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y++;
                 }
-                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y++;
                 }
             }
@@ -548,7 +556,7 @@ void moveCharacter(int n)
                     {
                         g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y++;
                     }
-                    else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                    else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                     {
                         g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y++;
                     }
@@ -561,7 +569,7 @@ void moveCharacter(int n)
                     if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                     }
-                    else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                    else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                     }
                 }
@@ -573,7 +581,7 @@ void moveCharacter(int n)
                         {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                         }
-                        else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                         }
@@ -599,7 +607,7 @@ void moveCharacter(int n)
                         {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                         }
-                        else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                         }
@@ -626,7 +634,7 @@ void moveCharacter(int n)
                     if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                         g_sChar.m_cLocation.Y--;
                     }
-                    else if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                    else if (g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                         g_sChar.m_cLocation.Y--;
                     }
                 }
@@ -638,7 +646,7 @@ void moveCharacter(int n)
                         {
                             g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
                         }
-                        else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                        else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
                             g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
                         }
@@ -647,15 +655,12 @@ void moveCharacter(int n)
                 if (GetKeyState(0x41) & 0x800) //check for A input and fall left
                 {
                     g_sChar.m_cLocation.X--;
-                    steps--;
                     for (int i = 0; i < g_iPlatforms; i++) {
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-                            steps++;
                         }
-                        else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                        else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-                            steps++;
                         }
                     }
                     for (int i = 0; i <= obj; i++)
@@ -665,12 +670,10 @@ void moveCharacter(int n)
                             if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
                                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-                                steps++;
                             }
-                            else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                            else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
                                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
-                                steps++;
                             }
                         }
                     }
@@ -678,15 +681,12 @@ void moveCharacter(int n)
                 if (GetKeyState(0x44) & 0x800) //check for D input and fall right
                 {
                     g_sChar.m_cLocation.X++;
-                    steps++;
                     for (int i = 0; i < g_iPlatforms; i++) {
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
-                            steps--;
                         }
-                        else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                        else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
-                            steps--;
                         }
                     }
                     for (int i = 0; i <= obj; i++)
@@ -696,12 +696,10 @@ void moveCharacter(int n)
                             if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
                                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
-                                steps--;
                             }
-                            else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                            else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
                                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
-                                steps--;
                             }
                         }
                     }
@@ -716,15 +714,12 @@ void moveCharacter(int n)
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X - n;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-        steps--;
         for (int i = 0; i < g_iPlatforms; i++) {
             if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                steps++;
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                steps++;
             }
         }
         for (int i = 0; i <= obj; i++)
@@ -734,12 +729,10 @@ void moveCharacter(int n)
                 if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                    steps++;
                 }
-                else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-                    steps++;
                 }
             }
         }
@@ -758,19 +751,15 @@ void moveCharacter(int n)
         /*Beep(1440, 30);*/
         oneStep = g_sChar.m_cLocation.X + n;
         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + n;
-        steps++;
         for (int i = 0; i < g_iPlatforms; i++) {
             if (oneStep == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                steps--;
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                steps--;
             }
-            else if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+            else if (g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                steps--;
             }
         }
         for (int i = 0; i <= obj; i++)
@@ -780,12 +769,10 @@ void moveCharacter(int n)
                 if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                    steps--;
                 }
-                else if ((g_sChar.m_cLocation.X+1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X+1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
+                else if ((g_sChar.m_cLocation.X + 1 == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X + 1 == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
-                    steps--;
                 }
             }
         }
@@ -1623,6 +1610,7 @@ void focusUlt() //Gin's Focus ultimate
 
 }
 
+
 void setdamage()
 {
     for (int i = 0; i < ne; i++)
@@ -1702,7 +1690,7 @@ void setdamage()
     //        g_hElapsedTime = 0;
     //    }
     //}
-    for (int i = 0; i < ne; i++)  //check projectile damage
+    for (int i = 0; i < ne; i++)  //check projectile damage to enemy
     {
         if ((g_sProj.m_cLocation.X == g_sEnemy[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5[i] != 0)
         {
@@ -1724,6 +1712,7 @@ void setdamage()
             enemyColor[i] = 0x4A;
         }
     }
+    //to Boss
     if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
         if (!g_sRage)
@@ -1737,6 +1726,7 @@ void setdamage()
         j = 0;
         g_sProj.m_cLocation = g_sChar.m_cLocation;
     }
+    //to object
     for (int i = 0; i <= obj; i++)
     {
         if ((g_sProj.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sObj[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c0[i] != 0)
@@ -1749,6 +1739,15 @@ void setdamage()
             {
                 g_sObj[i].m_dHealth = g_sObj[i].m_dHealth - 5;
             }
+            j = 0;
+            g_sProj.m_cLocation = g_sChar.m_cLocation;
+        }
+    }
+    //For platforms
+    for (int i = 0; i < g_iPlatforms; i++)
+    {
+        if ((g_sProj.m_cLocation.X == g_aPlatformsX[i] && g_sProj.m_cLocation.Y == g_aPlatformsY[i]) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X))
+        {
             j = 0;
             g_sProj.m_cLocation = g_sChar.m_cLocation;
         }
@@ -1830,26 +1829,40 @@ void setUltimate(int M)
 
 }
 
-void moveEnemy(int n, double t, int d, int e)
+void moveEnemy(int &i, char a, int n, double t, int d, int e)
 {
-
     if (c5[e] != 0 && !g_sUltimate && !g_sFocus)
     {
         if (g_stun > 2)
         {
-            if (g_eElapsedTime > t)
+            if (g_eElapsedTime[e] > t)
             {
-                if (i < k)
+                if (i < n && a == 'r') //direction = right
                 {
                     g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
-                    g_eElapsedTime = 0;
+                    g_eElapsedTime[e] = 0;
                     i++;
                 }
-                else
+                else if (a == 'r') //go back
                 {
                     g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
-                    g_eElapsedTime = 0;
+                    g_eElapsedTime[e] = 0;
                     if (g_sEnemy[e].m_cLocation.X <= d)
+                    {
+                        i = 0;
+                    }
+                }
+                if (i < n && a == 'l') //direction = left
+                {
+                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
+                    g_eElapsedTime[e] = 0;
+                    i++;
+                }
+                else if (a == 'l') //go back
+                {
+                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
+                    g_eElapsedTime[e] = 0;
+                    if (g_sEnemy[e].m_cLocation.X >= d)
                     {
                         i = 0;
                     }
@@ -1864,6 +1877,14 @@ void moveEnemy(int n, double t, int d, int e)
                 g_sEnemy[k].m_cLocation.X = g_sEnemy[k].m_cLocation.X + 1;
                 i = i + 1;
                 stun++;
+                for (int i = 0; i <= g_iPlatforms; i++)
+                {
+                    if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
+                    {
+                        g_sEnemy[k].m_cLocation.X = g_sEnemy[k].m_cLocation.X - 1;
+                        i = i - 1;
+                    }
+                }
             }
             else if (g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X - 1 <= g_sEnemy[k].m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy[k].m_cLocation.X && g_sAttackState == true) //push left
             {
@@ -1873,10 +1894,26 @@ void moveEnemy(int n, double t, int d, int e)
                 if (g_sEnemy[k].m_cLocation.X - 1 == d)
                 {
                     n++;
+                    for (int i = 0; i <= g_iPlatforms; i++)
+                    {
+                        if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
+                        {
+                            g_sEnemy[k].m_cLocation.X = g_sEnemy[k].m_cLocation.X + 1;
+                            n--;
+                        }
+                    }
                 }
                 else if (g_sEnemy[k].m_cLocation.X - 2 == d)
                 {
                     n = n + 2;
+                    for (int i = 0; i <= g_iPlatforms; i++)
+                    {
+                        if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
+                        {
+                            g_sEnemy[k].m_cLocation.X = g_sEnemy[k].m_cLocation.X + 1;
+                            n = n - 2;
+                        }
+                    }
                 }
             }
             else if (stun > 1)
@@ -2077,8 +2114,8 @@ void DewmAwaken()
             g_sCutscene = false;
             cut = 0;
         }
+
     }
-    //renderDialogue("Press <Space> to escape");
 }
 
 void DewmIntro()
@@ -2090,21 +2127,13 @@ void DewmIntro()
             g_sCutscene = true;
             cut++;
         }
-        if (cut < 94 && g_sCutscene == true)
+        if (cut < 96 && g_sCutscene == true)
         {
             if (g_cElapsedTime > 0.3)
             {
-                if (cut >= 1 && cut < 94)
+                if (cut >= 1 && cut < 96)
                 {
                     g_sChar.m_cLocation.X++;
-                    if ((g_sChar.m_cLocation.X - 2) == g_sNPC[1].m_cLocation.X) {
-                        renderDialogue("How dare you!", g_sNPC[1].m_cLocation.X, g_sNPC[1].m_cLocation.Y - 1);
-                        //g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X, g_sNPC[1].m_cLocation.Y-1, "How dare you!", 0x80);
-                    }
-                    if ((g_sChar.m_cLocation.X - 2) == g_sNPC[5].m_cLocation.X) {
-                        renderDialogue("How dare you!", g_sNPC[5].m_cLocation.X, g_sNPC[5].m_cLocation.Y - 1);
-                        //g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X, g_sNPC[5].m_cLocation.Y - 1, "How dare you!", 0x80);
-                    }
                     if (cut >= 59)
                     {
                         g_sNPC[5].m_cLocation.X++;
@@ -2340,7 +2369,7 @@ void processUserInput() {
         switch (g_eGameState) {
         case S_START: break;
         case S_SPLASHSCREEN: break;
-        case S_GAME: 
+        case S_GAME:
             if (godMode)
                 godMode = false;
             else if (!godMode)
@@ -2385,7 +2414,7 @@ void render() {
     case S_EDITOR: renderEditor(); break;
     }
     // renderFramerate();      // renders debug information, frame rate, elapsed time, etc
-    // renderInputEvents();    // renders status of input events
+    //renderInputEvents();    // renders status of input events
     renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
 }
 
@@ -2552,29 +2581,30 @@ void renderMenuBackground() {
     }
 }
 
+void renderEnemyStats() {
+    for (int e = 0; e < ne; e++) {
+        int enemyhealth = g_sEnemy[e].m_dHealth;
+        if (g_sEnemy[e].m_dHealth > 0)
+            g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), 0x4A);
+    }
+    if (g_sBossP1.m_dHealth > 0) {
+        int bosshealth = g_sBossP1.m_dHealth;
+        g_Console.writeToBuffer(g_sBossP1.m_cLocation.X, g_sBossP1.m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+    }
+}
+
 void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderObj();        // renders obj under char
     renderCharacter();  // renders the character into the buffer
     renderHUD();
     renderPortal();
-    renderEnemyStats();
-    if (level == 3)
+    if (level == 4) 
+    {
         renderNPCDialogue();
-    //LEMoveChar();
+    }
+    LEMoveChar();
     //renderInputEvents();
-}
-
-void renderEnemyStats() {
-    for (int e = 0; e < ne; e++) {
-        int enemyhealth = g_sEnemy[e].m_dHealth;
-        if (g_sEnemy[e].m_dHealth > 0)
-            g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y-1, std::to_string(enemyhealth), 0x4A);
-    }
-    if (g_sBossP1.m_dHealth > 0) {
-        int bosshealth = g_sBossP1.m_dHealth;
-        g_Console.writeToBuffer(g_sBossP1.m_cLocation.X, g_sBossP1.m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
-    }
 }
 
 void renderHUD() {
@@ -2631,21 +2661,38 @@ void nextLevel() {
         level++;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
         g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+        for (int i = 0; i < obj; i++) 
+        {
+            g_sObj[i].m_cLocation.X = NULL;
+            g_sObj[i].m_cLocation.Y = NULL;
+        }
+        for (int i = 0; i <= 1; i++)
+        {
+            g_sPrimeObj[i].m_cLocation.X = NULL;
+            g_sPrimeObj[i].m_cLocation.Y = NULL;
+        }
         deletePlatforms();
     }
-    else if (g_sChar.m_cLocation.X+1 == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
+    else if (g_sChar.m_cLocation.X + 1 == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
         oneTime = 0;
         level++;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
         g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+        for (int i = 0; i < obj; i++)
+        {
+            g_sObj[i].m_cLocation.X = NULL;
+            g_sObj[i].m_cLocation.Y = NULL;
+        }
+        for (int i = 0; i <= 1; i++)
+        {
+            g_sPrimeObj[i].m_cLocation.X = NULL;
+            g_sPrimeObj[i].m_cLocation.Y = NULL;
+        }
         deletePlatforms();
     }
     if (oneTime == 0) {
-        if (level == 0) {
+        if (level == 0)
             loadLevelData(0);
-            g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
-            g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
-        }
         if (level == 1)
             loadLevelData(1);
         if (level == 2)
@@ -2756,14 +2803,26 @@ void updateEditor() {
 void renderCharacter()
 {
     // Draw the location of the character and weapon
+
+    // Draw the location of the character and weapon
     WORD charColor; //non - ultimate mode color
 
     for (int i = 0; i < ne; i++) //Enemy
     {
-        /*if (level == 0)
-        {*
-            g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
-        //}
+        if (level >= 4)
+        {
+            if (g_sEnemy[i].m_dHealth > 0) 
+            {
+                enemyColor[i] = 0x4F;
+                c5[i] = 157;
+                g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
+            }
+            else
+            {
+                c5[i] = 0;
+                enemyColor[i] = BGcolor;
+            }
+        }
         /*if (c5[i] == 0)
         {
             if (g_uSpawn > 3)
@@ -2795,11 +2854,15 @@ void renderCharacter()
             }
             c1 = 203;
             c2 = 203;
-            if (level >= 2)
+            if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
             {
-                if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
-                {
+                if (level >= 2 && level < 4)
+                { 
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8E);
+                }
+                else if (level >= 4)
+                {
+                    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
                 }
             }
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
@@ -2867,7 +2930,7 @@ void renderObj()
             g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x00);
         }
     }
-    if (level == 2)
+    else if (level == 2)
     {
         for (int i = 0; i <= 4; i++)
         {
@@ -2884,7 +2947,7 @@ void renderObj()
             g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
         }
     }
-    if (level == 3)
+    else if (level == 3)
     {
         for (int i = 5; i <= obj; i++)
         {
@@ -2910,6 +2973,7 @@ void renderObj()
             g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
         }
     }
+
 }
 
 void renderPlatform() {
@@ -2928,6 +2992,9 @@ bool checkCollision() {
         if (g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
+        if (g_sChar.m_cLocation.X - 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+            hit = true;
+        }
     }
     return hit;
 }
@@ -2937,7 +3004,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/cut << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/i[1] << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -3021,7 +3088,6 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0; int n = 0; int b = 0;
     int y = 0; int e = 0; int o = 0; int po = 0;
-
     std::string levelFile;
     std::string line2;
     if (number == 0) {
@@ -3039,21 +3105,17 @@ void loadLevelData(int number) {
         o = 5;
     }
     if (number == 4) {
-        g_sCutscene = false;
         BGcolor = 0x40;
-        levelFile = "levelone.txt";
+        levelFile = "lvlDewm1.txt";
     }
     if (number == 5) {
-        levelFile = "levelone.txt";
+        levelFile = "lvlDewm2.txt";
     }
     if (number == 6) {
-        levelFile = "levelthree.txt";
+        levelFile = "lvlDewm3.txt";
     }
     if (number == 7) {
-        levelFile = "levelfour.txt";
-    }
-    if (number == 111) {
-        levelFile = "custom.txt";
+        levelFile = "lvlDewm4.txt";
     }
     std::ifstream level;
     std::ifstream levelPtr(levelFile);
@@ -3083,25 +3145,45 @@ void loadLevelData(int number) {
                     g_sCharSpawn.m_cLocation.X = x;
                     g_sCharSpawn.m_cLocation.Y = y;
                 }
-                if (perLine[x] == '1') {
+                if (perLine[x] == '0') {
                     g_sEnemy[0].m_cLocation.X = x;
                     g_sEnemy[0].m_cLocation.Y = y;
                 }
-                if (perLine[x] == '2') {
+                if (perLine[x] == '1') {
                     g_sEnemy[1].m_cLocation.X = x;
                     g_sEnemy[1].m_cLocation.Y = y;
                 }
-                if (perLine[x] == '3') {
+                if (perLine[x] == '2') {
                     g_sEnemy[2].m_cLocation.X = x;
                     g_sEnemy[2].m_cLocation.Y = y;
                 }
-                if (perLine[x] == '4') {
+                if (perLine[x] == '3') {
                     g_sEnemy[3].m_cLocation.X = x;
                     g_sEnemy[3].m_cLocation.Y = y;
                 }
-                if (perLine[x] == '5') {
+                if (perLine[x] == '4') {
                     g_sEnemy[4].m_cLocation.X = x;
                     g_sEnemy[4].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '5') {
+                    g_sEnemy[5].m_cLocation.X = x;
+                    g_sEnemy[5].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '6') {
+                    g_sEnemy[6].m_cLocation.X = x;
+                    g_sEnemy[6].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '7') {
+                    g_sEnemy[7].m_cLocation.X = x;
+                    g_sEnemy[7].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '8') {
+                    g_sEnemy[8].m_cLocation.X = x;
+                    g_sEnemy[8].m_cLocation.Y = y;
+                }
+                if (perLine[x] == '9') {
+                    g_sEnemy[9].m_cLocation.X = x;
+                    g_sEnemy[9].m_cLocation.Y = y;
                 }
                 if (perLine[x] == 'B') {
                     g_sBossP1.m_cLocation.X = x;
@@ -3245,7 +3327,6 @@ void reset() {
     g_sPortal.m_cLocation.Y = 28;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
-    steps = 0;
 }
 
 void renderIntro() {
@@ -3282,19 +3363,19 @@ void renderIntro() {
 
 void renderNPCDialogue() {
     if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X-3, g_sNPC[1].m_cLocation.Y - 1, "faggot", 0x80);
+        g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "faggot", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X-1, g_sNPC[2].m_cLocation.Y - 1, "dick", 0x80);
+        g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "dick", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X-3, g_sNPC[3].m_cLocation.Y - 1, "whyyyyy", 0x80);
+        g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, "whyyyyy", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X-3 , g_sNPC[4].m_cLocation.Y - 1, "stoppp", 0x80);
+        g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "stoppp", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X-6, g_sNPC[5].m_cLocation.Y - 1, "stop pushing me", 0x80);
+        g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "stop pushing me", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
         g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "this is so going on tiktok", 0x80);

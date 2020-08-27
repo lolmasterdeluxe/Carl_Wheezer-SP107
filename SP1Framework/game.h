@@ -91,7 +91,7 @@ void focusUlt();                   //Gin's focus ultimate
 // game funcs
 void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
-void moveEnemy(int n, double t, int d, int e); //set distance and speed for enemy patrolling
+void moveEnemy(int &i, char a, int n, double t, int d, int e); //set distance and speed for enemy patrolling
 void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void scroll();              // scrolls the screen on char movement

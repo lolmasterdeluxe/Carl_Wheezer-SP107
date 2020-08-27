@@ -119,11 +119,16 @@ void init(void) {
 
     std::ifstream save;
     save.open("save.txt");
-    if (!save)
-        state.defaultSave();
-    state.loadSave();
-    g_sChar.m_cLocation.X = state.returnX();
-    g_sChar.m_cLocation.Y = state.returnY();
+    if (!save) {
+        //state.defaultSave();
+        loadLevelData(0);
+    }
+    save.close();
+    g_sChar.m_cLocation.X = 8;
+    g_sChar.m_cLocation.Y = 5;
+    //state.loadSave();
+    //g_sChar.m_cLocation.X = state.returnX();
+    //g_sChar.m_cLocation.Y = state.returnY();
     //g_sEnemy[0].m_cLocation.X = 10;
     //g_sEnemy[0].m_cLocation.Y = 28;
     //g_sEnemy[1].m_cLocation.X = 20;
@@ -146,6 +151,7 @@ void init(void) {
     g_sBossP1.m_cLocation.Y = 28;
     g_sBossP2.m_cLocation.X = bossd;
     g_sBossP2.m_cLocation.Y = 28 - 1;*/
+
     g_sEnemy[0].m_dHealth = 5;
     g_sEnemy[1].m_dHealth = 5;
     g_sEnemy[2].m_dHealth = 5;
@@ -2181,8 +2187,21 @@ void renderGame() {
     renderCharacter();  // renders the character into the buffer
     renderHUD();
     renderPortal();
+    renderEnemyStats();
     //LEMoveChar();
     //renderInputEvents();
+}
+
+void renderEnemyStats() {
+    for (int e = 0; e < ne; e++) {
+        int enemyhealth = g_sEnemy[e].m_dHealth;
+        if (g_sEnemy[e].m_dHealth > 0)
+            g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y-1, std::to_string(enemyhealth), 0x4A);
+    }
+    if (g_sBossP1.m_dHealth > 0) {
+        int bosshealth = g_sBossP1.m_dHealth;
+        g_Console.writeToBuffer(g_sBossP1.m_cLocation.X, g_sBossP1.m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+    }
 }
 
 void renderHUD() {
@@ -2224,8 +2243,11 @@ void nextLevel() {
         deletePlatforms();
     }
     if (oneTime == 0) {
-        if (level == 0)
+        if (level == 0) {
             loadLevelData(0);
+            g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+            g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
+        }
         if (level == 1)
             loadLevelData(1);
         if (level == 2)
@@ -2305,6 +2327,17 @@ void renderMap() {
     map.close();
     if (level <= 4)
         renderPlatform();
+}
+
+void renderDialogue() {
+    std::string dialogue;
+    if (characterSelect == 0) {
+        if (level == 0) {
+            dialogue = "test";
+            g_Console.writeToBuffer(50, 50, boss1, bossColor);
+            g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+        }
+    }
 }
 
 void renderCharacter()

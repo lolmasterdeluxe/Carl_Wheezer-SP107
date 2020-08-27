@@ -2700,6 +2700,9 @@ void renderMenuBackground() {
                 if (perLine[x] == '8') {
                     g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
                 }
+                if (perLine[x] == '7') {
+                    g_Console.writeToBuffer(x, y, " ", 0x30);
+                }
             }
             y++;
         }

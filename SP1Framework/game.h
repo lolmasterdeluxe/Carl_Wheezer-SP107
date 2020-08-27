@@ -34,7 +34,8 @@ enum EKEYS
     K_51,    //Dodge backwards (Q)
     K_45,    //Dodge forwards  (E)
     K_55,    //Gin's Ult       (U)
-    K_ENTER, //enter         (ENTER)
+    K_47,    //God mode        (G)
+    K_ENTER,
     K_ESCAPE,
     K_SPACE,
     K_LEFT,
@@ -71,64 +72,85 @@ struct Platform {
     COORD p_cLocation;
 };
 
-void init(void);      // initialize your variables, allocate memory, etc
+void init(void);          // initialize variables, allocate memory, etc
 void getInput(void);      // get input from player
-void update(double dt); // update the game and the state of the game
-void render(void);      // renders the current state of the game to the console
-void shutdown(void);      // do clean up, free memory
-void splashScreenWait();    // waits for time to pass in splash screen
-void updateGame();          // gameplay logic
-void moveCharacter(int n);       // moves the character, collision detection, physics, etc
-void sneakCharacter();       //Gin sneak ability
-void moveProjectile();      // moves player projectile
-void dodge(int i);               // Gin exclusive dodge
+void shutdown(void);      // cleans up the memory
+void deletePlatforms();   // delete platforms data
+
+// character abilities anad mechanics func
+void moveCharacter(int n);         // moves the character, collision detection, physics, etc
+void sneakCharacter();             //Gin sneak ability
+void moveProjectile();             // moves player projectile
+void dodge(int i);                 // Gin exclusive dodge
 void slashAttack(double n, int i); //Slash attack
-void downslam();            //Seraph's down slam
-void seraphUlt();           //Seraph combo breaker
-void focusAttack();         //Gin's focus ability
-void focusUlt();            //Gin's focus ultimate
+void downslam();                   //Seraph's down slam
+void seraphUlt();                  //Seraph combo breaker
+void focusAttack();                //Gin's focus ability
+void focusUlt();                   //Gin's focus ultimate
+
+// game funcs
 void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d, int e); //set distance and speed for enemy patrolling
 void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
+void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
+void scroll();              // scrolls the screen on char movement
+void saveGame();            // saves the game state
+void resetToStart();        // resets char and enemy stats
+void reset();
+
+// cut-scenes func
 void DewmAwaken();          // Dewm Guy's awakening
 void DewmIntro();           // Dewm Guy's intro
-void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
-void clearScreen();         // clears the current screen and draw from scratch 
-void renderNewGameOption();  // renders the splash screen
-void renderGame();          // renders the game stuff
-void renderMap();           // renders the map to the buffer first
-void renderHUD();
-void renderCharacter();     // renders the character into the buffer
-void renderObj();           // renders object into the buffer
-void renderFramerate();     // renders debug information, frame rate, elapsed time, etc
-void renderToScreen();      // dump the contents of the buffer to the screen, one frame worth of game
-void renderInputEvents();   // renders the status of input events
-void renderMenu();
-void updateMenu();
-void scroll();
-void updateTime(double dt);
-void saveGame();
-void renderPlatform();
-void loadLevelData(int number);
-void resetToStart();
-void renderSavedGame();
-void deletePlatforms();
-void LEMoveChar();
-void nextLevel();
-void renderPortal();
-void renderMenuBackground();
-void renderStartMenu();
-void updateStart();
-void renderEnemyStats();
-void renderDialogue(string d, int x, int y);
-void renderWin();
-void renderLose();
+
+// level funcs
+void nextLevel();           // switches to the next level
+void loadLevelData(int number); // loads a level
+
+// Update funcs
+void update(double dt);      // update the game and the state of the game
+void updateStart();          // update start menu
+void updateMenu();           // update pause menu
+void updateGame();           // gameplay logic
+void updateTime(double dt);  // update time
+void updateEditor();         // update editor logic
+void splashScreenWait();     // waits for time to pass in splash screen
+
+// Render funcs
+void render(void);           // renders the current state of the game to the console
+void renderNewGameOption();  // renders the new game option
+void renderGame();           // renders the game stuff
+void renderMap();            // renders the map to the buffer first
+void renderHUD();            // renders char HUD for health, mana, etc.
+void renderMenu();           // renders pause menu
+void renderCharacter();      // renders the character into the buffer
+void renderObj();            // renders object into the buffer
+void renderFramerate();      // renders debug information, frame rate, elapsed time, etc
+void renderInputEvents();    // renders the status of input events
+void renderNPCDialogue();
+void renderDialogue(string d, int x, int y);    // renders dialogue
+void renderPortal();         // renders portal
+void renderMenuBackground(); // renders the background of all menus
+void renderStartMenu();      // renders start menu
+void renderEnemyStats();     // renders enemy health above enemy
+void renderWin();            // renders win scenario
+void renderLose();           // renders lose scenario
+void renderSavedGame();      // renders saved game
+void renderPlatform();       // renders platforms
+void renderEditor();         // renders level editor
+void renderToScreen();       // dump the contents of the buffer to the screen, one frame worth of game
+void renderIntro();          // renders intro splashscreen for characters
+void clearScreen();          // clears the current screen and draw from scratch 
+
+// Level editor functions
+void LEMoveChar();           // moves character
+void LEMarkEnemy();          // marks mouse pos as enemy
+void LEMarkPlatform();       // marks mouse pos as platform
+void writeLevel();           // write level to .txt file
 
 // keyboard and mouse input event managers
-void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events
-void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent);      // define this function for the console to call when there are mouse events
-
+void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);     // define this function for the console to call when there are keyboard events
+void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent);         // define this function for the console to call when there are mouse events
 void gameplayKBHandler(const KEY_EVENT_RECORD& keyboardEvent);   // handles keyboard events for gameplay 
 void gameplayMouseHandler(const MOUSE_EVENT_RECORD& mouseEvent); // handles mouse events for gameplay 
 

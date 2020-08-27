@@ -24,4 +24,3 @@ Thorfinn Controls:
 Misc:
 R - Reset
 G - Editor Mode / God Mode (drag and move character)
---------------------------------------------------------------------------------------

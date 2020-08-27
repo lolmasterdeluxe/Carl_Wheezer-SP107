@@ -79,7 +79,8 @@ auto c3 = std::string(1, c1) + c2; //combined into 2
 char c4 = 205;                     //projectile ascii
 
 char c5[5] = { 157, 157, 157, 157, 157 };  //Enemy ascii
-char c0[30] = { };
+char c0[30] = { };                         //Object Ascii
+char NPC[9] = { };                         //NPC ascii
 
 char c6 = 232;                     //mini - Boss ascii (c6 - 9)
 char c7 = 232;
@@ -92,6 +93,7 @@ WORD enemyColor[5] = { 0x4F, 0x4F, 0x4F, 0x4F, 0x4F };
 WORD bossColor = 0x4E;
 WORD BGcolor;
 WORD ObjColor[30] = {};
+WORD NPCcolor[9] = {};
 // bool g_bInMenu = false;
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
@@ -104,7 +106,7 @@ SGameChar   g_sEnemy[5];
 SGameChar   g_sPortal;
 SGameChar   g_sBossP1;       //Boss bottom half
 SGameChar   g_sBossP2;       //Boss top half
-SGameChar   g_sNPC;          //NPC
+SGameChar   g_sNPC[9];          //NPC
 SGameChar   g_sObj[30];      //Any obj
 SGameChar   g_sPrimeObj[2];  //Obj used in cutscenes
 EGAMESTATES g_eGameState = S_START; // initial state
@@ -131,26 +133,11 @@ void init(void) {
 
     std::ifstream save;
     save.open("save.txt");
-    if (!save) {
-        //state.defaultSave();
-        loadLevelData(0);
-    }
-    save.close();
-    g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
-    g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
-    //state.loadSave();
-    //g_sChar.m_cLocation.X = state.returnX();
-    //g_sChar.m_cLocation.Y = state.returnY();
-    //g_sEnemy[0].m_cLocation.X = 10;
-    //g_sEnemy[0].m_cLocation.Y = 28;
-    //g_sEnemy[1].m_cLocation.X = 20;
-    //g_sEnemy[1].m_cLocation.Y = 28;
-    //g_sEnemy[2].m_cLocation.X = 30;
-    //g_sEnemy[2].m_cLocation.Y = 28;
-    //g_sEnemy[3].m_cLocation.X = 40;
-    //g_sEnemy[3].m_cLocation.Y = 28;
-    //g_sEnemy[4].m_cLocation.X = 55;
-    //g_sEnemy[4].m_cLocation.Y = 28;
+    if (!save)
+        state.defaultSave();
+    state.loadSave();
+    g_sChar.m_cLocation.X = state.returnX();
+    g_sChar.m_cLocation.Y = state.returnY();
     //g_sBossP1.m_cLocation.X = state.returnBossX();
     //g_sBossP1.m_cLocation.Y = state.returnBossY();
     //g_sBossP2.m_cLocation.X = state.returnBossX();
@@ -420,6 +407,10 @@ void updateGame() {     // gameplay logic
         {
             if (level == 0)
             {
+                DewmAwaken();
+            }
+            if (level == 3)
+            {
                 DewmIntro();
             }
             if (level >= 2 && g_sCutscene == false)
@@ -541,7 +532,7 @@ void moveCharacter(int n)
             }
             for (int i = 0; i <= obj; i++)
             {
-                if (g_sObj[i].m_dHealth > 0)
+                if (c0[i] != 0)
                 {
                     if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                     {
@@ -562,7 +553,7 @@ void moveCharacter(int n)
                 }
                 for (int i = 0; i <= obj; i++)
                 {
-                    if (g_sObj[i].m_dHealth > 0)
+                    if (c0[i] != 0)
                     {
                         if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
@@ -584,7 +575,7 @@ void moveCharacter(int n)
                 }
                 for (int i = 0; i <= obj; i++)
                 {
-                    if (g_sObj[i].m_dHealth > 0)
+                    if (c0[i] != 0)
                     {
                         if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
@@ -619,7 +610,7 @@ void moveCharacter(int n)
                 }
                 for (int i = 0; i <= obj; i++)
                 {
-                    if (g_sObj[i].m_dHealth > 0)
+                    if (c0[i] != 0)
                     {
                         if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                         {
@@ -640,7 +631,7 @@ void moveCharacter(int n)
                     }
                     for (int i = 0; i <= obj; i++)
                     {
-                        if (g_sObj[i].m_dHealth > 0)
+                        if (c0[i] != 0)
                         {
                             if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
@@ -662,7 +653,7 @@ void moveCharacter(int n)
                     }
                     for (int i = 0; i <= obj; i++)
                     {
-                        if (g_sObj[i].m_dHealth > 0)
+                        if (c0[i] != 0)
                         {
                             if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                             {
@@ -691,7 +682,7 @@ void moveCharacter(int n)
         }
         for (int i = 0; i <= obj; i++)
         {
-            if (g_sObj[i].m_dHealth > 0)
+            if (c0[i] != 0)
             {
                 if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
@@ -727,7 +718,7 @@ void moveCharacter(int n)
         }
         for (int i = 0; i <= obj; i++)
         {
-            if (g_sObj[i].m_dHealth > 0)
+            if (c0[i] != 0)
             {
                 if ((g_sChar.m_cLocation.X == g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sObj[i].m_cLocation.Y) || (g_sChar.m_cLocation.X == g_sPrimeObj[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPrimeObj[i].m_cLocation.Y))
                 {
@@ -1950,7 +1941,7 @@ void moveBoss(int n, double t, double t2, int d)
     }
 }
 
-void DewmIntro()
+void DewmAwaken()
 {
     if (level == 0)
     {
@@ -1961,9 +1952,9 @@ void DewmIntro()
         }
         /*g_sChar.m_cLocation.X = 26;
         g_sChar.m_cLocation.Y = 48;*/
-        if (cut < 27 && g_sCutscene == true)
+        if (cut < 31 && g_sCutscene == true)
         {
-            if (g_cElapsedTime > 0.01)
+            if (g_cElapsedTime > 0.05)
             {
                 if (cut >= 1 && cut < 10)
                 {
@@ -1989,18 +1980,27 @@ void DewmIntro()
                     cut++;
                     g_cElapsedTime = 0;
                 }
+                if (cut >= 19 && cut < 23)
+                {
+                    for (int i = 0; i <= 1; i++)
+                    {
+                        g_sPrimeObj[i].m_cLocation.X = g_sPrimeObj[i].m_cLocation.X - 2;
+                    }
+                    cut++;
+                    g_cElapsedTime = 0;
+                }
 
             }
             if (g_cElapsedTime > 0.05)
             {
-                if (cut >= 19 && cut < 23)
+                if (cut >= 23 && cut < 27)
                 {
                     g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 2;
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                     cut++;
                     g_cElapsedTime = 0;
                 }
-                if (cut >= 23 && cut < 27)
+                if (cut >= 27 && cut < 31)
                 {
                     g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y + 2;
                     g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
@@ -2012,9 +2012,46 @@ void DewmIntro()
         else
         {
             g_sCutscene = false;
+            cut = 0;
         }
     }
     //renderDialogue("Press <Space> to escape");
+}
+
+void DewmIntro()
+{
+    if (level == 3)
+    {
+        if (g_sChar.m_cLocation.X == 4 && g_sChar.m_cLocation.Y == 28)
+        {
+            g_sCutscene = true;
+            cut++;
+        }
+        if (cut < 94 && g_sCutscene == true)
+        {
+            if (g_cElapsedTime > 0.3)
+            {
+                if (cut >= 1 && cut < 94)
+                {
+                    g_sChar.m_cLocation.X++;
+                    if (cut >= 59)
+                    {
+                        g_sNPC[5].m_cLocation.X++;
+                    }
+                    if (cut >= 85)
+                    {
+                        g_sNPC[8].m_cLocation.X--;
+                    }
+                    cut++;
+                    g_cElapsedTime = 0; 
+                }
+            }
+        }
+        else
+        {
+            g_sCutscene = false;
+        }
+    }
 }
 
 void processUserInput() {
@@ -2718,6 +2755,15 @@ void renderObj()
             }
             g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
         }
+        for (int i = 1; i <= 8; i++)
+        {
+            NPC[i] = 246;
+            NPCcolor[i] = 0x9F;
+            NPCcolor[5] = 0x9C;
+            NPC[8] = 241;
+            NPCcolor[8] = 0x0F;
+            g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+        }
     }
 }
 
@@ -2746,7 +2792,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << 1.0 / g_dDeltaTime << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/cut << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -2829,6 +2875,7 @@ void renderInputEvents() {
 
 void loadLevelData(int number) {
     int n1 = 0;
+    int n = 0;
     int y = 0;
     int e = 0;
     int b = 0;
@@ -2924,8 +2971,9 @@ void loadLevelData(int number) {
                 }
                 if (perLine[x] == 'N')
                 {
-                    g_sNPC.m_cLocation.X = x;
-                    g_sNPC.m_cLocation.Y = y;
+                    g_sNPC[n].m_cLocation.X = x;
+                    g_sNPC[n].m_cLocation.Y = y;
+                    n++;
                 }
                 if (perLine[x] == 'Q')
                 {

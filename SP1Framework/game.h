@@ -90,6 +90,7 @@ void setdamage();           //damage conditions
 void setUltimate(int t);    // sets ultimate metre conditions
 void moveEnemy(int n, double t, int d, int e); //set distance and speed for enemy patrolling
 void moveBoss(int n, double t, double t2, int d); //set distance and speed for boss movement
+void DewmAwaken();          // Dewm Guy's awakening
 void DewmIntro();           // Dewm Guy's intro
 void processUserInput();    // checks if you should change states or do something else with the game, e.g. pause, exit
 void clearScreen();         // clears the current screen and draw from scratch 

@@ -57,6 +57,7 @@ int f = 0;       //focus counter
 int stun = 0;    //stun counter
 int cut = 0;     //Cutscene counter
 double sd = 0.2; //slash delay time elapsed condition
+bool dragging = false;
 
 //mechanic for Seraph's ult
 int y;           //cmd screen set centre y
@@ -135,8 +136,8 @@ void init(void) {
         loadLevelData(0);
     }
     save.close();
-    g_sChar.m_cLocation.X = 8;
-    g_sChar.m_cLocation.Y = 5;
+    g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+    g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
     //state.loadSave();
     //g_sChar.m_cLocation.X = state.returnX();
     //g_sChar.m_cLocation.Y = state.returnY();
@@ -368,6 +369,10 @@ void update(double dt) {
     case S_MENU: updateMenu();
         break;
     case S_START: updateStart();
+        break;
+    case S_CUTSCENE: break;
+    case S_WIN: break;
+    case S_LOSE: break;
     }
     //processUserInput();
 }
@@ -440,9 +445,13 @@ void updateGame() {     // gameplay logic
             setUltimate(75);      //Set ultimate capacity to *50
             moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
         }
-        if (characterSelect == 3)
-        {
-
+        if (characterSelect == 3) {
+            setUltimate(100);
+            moveCharacter(2);
+        }
+        if (characterSelect == 4) {
+            setUltimate(75);
+            moveCharacter(2);
         }
         moveEnemy(5, 0.5, 5, 0);  //move enemy by *5 steps back and forth from position x = *50 every *0.5 seconds
         moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
@@ -507,6 +516,9 @@ void moveCharacter(int n)
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y--;
                 }
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                    g_sChar.m_cLocation.Y--;
+                }
             }
         }
     }
@@ -521,6 +533,9 @@ void moveCharacter(int n)
             g_sChar.m_cLocation.Y--;
             for (int i = 0; i < g_iPlatforms; i++) {
                 if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                    g_sChar.m_cLocation.Y++;
+                }
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
                     g_sChar.m_cLocation.Y++;
                 }
             }
@@ -541,6 +556,9 @@ void moveCharacter(int n)
                     if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                     }
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                    }
                 }
                 for (int i = 0; i <= obj; i++)
                 {
@@ -558,6 +576,9 @@ void moveCharacter(int n)
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
                 for (int i = 0; i < g_iPlatforms; i++) {
                     if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    }
+                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
                     }
                 }
@@ -589,8 +610,10 @@ void moveCharacter(int n)
                 }
                 g_sChar.m_cLocation.Y++;
                 for (int i = 0; i < g_iPlatforms; i++) {
-                    if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i])
-                    {
+                    if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                        g_sChar.m_cLocation.Y--;
+                    }
+                    if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                         g_sChar.m_cLocation.Y--;
                     }
                 }
@@ -611,6 +634,9 @@ void moveCharacter(int n)
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
                         }
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                        }
                     }
                     for (int i = 0; i <= obj; i++)
                     {
@@ -628,6 +654,9 @@ void moveCharacter(int n)
                     g_sChar.m_cLocation.X++;
                     for (int i = 0; i < g_iPlatforms; i++) {
                         if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
+                            g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+                        }
+                        if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[i]) {
                             g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
                         }
                     }
@@ -690,6 +719,9 @@ void moveCharacter(int n)
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
             else if (g_sChar.m_cLocation.X == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
+                g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
+            }
+            else if (g_sChar.m_cLocation.X+1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
                 g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - n;
             }
         }
@@ -1537,7 +1569,6 @@ void focusUlt() //Gin's Focus ultimate
 
 }
 
-
 void setdamage()
 {
     for (int i = 0; i < ne; i++)
@@ -1982,8 +2013,8 @@ void DewmIntro()
         {
             g_sCutscene = false;
         }
-
     }
+    //renderDialogue("Press <Space> to escape");
 }
 
 void processUserInput() {
@@ -1995,7 +2026,7 @@ void processUserInput() {
             g_bPlayGame = false;
             break;
         case S_SPLASHSCREEN:
-            g_bQuitGame = true;
+            g_eGameState = S_START;
             break;
         case S_MENU:
             g_eGameState = S_GAME;
@@ -2009,6 +2040,7 @@ void processUserInput() {
             break;
         case S_START:
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_SPACE].keyReleased) {
@@ -2029,6 +2061,7 @@ void processUserInput() {
             break;
         case S_START:
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_52].keyReleased) {
@@ -2048,6 +2081,7 @@ void processUserInput() {
             break;
         case S_START:
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_ENTER].keyReleased) {
@@ -2083,12 +2117,15 @@ void processUserInput() {
             }
             else if (startMenuSelect == 0) {
                 g_bPlayGame = true;
+                g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+                g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
                 g_eGameState = S_GAME;
             }
             else if (startMenuSelect == -1) {
                 g_bQuitGame = true;
             }
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_LEFT].keyReleased) {
@@ -2110,6 +2147,7 @@ void processUserInput() {
             break;
         case S_START:
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_RIGHT].keyReleased) {
@@ -2131,6 +2169,7 @@ void processUserInput() {
             break;
         case S_START:
             break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_UP].keyReleased) {
@@ -2150,6 +2189,7 @@ void processUserInput() {
         case S_CUTSCENE: break;
         case S_WIN: break;
         case S_LOSE: break;
+        case S_EDITOR: break;
         }
     }
     if (g_skKeyEvent[K_DOWN].keyReleased) {
@@ -2169,6 +2209,7 @@ void processUserInput() {
         case S_CUTSCENE: break;
         case S_WIN: break;
         case S_LOSE: break;
+        case S_EDITOR: break;
         }
     }
 }
@@ -2250,14 +2291,8 @@ void renderNewGameOption() {
     string ch; string desc; WORD color;
     renderMenuBackground();
     c.Y /= 3;
-    c.X = c.X / 2 - 9;
-    c.X = g_Console.getConsoleSize().X / 2 - 13;
-    g_Console.writeToBuffer(c, "Press <Space> to Play", 0x09);
-    c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 23;
-    g_Console.writeToBuffer(c, "Arrow Keys to switch characters", 0x09);
-    c.Y += 1;
-    c.X = g_Console.getConsoleSize().X / 2 - 8;
+    c.Y += 6;
+    c.X = g_Console.getConsoleSize().X / 2 - 9;
     if (characterSelect == 0) {
         ch = "Dewm Guy";
         color = 0x0C;
@@ -2275,7 +2310,7 @@ void renderNewGameOption() {
         color = 0x0B;
     }
     g_Console.writeToBuffer(c, ch, color);
-    c.Y += 4;
+    c.Y += 2;
     c.X = 0;
     if (characterSelect == 0) {
         desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the ice of   Elsa, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
@@ -2290,9 +2325,15 @@ void renderNewGameOption() {
         desc = "Uses an axe (close range) and can change to bow (long range) , highest health, balanced damage, lowest speed, spirit metre slowly builds up overtime, or when enemies slain, and is used to summon a bear spirit which can attack enemies for him, whilst becoming invincible";
     }
     g_Console.writeToBuffer(c, desc, color);
-    c.Y += 8;
-    c.X = g_Console.getConsoleSize().X / 2 - 13;
-    g_Console.writeToBuffer(c, "Press <Esc> to quit", 0x0F);
+    c.Y += 6;
+    c.X = g_Console.getConsoleSize().X / 2 - 20;
+    g_Console.writeToBuffer(c, "Arrow Keys to switch characters", 0x0F);
+    c.Y += 2;
+    c.X = g_Console.getConsoleSize().X / 2 - 16;
+    g_Console.writeToBuffer(c, "Press <Space> to Play", 0x0F);
+    c.Y += 2;
+    c.X = g_Console.getConsoleSize().X / 2 - 23;
+    g_Console.writeToBuffer(c, "Press <Esc> to return to Start Menu", 0x0F);
 }
 
 void renderStartMenu() {
@@ -2514,25 +2555,24 @@ void renderMap() {
         }
     }
     map.close();
-    if (level <= 4)
+    if (level <= 7)
         renderPlatform();
+    if (level == 0)
+        renderDialogue("Press <Space> to escape", 11, 16);
+    if (level == 1)
+        renderDialogue("USE <AD> to move left and right, <W> to jump", 11, 16);
+    if (level == 2) {
+        renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
+        renderDialogue("Left Click to shoot", 11, 15);
+    }
 }
 
-void renderDialogue() {
-    std::string dialogue;
-    if (characterSelect == 0) {
-        if (level == 0) {
-            dialogue = "test";
-            g_Console.writeToBuffer(50, 50, boss1, bossColor);
-            g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
-        }
-    }
+void renderDialogue(string d, int x, int y) {
+    g_Console.writeToBuffer(x, y, d, 0x80);
 }
 
 void renderCharacter()
 {
-    // Draw the location of the character and weapon
-
     // Draw the location of the character and weapon
     WORD charColor; //non - ultimate mode color
 
@@ -2695,9 +2735,6 @@ bool checkCollision() {
             hit = true;
         }
         if (g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
-            hit = true;
-        }
-        if (g_sChar.m_cLocation.X - 1 == g_aPlatformsX[i] && g_sChar.m_cLocation.Y == g_aPlatformsY[i]) {
             hit = true;
         }
     }
@@ -2912,14 +2949,30 @@ void loadLevelData(int number) {
 void LEMoveChar() {
     if (g_mouseEvent.mousePosition.X == g_sChar.m_cLocation.X && g_mouseEvent.mousePosition.Y == g_sChar.m_cLocation.Y) {
         if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED) {
-            g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X;
-            g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;
+            dragging = true;
+        }
+        else {
+            dragging = false;
         }
     }
     if (g_mouseEvent.mousePosition.X == (g_sChar.m_cLocation.X + 1) && g_mouseEvent.mousePosition.Y == g_sChar.m_cLocation.Y) {
         if (g_mouseEvent.buttonState == RIGHTMOST_BUTTON_PRESSED) {
-            g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X - 1;
-            g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;
+            dragging = true;
+        }
+        else {
+            dragging = false;
         }
     }
+    if (dragging) {
+        g_sChar.m_cLocation.X = g_mouseEvent.mousePosition.X;
+        g_sChar.m_cLocation.Y = g_mouseEvent.mousePosition.Y;
+    }
+}
+
+void renderWin() {
+
+}
+
+void renderLose() {
+
 }

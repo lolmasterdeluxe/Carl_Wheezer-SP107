@@ -54,7 +54,8 @@ enum EGAMESTATES
     S_CUTSCENE,
     S_WIN,
     S_LOSE,
-    S_START
+    S_START,
+    S_EDITOR
 };
 
 // struct for the game character
@@ -119,7 +120,9 @@ void renderMenuBackground();
 void renderStartMenu();
 void updateStart();
 void renderEnemyStats();
-void renderDialogue();
+void renderDialogue(string d, int x, int y);
+void renderWin();
+void renderLose();
 
 // keyboard and mouse input event managers
 void keyboardHandler(const KEY_EVENT_RECORD& keyboardEvent);  // define this function for the console to call when there are keyboard events

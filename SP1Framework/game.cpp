@@ -2491,7 +2491,7 @@ void renderStartMenu() {
         c.Y += 1;
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
-        c.X -= 2;
+        c.X -= 1;
         g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == 1) {
@@ -2502,7 +2502,7 @@ void renderStartMenu() {
         c.Y += 1;
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
-        c.X -= 2;
+        c.X -= 1;
         g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == -1) {
@@ -2513,7 +2513,7 @@ void renderStartMenu() {
         c.Y += 1;
         g_Console.writeToBuffer(c, "Exit Game", 0x9F);
         c.Y += 1;
-        c.X -= 2;
+        c.X -= 1;
         g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == -2) {
@@ -2524,9 +2524,12 @@ void renderStartMenu() {
         c.Y += 1;
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
-        c.X -= 2;
+        c.X -= 1;
         g_Console.writeToBuffer(c, "Level Editor", 0x9F);
     }
+    c.Y += 2;
+    c.X -= 1;
+    g_Console.writeToBuffer(c, "By Team-07 ;D", 0x0F);
 }
 
 void renderMenuBackground() {

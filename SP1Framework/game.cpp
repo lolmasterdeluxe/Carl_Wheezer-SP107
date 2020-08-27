@@ -47,7 +47,7 @@ int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
 int p = 0;       //slash delay counter and down slam condition
 int ne = 10;      //number of enemies
-int obj = 29;   //number of objects
+int obj = 24;   //number of objects
 int fe = 0.01;   //Focus delay
 int bossd = 5;   //boss initial location
 int dashl = 0;   //counter for dodge (left)
@@ -79,7 +79,8 @@ auto c3 = std::string(1, c1) + c2; //combined into 2
 char c4 = 205;                     //projectile ascii
 
 char c5[10] = { };  //Enemy ascii
-char c0[30] = { };                         //Object Ascii
+char cP5[10] = { };
+char c0[25] = { };                         //Object Ascii
 char NPC[9] = { };                         //NPC ascii
 
 char c6 = 232;                     //mini - Boss ascii (c6 - 9)
@@ -92,7 +93,7 @@ auto boss2 = std::string(3, c8) + c9;
 WORD enemyColor[10] = { };
 WORD bossColor = 0x4E;
 WORD BGcolor;
-WORD ObjColor[30] = {};
+WORD ObjColor[25] = {};
 WORD NPCcolor[9] = {};
 // bool g_bInMenu = false;
 SKeyEvent g_skKeyEvent[K_COUNT];
@@ -101,13 +102,13 @@ SMouseEvent g_mouseEvent;
 save state;
 // Game specific variables here
 std::string status;
-SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj;
-SGameChar   g_sEnemy[10];
+SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj; //Player specific chars
+SGameChar   g_sEnemy[10]; SGameChar g_sEProj[10]; //Enemy specific chars
 SGameChar   g_sPortal;
 SGameChar   g_sBossP1;       //Boss bottom half
 SGameChar   g_sBossP2;       //Boss top half
 SGameChar   g_sNPC[9];          //NPC
-SGameChar   g_sObj[30];      //Any obj
+SGameChar   g_sObj[25];      //Any obj
 SGameChar   g_sPrimeObj[2];  //Obj used in cutscenes
 EGAMESTATES g_eGameState = S_START; // initial state
 
@@ -429,7 +430,8 @@ void updateGame() {     // gameplay logic
             {
                 moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
                 moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
-                moveEnemy(i[2], 'l', 19, 0.7, 89, 2);
+                EnemyProjectile(i[2], 2, 0.05, 10);       //Enemy int counter, Enemy array number, delay between shots and distance
+                //moveEnemy(i[2], 'l', 19, 0.7, 89, 2);
                 moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
                 moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
                 moveEnemy(i[5], 'r', 17, 0.1, 38, 5);
@@ -437,6 +439,19 @@ void updateGame() {     // gameplay logic
                 moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
                 moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
                 moveEnemy(i[9], 'l', 20, 0.1, 90 , 9);
+            }
+            if (level == 5)
+            {
+                moveEnemy(i[0], 'r', 44, 0.2, 36, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+                moveEnemy(i[1], 'l', 40, 0.2, 76, 1);  //0 is the constant
+                moveEnemy(i[2], 'r', 17, 0.3, 41, 2);
+                moveEnemy(i[3], 'r', 19, 0.4, 16, 3);
+                moveEnemy(i[4], 'l', 12, 0.3, 81, 4);
+                moveEnemy(i[5], 'l', 22, 0.1, 63, 5);
+                moveEnemy(i[6], 'r', 19, 0.5, 70, 6);
+                moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
+                moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
+                moveEnemy(i[9], 'r', 33, 0.1, 6, 9);
             }
 
         }
@@ -1621,7 +1636,7 @@ void setdamage()
             {
                 if (g_sEnemy[i].m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
                 {
-                    g_sChar.m_dHealth--;
+                    g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
                 }
                 g_hElapsedTime = 0;
                 if (g_sAttackState == true)
@@ -1634,6 +1649,19 @@ void setdamage()
                 }
             }
         }
+        if (g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y && g_sEnemy[i].m_dHealth > 0)
+        {
+            if (g_hElapsedTime > 0.5 && !g_sAttackState && !g_sFocus)
+            {
+                if (g_sChar.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
+                {
+                    g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
+                }
+                g_hElapsedTime = 0;
+                
+            }
+            g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
+        }
     }
     if ((g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
@@ -1641,7 +1669,7 @@ void setdamage()
         {
             if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
             {
-                g_sChar.m_dHealth = g_sChar.m_dHealth - 2;
+                g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
             }
             g_hElapsedTime = 0;
         }
@@ -1660,7 +1688,7 @@ void setdamage()
         {
             if (g_hElapsedTime > 0.2)
             {
-                g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 1;
+                g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
                 g_hElapsedTime = 0;
             }
         }
@@ -1668,7 +1696,7 @@ void setdamage()
         {
             if (g_hElapsedTime > 0.2)
             {
-                g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 1;
+                g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
                 g_hElapsedTime = 0;
             }
         }
@@ -2040,6 +2068,103 @@ void moveBoss(int n, double t, double t2, int d)
         //}
     }
 }
+
+void EnemyProjectile(int& k, int i, double n, int x) //i = enemy number, x is distance of range
+{
+    if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) 
+    {
+        if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
+        {
+            cP5[i] = 248;
+            if (g_eElapsedTime[i] > n) //time between shots
+            {
+                if (k != x)
+                {
+                    /*if (j == 1)
+                    {
+                        Beep(1440, 30);
+                    }*/
+                    g_sEProj[i].m_cLocation.X++;
+                    g_eElapsedTime[i] = 0;
+                    k++;
+
+                }
+                else
+                {
+                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                    k = 0;
+                }
+            }
+        }
+        else if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
+        {
+            if (k > 0 && k < x)
+            {
+                if (g_eElapsedTime[i] > n)
+                {
+                    g_sProj.m_cLocation.X++;
+                    g_eElapsedTime[i] = 0;
+                    k++;
+                }
+            }
+            else
+            {
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
+            }
+        }
+    }
+    if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) 
+    {
+        if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
+        {
+            cP5[i] = 248;
+            if (g_eElapsedTime[i] > n)
+            {
+                if (k != x)
+                {
+                    /*if (j == 1)
+                    {
+                        Beep(1440, 30);
+                    }*/
+                    g_sEProj[i].m_cLocation.X--;
+                    g_eElapsedTime[i] = 0;
+                    k++;
+                }
+                else
+                {
+                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                    cP5[i] = 0;
+                    k = 0;
+                }
+            }
+        }
+        else if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
+        {
+            if (k > 0 && k < x)
+            {
+                if (g_eElapsedTime[i] > n)
+                {
+                    g_sEProj[i].m_cLocation.X--;
+                    g_eElapsedTime[i] = 0;
+                    k++;
+                }
+            }
+            else
+            {
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
+            }
+        }
+    }
+}
+
 
 void DewmAwaken()
 {
@@ -2599,7 +2724,7 @@ void renderGame() {
     renderCharacter();  // renders the character into the buffer
     renderHUD();
     renderPortal();
-    if (level == 4) 
+    if (level == 3) 
     {
         renderNPCDialogue();
     }
@@ -2671,6 +2796,14 @@ void nextLevel() {
             g_sPrimeObj[i].m_cLocation.X = NULL;
             g_sPrimeObj[i].m_cLocation.Y = NULL;
         }
+        for (int i = 0; i < ne; i++)
+        {
+            g_sEnemy[i].m_dHealth = 5;
+        }
+        for (int i = 0; i < obj; i++)
+        {
+            g_sObj[i].m_dHealth = 5;
+        }
         deletePlatforms();
     }
     else if (g_sChar.m_cLocation.X + 1 == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
@@ -2687,6 +2820,14 @@ void nextLevel() {
         {
             g_sPrimeObj[i].m_cLocation.X = NULL;
             g_sPrimeObj[i].m_cLocation.Y = NULL;
+        }
+        for (int i = 0; i < ne; i++)
+        {
+            g_sEnemy[i].m_dHealth = 5;
+        }
+        for (int i = 0; i < obj; i++)
+        {
+            g_sObj[i].m_dHealth = 5;
         }
         deletePlatforms();
     }
@@ -2778,10 +2919,18 @@ void renderMap() {
     map.close();
     if (level <= 7)
         renderPlatform();
-    if (level == 0)
-        renderDialogue("Press <Space> to escape", 11, 16);
+    if (level == 0) {
+        if (g_sChar.m_cLocation.X == 45) 
+        {
+            renderDialogue("Press <Space> to awaken", 11, 16);
+        }
+        else
+        {
+            renderDialogue("Press <AD> to move left and right", 11, 16);
+        }
+    }
     if (level == 1)
-        renderDialogue("USE <AD> to move left and right, <W> to jump", 11, 16);
+        renderDialogue("Press <W> to jump", 11, 16);
     if (level == 2) {
         renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
         renderDialogue("Left Click to shoot", 11, 15);
@@ -2815,6 +2964,7 @@ void renderCharacter()
             {
                 enemyColor[i] = 0x4F;
                 c5[i] = 157;
+                g_Console.writeToBuffer(g_sEProj[i].m_cLocation, cP5[i], 0x4F);
                 g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
             }
             else
@@ -2949,12 +3099,12 @@ void renderObj()
     }
     else if (level == 3)
     {
-        for (int i = 5; i <= obj; i++)
+        for (int i = 0; i <= 24; i++)
         {
             if (g_sObj[i].m_dHealth > 0)
             {
                 c0[i] = 219;
-                ObjColor[i] = 0x40;
+                ObjColor[i] = 0x00;
             }
             else
             {
@@ -3004,7 +3154,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/i[1] << "FPS";
+    ss << 1.0 / g_dDeltaTime << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -3102,7 +3252,6 @@ void loadLevelData(int number) {
     }
     if (number == 3) {
         levelFile = "Intro.txt";
-        o = 5;
     }
     if (number == 4) {
         BGcolor = 0x40;
@@ -3363,27 +3512,27 @@ void renderIntro() {
 
 void renderNPCDialogue() {
     if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "faggot", 0x80);
+        g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "  ...!?", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "dick", 0x80);
+        g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "It's him...", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, "whyyyyy", 0x80);
+        g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, " Huh!?", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "stoppp", 0x80);
+        g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "What the..", 0x80);
     }
-    if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "stop pushing me", 0x80);
+    if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3) && g_sNPC[5].m_cLocation.X < g_sNPC[6].m_cLocation.X) {
+        g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "    Waaa!", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "this is so going on tiktok", 0x80);
+        g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "     Oh sh*t..", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[7].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[7].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "smile bitch", 0x80);
+        g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "  :O", 0x80);
     }
     if ((g_sChar.m_cLocation.X > g_sNPC[8].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[8].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, "halt", 0x80);
+        g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, " !!!", 0x80);
     }
 }

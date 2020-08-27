@@ -87,6 +87,7 @@ void downslam();                   //Seraph's down slam
 void seraphUlt();                  //Seraph combo breaker
 void focusAttack();                //Gin's focus ability
 void focusUlt();                   //Gin's focus ultimate
+void EnemyProjectile(int& k, int i, double n, int x); //Enemy projectile
 
 // game funcs
 void setdamage();           //damage conditions

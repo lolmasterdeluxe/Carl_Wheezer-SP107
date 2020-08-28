@@ -88,5 +88,8 @@
     <Text Include="lvlDewm4.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="menu.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

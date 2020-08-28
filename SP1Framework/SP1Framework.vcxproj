@@ -99,6 +99,7 @@
     <Text Include="lvlDewm3.txt" />
     <Text Include="lvlDewm4.txt" />
     <Text Include="map.txt" />
+    <Text Include="menu.txt" />
     <Text Include="save.txt" />
     <Text Include="tutorial_1.txt" />
     <Text Include="tutorial_2.txt" />

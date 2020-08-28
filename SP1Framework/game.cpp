@@ -58,6 +58,7 @@ int stun = 0;    //stun counter
 int cut = 0;     //Cutscene counter
 double sd = 0.2; //slash delay time elapsed condition
 bool dragging = false; bool edit = false; bool godMode = false;
+int dialogueX;
 
 //mechanic for Seraph's ult
 int y;           //cmd screen set centre y
@@ -99,12 +100,11 @@ WORD NPCcolor[9] = {};
 SKeyEvent g_skKeyEvent[K_COUNT];
 SMouseEvent g_mouseEvent;
 
-save state;
 // Game specific variables here
-std::string status;
+save state;
 SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj; //Player specific chars
 SGameChar   g_sEnemy[10]; SGameChar g_sEProj[10]; //Enemy specific chars
-SGameChar   g_sPortal;
+SGameChar   g_sPortal; SGameChar g_sDewmintro; SGameChar g_sDewmawaken;
 SGameChar   g_sBossP1;       //Boss bottom half
 SGameChar   g_sBossP2;       //Boss top half
 SGameChar   g_sNPC[9];          //NPC
@@ -134,38 +134,37 @@ void init(void) {
 
     std::ifstream save;
     save.open("save.txt");
-    if (!save)
-        state.defaultSave();
-    state.loadSave();
-    g_sChar.m_cLocation.X = state.returnX();
-    g_sChar.m_cLocation.Y = state.returnY();
-    //g_sBossP1.m_cLocation.X = state.returnBossX();
-    //g_sBossP1.m_cLocation.Y = state.returnBossY();
-    //g_sBossP2.m_cLocation.X = state.returnBossX();
-    //g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
-    //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-    //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-    //g_sChar.m_bActive = state.returnCharState();
-    //g_sChar.m_dHealth = state.returnCharHealth();
-    /*g_sBossP1.m_cLocation.X = bossd;
-    g_sBossP1.m_cLocation.Y = 28;
-    g_sBossP2.m_cLocation.X = bossd;
-    g_sBossP2.m_cLocation.Y = 28 - 1;*/
-    for (int i = 0; i <= ne; i++)
-    {
-        g_sEnemy[i].m_dHealth = 5;
+    if (!save) {
+        g_sChar.m_cLocation.X = 0;
+        g_sChar.m_cLocation.Y = 0;
+        g_sChar.m_dMana = 50;
+        g_sChar.m_dHealth = 50;
+        for (int i = 0; i <= ne; i++)
+        {
+            g_sEnemy[i].m_dHealth = 5;
+        }
+        for (int i = 0; i <= obj; i++)
+        {
+            g_sObj[i].m_dHealth = 5;
+        }
+        g_sBossP1.m_dHealth = 100;
+        g_sBossP1.m_cLocation.X = bossd;
+        g_sBossP1.m_cLocation.Y = 28;
+        g_sBossP2.m_cLocation.X = bossd;
+        g_sBossP2.m_cLocation.Y = 28 - 1;
     }
-    for (int i = 0; i <= obj; i++)
-    {
-        g_sObj[i].m_dHealth = 5;
+    else {
+        state.loadSave();
+        loadSavedGame();
+        loadLevelData(level);
+        save.close();
     }
-    g_sBossP1.m_dHealth = 100;
-    g_sChar.m_dMana = state.returnCharMana();
-    g_sChar.m_dMana = 50;
-    g_sPortal.m_cLocation.X = 97;
-    g_sPortal.m_cLocation.Y = 28;
+    g_sDewmintro.m_cLocation.X = 4;
+    g_sDewmintro.m_cLocation.Y = 28;
+    g_sDewmawaken.m_cLocation.X = 42;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
+    dialogueX = 11;
     
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -268,8 +267,7 @@ void mouseHandler(const MOUSE_EVENT_RECORD& mouseEvent) {
 }
 
 void saveGame() {
-    /*state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sEnemy.m_dHealth));*/
-    /*state.saveState(std::to_string(g_sEnemy.m_cLocation.X), std::to_string(g_sEnemy.m_cLocation.Y), std::to_string(g_sBossP1.m_cLocation.X), std::to_string(g_sBossP1.m_cLocation.Y));*/
+    state.saveState(sendSaveData());
 }
 
 //--------------------------------------------------------------
@@ -363,7 +361,7 @@ void update(double dt) {
         break;
     case S_CUTSCENE: break;
     case S_WIN: break;
-    case S_LOSE: break;
+    case S_LOSE: processUserInput(); break;
     case S_EDITOR: updateEditor(); break;
     }
     //processUserInput();
@@ -400,6 +398,7 @@ void splashScreenWait() {      // waits for time to pass in splash screen
     if (g_bPlayGame == true)   // wait for keyboard to switch to game mode, else do nothing
         g_eGameState = S_GAME;
     //renderSplashScreen();
+    reset();
     processUserInput();
 }
 
@@ -452,8 +451,8 @@ void updateGame() {     // gameplay logic
                 moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
                 moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
                 moveEnemy(i[9], 'r', 33, 0.1, 6, 9);
+                moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
             }
-
         }
         if (characterSelect == 1) { //Seraph
             slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
@@ -475,12 +474,13 @@ void updateGame() {     // gameplay logic
         {
 
         }
-        
-        moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
         setdamage();              //find reason for damage              /
         nextLevel();
         if (godMode)
             LEMoveChar();
+        if (g_sChar.m_dHealth == 0) {
+            resetToStart();
+        }
         //scroll();
     }
     //state.saveState(std::to_string(g_sChar.m_cLocation.X), std::to_string(g_sChar.m_cLocation.Y), status, std::to_string(g_sProj.m_cLocation.X), std::to_string(g_sProj.m_cLocation.Y));
@@ -792,7 +792,7 @@ void moveCharacter(int n)
             }
         }
     }
-
+    //scroll();
 }
 
 void sneakCharacter()
@@ -1620,9 +1620,7 @@ void focusUlt() //Gin's Focus ultimate
                 g_sChar.m_dMana = 0;
             }
         }
-
     }
-
 }
 
 
@@ -1867,33 +1865,33 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
             {
                 if (i < n && a == 'r') //direction = right
                 {
-                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
-                    g_eElapsedTime[e] = 0;
-                    i++;
+                            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
+                            g_eElapsedTime[e] = 0;
+                            i++;
                 }
                 else if (a == 'r') //go back
                 {
-                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
-                    g_eElapsedTime[e] = 0;
-                    if (g_sEnemy[e].m_cLocation.X <= d)
-                    {
-                        i = 0;
+                            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
+                            g_eElapsedTime[e] = 0;
+                            if (g_sEnemy[e].m_cLocation.X <= d)
+                            {
+                                i = 0;
                     }
                 }
                 if (i < n && a == 'l') //direction = left
                 {
-                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
-                    g_eElapsedTime[e] = 0;
-                    i++;
+                            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
+                            g_eElapsedTime[e] = 0;
+                            i++;
                 }
                 else if (a == 'l') //go back
                 {
-                    g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
-                    g_eElapsedTime[e] = 0;
-                    if (g_sEnemy[e].m_cLocation.X >= d)
-                    {
-                        i = 0;
-                    }
+                            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
+                            g_eElapsedTime[e] = 0;
+                            if (g_sEnemy[e].m_cLocation.X >= d)
+                            {
+                                i = 0;
+                            }
                 }
             }
         }
@@ -1905,7 +1903,7 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
                 g_sEnemy[k].m_cLocation.X = g_sEnemy[k].m_cLocation.X + 1;
                 i = i + 1;
                 stun++;
-                for (int i = 0; i <= g_iPlatforms; i++)
+                for (int i = 0; i < g_iPlatforms; i++)
                 {
                     if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
                     {
@@ -1922,7 +1920,7 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
                 if (g_sEnemy[k].m_cLocation.X - 1 == d)
                 {
                     n++;
-                    for (int i = 0; i <= g_iPlatforms; i++)
+                    for (int i = 0; i < g_iPlatforms; i++)
                     {
                         if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
                         {
@@ -1934,7 +1932,7 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
                 else if (g_sEnemy[k].m_cLocation.X - 2 == d)
                 {
                     n = n + 2;
-                    for (int i = 0; i <= g_iPlatforms; i++)
+                    for (int i = 0; i < g_iPlatforms; i++)
                     {
                         if (g_sEnemy[k].m_cLocation.Y + 1 != g_aPlatformsY[i])
                         {
@@ -2247,7 +2245,7 @@ void DewmIntro()
 {
     if (level == 3)
     {
-        if (g_sChar.m_cLocation.X == 4 && g_sChar.m_cLocation.Y == 28)
+        if (g_sChar.m_cLocation.X == g_sDewmintro.m_cLocation.X && g_sChar.m_cLocation.Y == g_sDewmintro.m_cLocation.Y)
         {
             g_sCutscene = true;
             cut++;
@@ -2277,6 +2275,9 @@ void DewmIntro()
             g_sCutscene = false;
         }
     }
+    else {
+        g_sCutscene = false;
+    }
 }
 
 void processUserInput() {
@@ -2304,6 +2305,7 @@ void processUserInput() {
         case S_WIN:
             break;
         case S_LOSE:
+            g_eGameState = S_START;
             break;
         case S_START:
             break;
@@ -2317,6 +2319,7 @@ void processUserInput() {
         case S_GAME:
             break;
         case S_SPLASHSCREEN:
+            resetToStart();
             g_bPlayGame = true;
             break;
         case S_MENU:
@@ -2361,14 +2364,17 @@ void processUserInput() {
             break;
         case S_MENU:
             if (pauseMenuSelect == 1) {
-                //saveGame();
+                saveGame();
                 g_bPlayGame = true;
                 g_eGameState = S_GAME;
             }
             else if (pauseMenuSelect == 0) {
                 g_bPlayGame = true;
-                if (!edit)
+                if (!edit) {
+                    loadSavedGame();
+                    loadLevelData(level);
                     g_eGameState = S_GAME;
+                }
                 if (edit)
                     g_eGameState = S_EDITOR;
             }
@@ -2712,8 +2718,11 @@ void renderMenuBackground() {
 void renderEnemyStats() {
     for (int e = 0; e < ne; e++) {
         int enemyhealth = g_sEnemy[e].m_dHealth;
-        if (g_sEnemy[e].m_dHealth > 0)
-            g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), 0x4A);
+        if (g_sEnemy[e].m_dHealth > 0) {
+            if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
+                g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), 0x4A);
+            }
+        }
     }
     if (g_sBossP1.m_dHealth > 0) {
         int bosshealth = g_sBossP1.m_dHealth;
@@ -2725,13 +2734,14 @@ void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderObj();        // renders obj under char
     renderCharacter();  // renders the character into the buffer
+    renderEnemyStats();
     renderHUD();
     renderPortal();
     if (level == 3) 
     {
         renderNPCDialogue();
     }
-    LEMoveChar();
+    //LEMoveChar();
     //renderInputEvents();
 }
 
@@ -2785,10 +2795,9 @@ void renderHUD() {
 
 void nextLevel() {
     if (g_sChar.m_cLocation.X == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
+        g_sCutscene = false;
         oneTime = 0;
         level++;
-        g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
-        g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
         for (int i = 0; i < obj; i++) 
         {
             g_sObj[i].m_cLocation.X = NULL;
@@ -2810,6 +2819,7 @@ void nextLevel() {
         deletePlatforms();
     }
     else if (g_sChar.m_cLocation.X + 1 == g_sPortal.m_cLocation.X && g_sChar.m_cLocation.Y == g_sPortal.m_cLocation.Y && oneTime == 1) {
+        g_sCutscene = false;
         oneTime = 0;
         level++;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
@@ -2852,6 +2862,8 @@ void nextLevel() {
         if (level == 7)
             loadLevelData(7);
         oneTime = 1;
+        g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
+        g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
     }
     if (level > 7)
         level = 7;
@@ -2892,7 +2904,8 @@ void renderMenu() {
 }
 
 void renderPortal() {
-    g_Console.writeToBuffer(g_sPortal.m_cLocation.X, g_sPortal.m_cLocation.Y, " ", 0xF0);
+    if (g_sPortal.m_cLocation.X > 0 && g_sPortal.m_cLocation.X < x)
+        g_Console.writeToBuffer(g_sPortal.m_cLocation.X, g_sPortal.m_cLocation.Y, " ", 0xF0);
 }
 
 void renderSavedGame() {
@@ -2923,25 +2936,26 @@ void renderMap() {
     if (level <= 7)
         renderPlatform();
     if (level == 0) {
-        if (g_sChar.m_cLocation.X == 45) 
+        if (g_sChar.m_cLocation.X == g_sDewmawaken.m_cLocation.X) 
         {
-            renderDialogue("Press <Space> to awaken", 11, 16);
+            renderDialogue("Press <Space> to awaken", dialogueX, 16);
         }
         else
         {
-            renderDialogue("Press <AD> to move left and right", 11, 16);
+            renderDialogue("Press <AD> to move left and right", dialogueX, 16);
         }
     }
     if (level == 1)
-        renderDialogue("Press <W> to jump", 11, 16);
+        renderDialogue("Press <W> to jump", dialogueX, 16);
     if (level == 2) {
-        renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
-        renderDialogue("Left Click to shoot", 11, 15);
+        renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", dialogueX, 14);
+        renderDialogue("Left Click to shoot", dialogueX, 15);
     }
 }
 
 void renderDialogue(string d, int x, int y) {
-    g_Console.writeToBuffer(x, y, d, 0x80);
+    if (x > 0 && x < g_Console.getConsoleSize().X)
+        g_Console.writeToBuffer(x, y, d, 0x80);
 }
 
 void renderEditor() {
@@ -3419,9 +3433,14 @@ void renderLose() {
     COORD c;
     c.X = g_Console.getConsoleSize().X / 2;
     c.Y = g_Console.getConsoleSize().Y / 2;
+    c.X -= 2;
     g_Console.writeToBuffer(c, "You lost!", 0x0F);
+    c.Y += 1;
+    c.X -= 2;
+    g_Console.writeToBuffer(c, "Press <Esc> to restart", 0x0F);
 }
 
+// side-scrolling
 void scroll() {
     int move;
     int c = g_Console.getConsoleSize().X / 2 - 1;
@@ -3439,7 +3458,14 @@ void scroll() {
         for (int i = 0; i < 2; i++) {
             g_sPrimeObj[i].m_cLocation.X = g_sPrimeObj[i].m_cLocation.X - move;
         }
+        for (int i = 0; i < 9; i++) {
+            g_sNPC[i].m_cLocation.X = g_sNPC[i].m_cLocation.X - move;
+        }
+        g_sDewmawaken.m_cLocation.X = g_sDewmawaken.m_cLocation.X - move;
+        dialogueX = dialogueX - move;
+        g_sDewmintro.m_cLocation.X = g_sDewmintro.m_cLocation.X - move;
         g_sPortal.m_cLocation.X = g_sPortal.m_cLocation.X - move;
+        g_sCharSpawn.m_cLocation.X = g_sCharSpawn.m_cLocation.X - move;
         g_sChar.m_cLocation.X = c;
     }
     if (g_sChar.m_cLocation.X < c) {
@@ -3456,7 +3482,14 @@ void scroll() {
         for (int i = 0; i < 2; i++) {
             g_sPrimeObj[i].m_cLocation.X = g_sPrimeObj[i].m_cLocation.X + move;
         }
+        for (int i = 0; i < 9; i++) {
+            g_sNPC[i].m_cLocation.X = g_sNPC[i].m_cLocation.X + move;
+        }
+        g_sDewmawaken.m_cLocation.X = g_sDewmawaken.m_cLocation.X + move;
+        dialogueX = dialogueX + move;
+        g_sDewmintro.m_cLocation.X = g_sDewmintro.m_cLocation.X + move;
         g_sPortal.m_cLocation.X = g_sPortal.m_cLocation.X + move;
+        g_sCharSpawn.m_cLocation.X = g_sCharSpawn.m_cLocation.X + move;
         g_sChar.m_cLocation.X = c;
     }
 }
@@ -3473,12 +3506,8 @@ void reset() {
         g_sObj[i].m_dHealth = 5;
     }
     g_sBossP1.m_dHealth = 100;
-    g_sChar.m_dMana = state.returnCharMana();
     g_sChar.m_dMana = 50;
-    g_sPortal.m_cLocation.X = 97;
-    g_sPortal.m_cLocation.Y = 28;
-    y = g_Console.getConsoleSize().Y - 2;
-    x = g_Console.getConsoleSize().X - 2;
+    g_sChar.m_dHealth = 50;
 }
 
 void renderIntro() {
@@ -3514,28 +3543,96 @@ void renderIntro() {
 }
 
 void renderNPCDialogue() {
-    if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "  ...!?", 0x80);
+    if (g_sChar.m_cLocation.Y == g_sNPC[0].m_cLocation.Y) {
+        if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "  ...!?", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "It's him...", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, " Huh!?", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "What the..", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3) && g_sNPC[5].m_cLocation.X < g_sNPC[6].m_cLocation.X) {
+            g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "    Waaa!", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "     Oh sh*t..", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[7].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[7].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "  :O", 0x80);
+        }
+        if ((g_sChar.m_cLocation.X > g_sNPC[8].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[8].m_cLocation.X + 3)) {
+            g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, " !!!", 0x80);
+        }
     }
-    if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "It's him...", 0x80);
+}
+
+string sendSaveData() {
+    int x, y, hl, mn, ex[10], ey[10], eh[10],
+        bx, by, bh;
+    string c, cx, cy, hlth, mana, l, ste, enx[10], eny[10], enh[10],
+        bosx, bosy, bosh, save;
+    x = g_sChar.m_cLocation.X; y = g_sChar.m_cLocation.Y; mn = g_sChar.m_dMana; hl = g_sChar.m_dHealth;
+    cx = to_string(x); cy = to_string(y); mana = to_string(mn); hlth = to_string(hl);
+    l = to_string(level); c = to_string(characterSelect);
+
+    if (cx.length() == 1) cx = "0" + cx;
+    if (cy.length() == 1) cy = "0" + cy;
+    if (hlth.length() == 1) hlth = "00" + hlth;
+    if (hlth.length() == 2) hlth = "0" + hlth;
+    if (mana.length() == 1) mana = "00" + mana;
+    if (mana.length() == 2) mana = "0" + mana;
+    if (g_sChar.m_bActive == false) ste = "1";
+    if (g_sChar.m_bActive == true) ste = "0";
+
+    save = c + cx + cy + hlth + mana + l + ste;
+
+    for (int i = 0; i < ne; i++) {
+        ex[i] = g_sEnemy[i].m_cLocation.X; ey[i] = g_sEnemy[i].m_cLocation.Y; eh[i] = g_sEnemy[i].m_dHealth;
+        enx[i] = to_string(ex[i]); eny[i] = to_string(ey[i]); enh[i] = to_string(eh[i]);
+        if (enx[i].length() == 1) enx[i] = "0" + enx[i];
+        if (eny[i].length() == 1) eny[i] = "0" + eny[i];
+        if (enh[i].length() == 1) enh[i] = "0" + enh[i];
+        
+        save = save + enx[i] + eny[i] + enh[i];
     }
-    if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, " Huh!?", 0x80);
+
+    bx = g_sBossP1.m_cLocation.X; by = g_sBossP1.m_cLocation.Y; bh = g_sBossP1.m_dHealth;
+    bosx = to_string(bx); bosy = to_string(by); bosh = to_string(bh);
+    if (bosx.length() == 1) bosx = "0" + bosx;
+    if (bosy.length() == 1) bosy = "0" + bosy;
+    if (bosh.length() == 1) bosh = "00" + bosh;
+    if (bosh.length() == 2) bosh = "0" + bosh;
+
+    save = save + bosx + bosy + bosh;
+
+    return save;
+}
+
+void loadSavedGame() {
+    characterSelect = state.returnChar();
+    g_sChar.m_cLocation.X = state.returnX();
+    g_sChar.m_cLocation.Y = state.returnY();
+    g_sChar.m_dMana = state.returnCharMana();
+    g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+    g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+    g_sChar.m_bActive = state.returnCharState();
+    g_sChar.m_dHealth = state.returnCharHealth();
+    for (int i = 0; i < ne; i++) {
+        g_sEnemy[i].m_cLocation.X = state.returnEnemyX(i);
+        g_sEnemy[i].m_cLocation.Y = state.returnEnemyY(i);
+        g_sEnemy[i].m_dHealth = state.returnEnemyH(i);
     }
-    if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "What the..", 0x80);
-    }
-    if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3) && g_sNPC[5].m_cLocation.X < g_sNPC[6].m_cLocation.X) {
-        g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "    Waaa!", 0x80);
-    }
-    if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "     Oh sh*t..", 0x80);
-    }
-    if ((g_sChar.m_cLocation.X > g_sNPC[7].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[7].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "  :O", 0x80);
-    }
-    if ((g_sChar.m_cLocation.X > g_sNPC[8].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[8].m_cLocation.X + 3)) {
-        g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, " !!!", 0x80);
+    level = state.returnLevel();
+    if (level > 4) {
+        g_sBossP1.m_dHealth = state.returnBossH();
+        g_sBossP1.m_cLocation.X = state.returnBossX();
+        g_sBossP1.m_cLocation.Y = state.returnBossY();
+        g_sBossP2.m_cLocation.X = state.returnBossX();
+        g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
     }
 }

@@ -3,25 +3,26 @@
 using namespace std;
 class save {
 private:
-	int x = 0; int y = 0; int enemyX = 0; int enemyY = 0; int state = 0;
-	int bossX = 0; int bossY = 0; int hp = 0; int mana = 0;
+	int x = 0; int y = 0; int enemyX[10]; int enemyY[10]; int enemyH[10]; int state = 0;
+	int bossX = 0; int bossY = 0; int bossH = 0;  int hp = 0; int mana = 0; int level; int ch;
 public:
 	save();
 	~save();
-	void saveState(string posx, string posy, string charstate, string health, string mana, string eX, string eY, string bX, string bY);
-	void saveState();
+	void saveState(string s);
 	void readSave();
 	void defaultSave();
 	int loadSave();
 	int returnX();
 	int returnY();
 	bool returnCharState();
-	int returnEnemyX();
-	int returnEnemyY();
+	int returnChar();
+	int returnEnemyX(int n);
+	int returnEnemyY(int n);
+	int returnEnemyH(int n);
 	int returnBossX();
 	int returnBossY();
+	int returnBossH();
 	int returnCharHealth();
 	int returnCharMana();
-	string returnCharSave();
-	string returnEnemySave();
+	int returnLevel();
 };

@@ -76,6 +76,7 @@ void init(void);          // initialize variables, allocate memory, etc
 void getInput(void);      // get input from player
 void shutdown(void);      // cleans up the memory
 void deletePlatforms();   // delete platforms data
+void loadSavedGame();
 
 // character abilities anad mechanics func
 void moveCharacter(int n);         // moves the character, collision detection, physics, etc
@@ -99,6 +100,7 @@ void scroll();              // scrolls the screen on char movement
 void saveGame();            // saves the game state
 void resetToStart();        // resets char and enemy stats
 void reset();
+string sendSaveData();
 
 // cut-scenes func
 void DewmAwaken();          // Dewm Guy's awakening
@@ -128,7 +130,7 @@ void renderCharacter();      // renders the character into the buffer
 void renderObj();            // renders object into the buffer
 void renderFramerate();      // renders debug information, frame rate, elapsed time, etc
 void renderInputEvents();    // renders the status of input events
-void renderNPCDialogue();
+void renderNPCDialogue();    // renders NPC dialogue
 void renderDialogue(string d, int x, int y);    // renders dialogue
 void renderPortal();         // renders portal
 void renderMenuBackground(); // renders the background of all menus

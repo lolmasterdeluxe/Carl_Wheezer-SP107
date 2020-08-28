@@ -12,87 +12,13 @@ string charSaveState = "0"; string enemySaveState = "0";
 save::save() {
 }
 save::~save() {
-	/*ofstream Map;
-	Map.open("save.txt");
-	Map << (charSaveState + enemySaveState);
-	Map.close();
-	cout << "saved all!";*/
-	/*ofstream Map;
-	Map.open("save1.txt");
-	Map << "line1\nline2";
-	Map.close();*/
 }
 
-//void save::saveState(string posx, string posy, string charstate, string health, string mana) {
-//	if (posx.length() == 1) {
-//		posx = "0" + posx;
-//	}
-//	if (posy.length() == 1) {
-//		posy = "0" + posy;
-//	}
-//	if (charstate.length() == 1) {
-//		charstate = "0" + charstate;
-//	}
-//	if (health.length() < 4) {
-//		for (int i = 0; i < health.length(); i++) {
-//			health = "0" + health;
-//			cout << health;
-//		}
-//	}
-//	if (mana.length() == 1) {
-//		mana = "0" + mana;
-//	}
-//	charSaveState = posx + posy + charstate + health + mana;
-//	cout << "saved char!";
-//}
-
-void save::saveState(string posx, string posy, string charstate, string health, string mana, string eX, string eY, string bX, string bY) {
-	if (posx.length() == 1) {
-		posx = "0" + posx;
-	}
-	if (posy.length() == 1) {
-		posy = "0" + posy;
-	}
-	if (charstate.length() == 1) {
-		charstate = "0" + charstate;
-	}
-	if (health.length() < 4) {
-		for (int i = 0; i < health.length(); i++) {
-			health = "0" + health;
-			cout << health;
-		}
-	}
-	if (mana.length() == 1) {
-		mana = "0" + mana;
-	}
-	charSaveState = posx + posy + charstate + health + mana;
-	cout << "saved char!";
-	if (eX.length() == 1) {
-		eX = "0" + eX;
-	}
-	if (eY.length() == 1) {
-		eY = "0" + eY;
-	}
-	if (bX.length() == 1) {
-		bX = "0" + bX;
-	}
-	if (bY.length() == 1) {
-		bY = "0" + bY;
-	}
-	enemySaveState = eX + eY + bX + bY;
-	if (charSaveState == "0")
-		charSaveState = "201500200000";
-	cout << "saved!" << endl;
-	saveState();
-}
-
-void save::saveState() {
+void save::saveState(string s) {
 	ofstream Map;
-	string saveLine = charSaveState + '\n' + enemySaveState;
 	Map.open("save.txt");
-	Map << saveLine;
+	Map << s;
 	Map.close();
-	cout << "saved all!";
 }
 
 void save::defaultSave() {
@@ -114,44 +40,50 @@ void save::readSave() {
 	}
 }
 
-string save::returnCharSave() {
-	return charSaveState;
-}
-
-string save::returnEnemySave() {
-	return enemySaveState;
-}
-
 int save::loadSave() {
 	string line; string saveline;
 	ifstream map("save.txt");
-	string posx, posy, charstate, health, mn, ex, ey, bx, by;
+	string chr, posx, posy, charstate, health, mn, ex[10], ey[10], eh[10], l, bx, by, bh;
 	if (map.is_open()) {
 		while (getline(map, line)) {
 			saveline = line;
-			if (saveline.length() == 12) {
-				posx = saveline.substr(0, 2);
-				posy = saveline.substr(2, 2);
-				charstate = saveline.substr(4, 2);
-				health = saveline.substr(6, 4);
-				mn = saveline.substr(10, 2);
+			chr = saveline.substr(0, 1);
+			posx = saveline.substr(1, 2);
+			posy = saveline.substr(3, 2);
+			health = saveline.substr(5, 3);
+			mn = saveline.substr(8, 3);
+			l = saveline.substr(11, 1);
+			charstate = saveline.substr(12, 1);
+
+			for (int i = 0; i < 10; i++) {
+				for (int k = 13; k < 73; k+=6) {
+					ex[i] = saveline.substr(k, 2);
+					ey[i] = saveline.substr(k+2, 2);
+					eh[i] = saveline.substr(k+4, 2);
+				}
 			}
-			if (saveline.length() == 8) {
-				ex = saveline.substr(0, 2);
-				ey = saveline.substr(2, 2);
-				bx = saveline.substr(4, 2);
-				by = saveline.substr(6, 2);
-			}
+
+			bx = saveline.substr(73, 2);
+			by = saveline.substr(75, 2);
+			bh = saveline.substr(77, 3);
 		}
 		x = stoi(posx);
 		y = stoi(posy);
-		enemyX = stoi(ex);
-		enemyY = stoi(ey);
 		hp = stoi(health);
 		mana = stoi(mn);
 		state = stoi(charstate);
+		level = stoi(l);
+		ch = stoi(chr);
+
+		for (int i = 0; i < 10; i++) {
+			enemyX[i] = stoi(ex[i]);
+			enemyY[i] = stoi(ey[i]);
+			enemyH[i] = stoi(eh[i]);
+		}
+
 		bossX = stoi(bx);
 		bossY = stoi(by);
+		bossH = stoi(bh);
 	}
 	return 0;
 }
@@ -172,12 +104,16 @@ int save::returnCharMana() {
 	return mana;
 }
 
-int save::returnEnemyX() {
-	return enemyX;
+int save::returnEnemyX(int n) {
+	return enemyX[n];
 }
 
-int save::returnEnemyY() {
-	return enemyY;
+int save::returnEnemyY(int n) {
+	return enemyY[n];
+}
+
+int save::returnEnemyH(int n) {
+	return enemyH[n];
 }
 
 bool save::returnCharState() {
@@ -195,23 +131,28 @@ int save::returnBossY() {
 	return bossY;
 }
 
+int save::returnBossH() {
+	return bossH;
+}
+
+int save::returnChar() {
+	return ch;
+}
+
+int save::returnLevel() {
+	return level;
+}
+
 int main1() {
 	save state;
-	ifstream s;
-
-	s.open("save.txt");
-	if (!s)
-		state.defaultSave();
 
 	state.loadSave();
-	cout << "Char x = " << state.returnX() << " Char y = " << state.returnY() << " Char state = " << state.returnCharState() << endl;
-	cout << "Char health = " << state.returnCharHealth() << " Char mana = " << state.returnCharMana() << endl;
-	cout << "Enemy x = " << state.returnEnemyX() << " Enemy y = " << state.returnEnemyY() << endl;
-	cout << "Boss x = " << state.returnBossX() << " Boss y = " << state.returnBossY() << endl;
+	cout << "Char x = " << state.returnX() << " Char y = " << state.returnY() << " Char state = " << state.returnCharState() << " Char = " << state.returnChar() << endl;
+	cout << "Char health = " << state.returnCharHealth() << " Char mana = " << state.returnCharMana() << " Level = " << state.returnLevel() << endl;
+	for (int i = 0; i < 10; i++) {
+		cout << "EnemyX(" << i << ") = " << state.returnEnemyX(i) << " EnemyY(" << i << ") = " << state.returnEnemyY(i) << " EnemyH(" << i << ") = " << state.returnEnemyH(i)<< endl;
+	}
+	cout << "Boss x = " << state.returnBossX() << " Boss y = " << state.returnBossY() << " Boss H = " << state.returnBossH() << endl;
 
-	// Save char state
-	//state.saveState("25", "29", "00", "50", "10");
-	// Save enemy state
-	//state.saveState("25", "29", "00", "50", "10", "30", "29", "35", "29");
 	return 0;
 }

@@ -91,5 +91,29 @@
     <Text Include="menu.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="lvlSeraph1.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlSeraph2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlSeraph3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlSeraph4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlNinja1.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlNinja2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlNinja3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlNinja4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

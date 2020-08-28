@@ -88,6 +88,7 @@ void downslam();                   //Seraph's down slam
 void seraphUlt();                  //Seraph combo breaker
 void focusAttack();                //Gin's focus ability
 void focusUlt();                   //Gin's focus ultimate
+void ninjaAttack(int& i, int& a, int n, double t, int d, int e); //Attack specific to ninja enemies
 void EnemyProjectile(int& k, int i, double n, int x); //Enemy projectile
 
 // game funcs
@@ -115,6 +116,7 @@ void update(double dt);      // update the game and the state of the game
 void updateStart();          // update start menu
 void updateMenu();           // update pause menu
 void updateGame();           // gameplay logic
+void updateEnemy();          // enemy logic
 void updateTime(double dt);  // update time
 void updateEditor();         // update editor logic
 void splashScreenWait();     // waits for time to pass in splash screen
@@ -127,6 +129,7 @@ void renderMap();            // renders the map to the buffer first
 void renderHUD();            // renders char HUD for health, mana, etc.
 void renderMenu();           // renders pause menu
 void renderCharacter();      // renders the character into the buffer
+void renderEnemy();          // renders enemies into the buffer with specific conditions
 void renderObj();            // renders object into the buffer
 void renderFramerate();      // renders debug information, frame rate, elapsed time, etc
 void renderInputEvents();    // renders the status of input events

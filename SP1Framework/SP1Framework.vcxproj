@@ -98,6 +98,14 @@
     <Text Include="lvlDewm2.txt" />
     <Text Include="lvlDewm3.txt" />
     <Text Include="lvlDewm4.txt" />
+    <Text Include="lvlNinja1.txt" />
+    <Text Include="lvlNinja2.txt" />
+    <Text Include="lvlNinja3.txt" />
+    <Text Include="lvlNinja4.txt" />
+    <Text Include="lvlSeraph1.txt" />
+    <Text Include="lvlSeraph2.txt" />
+    <Text Include="lvlSeraph3.txt" />
+    <Text Include="lvlSeraph4.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />

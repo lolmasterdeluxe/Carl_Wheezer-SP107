@@ -25,6 +25,7 @@ double  g_jElapsedTime; //player jump elapsed time
 double  g_hElapsedTime; //health elapsed time
 double  g_delay1;       //boss movement delay 1
 double  g_delay2;       //boss movement delay 2
+double  g_uSpawn;       //Monster spawner
 double  g_slashdelay;   //slash attack delay
 double  g_stun = 2;     //enemy stunned when attacked
 double  g_staminaregen; //regen stamina after slashing
@@ -368,28 +369,29 @@ void update(double dt) {
 }
 
 void updateTime(double dt) {
-    g_dElapsedTime += dt; //game time elapsed
-    g_dDeltaTime = dt;    //seconds between each frame (if 90fps, deltatime = 1/90)
-    g_pElapsedTime += dt; //Projectile time elapsed
+    g_dElapsedTime += dt;   //game time elapsed
+    g_dDeltaTime = dt;      //seconds between each frame (if 90fps, deltatime = 1/90)
+    g_pElapsedTime += dt;   //Projectile time elapsed
     for (int i = 0; i <= 9; i++)
     {
         g_eElapsedTime[i] += dt; //Enemy movement time elapsed
     }
-    g_sElapsedTime += dt; //Slash movement time elapsed
-    g_doElapsedTime += dt; //Dodge time elapsed
-    g_uElapsedTime += dt; //Ultimate meter time elapsed
-    g_hElapsedTime += dt; //Health meter time elapsed
-    g_jElapsedTime += dt; //Player jump time elapsed
-    g_bElapsedTime += dt; //Boss movement time elapsed
-    g_bjElapsedTime += dt; //boss jump elapsed time
-    g_suElapsedTime += dt; //Seraph ultimate time elapsed
-    g_udElapsedTime += dt; //Seraph ulti delay
-    g_cElapsedTime += dt; //Cutscene elapsed time
-    g_delay1 += dt; //boss movement delay 1
-    g_delay2 += dt; //boss movement delay 2
-    g_slashdelay += dt; //delay after each slash (applies to melee attacks)
-    g_stun += dt; //stun enemy when hit
-    g_staminaregen += dt; //regen stamina time
+    g_sElapsedTime += dt;   //Slash movement time elapsed
+    g_doElapsedTime += dt;  //Dodge time elapsed
+    g_uElapsedTime += dt;   //Ultimate meter time elapsed
+    g_hElapsedTime += dt;   //Health meter time elapsed
+    g_jElapsedTime += dt;   //Player jump time elapsed
+    g_bElapsedTime += dt;   //Boss movement time elapsed
+    g_bjElapsedTime += dt;  //boss jump elapsed time
+    g_suElapsedTime += dt;  //Seraph ultimate time elapsed
+    g_udElapsedTime += dt;  //Seraph ulti delay
+    g_cElapsedTime += dt;   //Cutscene elapsed time
+    g_delay1 += dt;         //boss movement delay 1
+    g_delay2 += dt;         //boss movement delay 2
+    g_slashdelay += dt;     //delay after each slash (applies to melee attacks)
+    g_stun += dt;           //stun enemy when hit
+    g_uSpawn += dt;         //Enemy Spawner
+    g_staminaregen += dt;   //regen stamina time
     g_iElapsedTime = (int)round(g_dElapsedTime);
     g_iTimeAfter = g_iElapsedTime + 1;
 }
@@ -429,7 +431,7 @@ void updateGame() {     // gameplay logic
             {
                 moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
                 moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
-                EnemyProjectile(i[2], 2, 0.05, 10);       //Enemy int counter, Enemy array number, delay between shots and distance
+                EnemyProjectile(i[2], 2, 0.1, 19);       //Enemy int counter, Enemy array number, delay between shots and distance
                 //moveEnemy(i[2], 'l', 19, 0.7, 89, 2);
                 moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
                 moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
@@ -437,21 +439,40 @@ void updateGame() {     // gameplay logic
                 moveEnemy(i[6], 'l', 22, 0.5, 79, 6);
                 moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
                 moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
-                moveEnemy(i[9], 'l', 20, 0.1, 90 , 9);
+                EnemyProjectile(i[9], 9, 0.1, 28);
+                //moveEnemy(i[9], 'l', 20, 0.1, 90 , 9);
             }
             if (level == 5)
             {
                 moveEnemy(i[0], 'r', 44, 0.2, 36, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-                moveEnemy(i[1], 'l', 40, 0.2, 76, 1);  //0 is the constant
-                moveEnemy(i[2], 'r', 17, 0.3, 41, 2);
+                moveEnemy(i[1], 'l', 15, 0.2, 97, 1);  //0 is the constant
+                //moveEnemy(i[2], 'r', 17, 0.3, 41, 2);
+                EnemyProjectile(i[2], 2, 0.1, 10);
                 moveEnemy(i[3], 'r', 19, 0.4, 16, 3);
                 moveEnemy(i[4], 'l', 12, 0.3, 81, 4);
                 moveEnemy(i[5], 'l', 22, 0.1, 63, 5);
-                moveEnemy(i[6], 'r', 19, 0.5, 70, 6);
+                //moveEnemy(i[6], 'r', 19, 0.5, 70, 6);
+                EnemyProjectile(i[6], 6, 0.1, 10);
                 moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
                 moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
                 moveEnemy(i[9], 'r', 33, 0.1, 6, 9);
                 moveBoss(45, 0.05, 2, 5); //move *45 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *5
+                EnemyProjectile(i[9], 9, 0.1, 24);
+                //moveEnemy(i[9], 'r', 33, 0.1, 6, 9);
+            }
+            if (level == 6)
+            {
+                moveEnemy(i[0], 'l', 14, 0.2, 29, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+                moveEnemy(i[1], 'l', 13, 0.3, 28, 1);  //0 is the constant
+                moveEnemy(i[2], 'r', 13, 0.3, 32, 2);
+                moveEnemy(i[3], 'r', 12, 0.4, 33, 3);
+                EnemyProjectile(i[4], 4, 0.1, 26);
+                moveEnemy(i[5], 'l', 26, 0.1, 61, 5);
+                //moveEnemy(i[6], 'r', 19, 0.5, 70, 6);
+                EnemyProjectile(i[6], 6, 0.1, 19);
+                moveEnemy(i[7], 'r', 22, 0.4, 44, 7);
+                EnemyProjectile(i[8], 8, 0.1, 12);
+                moveEnemy(i[9], 'l', 17, 0.1, 51, 9);
             }
         }
         if (characterSelect == 1) { //Seraph
@@ -494,32 +515,6 @@ void updateStart() {
     processUserInput();
 }
 
-//void scroll()
-//{
-//    if (g_skKeyEvent[K_44].keyDown && steps > 50)
-//    {
-//        g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X - 2;
-//        g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X - 2;
-//        g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
-//        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
-//        for (int i = 0; i <= g_iPlatforms; i++)
-//        {
-//            g_aPlatformsX[i] = g_aPlatformsX[i] - 2;
-//        }
-//    }
-//    if (g_skKeyEvent[K_41].keyDown && steps > 50)
-//    {
-//        g_sEnemy.m_cLocation.X = g_sEnemy.m_cLocation.X + 2;
-//        g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
-//        g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
-//        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
-//        for (int i = 0; i <= g_iPlatforms; i++)
-//        {
-//            g_aPlatformsX[i] = g_aPlatformsX[i] + 2;
-//        }
-//    }
-//
-//}
 
 void moveCharacter(int n)
 {
@@ -1647,9 +1642,9 @@ void setdamage()
                 }
             }
         }
-        if (g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y && g_sEnemy[i].m_dHealth > 0)
+        if ((g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEProj[i].m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y) && g_sEnemy[i].m_dHealth > 0)
         {
-            if (g_hElapsedTime > 0.5 && !g_sAttackState && !g_sFocus)
+            if (g_hElapsedTime > 0.5)
             {
                 if (g_sChar.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
                 {
@@ -2069,7 +2064,7 @@ void moveBoss(int n, double t, double t2, int d)
 
 void EnemyProjectile(int& k, int i, double n, int x) //i = enemy number, x is distance of range
 {
-    if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) 
+    if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
     {
         if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
         {
@@ -2095,27 +2090,27 @@ void EnemyProjectile(int& k, int i, double n, int x) //i = enemy number, x is di
                 }
             }
         }
-        else if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
+    }
+    if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
+    {
+        if (k >= 0 && k < x)
         {
-            if (k > 0 && k < x)
+            if (g_eElapsedTime[i] > n)
             {
-                if (g_eElapsedTime[i] > n)
-                {
-                    g_sProj.m_cLocation.X++;
-                    g_eElapsedTime[i] = 0;
-                    k++;
-                }
-            }
-            else
-            {
-                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                cP5[i] = 0;
-                k = 0;
+                g_sEProj[i].m_cLocation.X++;
+                g_eElapsedTime[i] = 0;
+                k++;
             }
         }
+        else
+        {
+            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+            cP5[i] = 0;
+            k = 0;
+        }
     }
-    if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) 
+    if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
     {
         if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
         {
@@ -2136,31 +2131,32 @@ void EnemyProjectile(int& k, int i, double n, int x) //i = enemy number, x is di
                 {
                     g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
                     g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                    cP5[i] = 0;
                     k = 0;
                 }
             }
         }
-        else if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
+
+    }
+    if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
+    {
+        if (k >= 0 && k < x)
         {
-            if (k > 0 && k < x)
+            if (g_eElapsedTime[i] > n)
             {
-                if (g_eElapsedTime[i] > n)
-                {
-                    g_sEProj[i].m_cLocation.X--;
-                    g_eElapsedTime[i] = 0;
-                    k++;
-                }
-            }
-            else
-            {
-                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                cP5[i] = 0;
-                k = 0;
+                g_sEProj[i].m_cLocation.X--;
+                g_eElapsedTime[i] = 0;
+                k++;
             }
         }
+        else
+        {
+            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+            cP5[i] = 0;
+            k = 0;
+        }
     }
+    
 }
 
 
@@ -2737,10 +2733,17 @@ void renderGame() {
     renderEnemyStats();
     renderHUD();
     renderPortal();
-    if (level == 3) 
+    if (level == 3 )
     {
-        renderNPCDialogue();
+        for (int i = 1; i <= 8; i++)
+        {
+            if (g_sChar.m_cLocation.Y == g_sNPC[i].m_cLocation.Y)
+            {
+                renderNPCDialogue();
+            }
+        }
     }
+    renderEnemyStats();  //Renders enemy health bar
     //LEMoveChar();
     //renderInputEvents();
 }
@@ -2977,7 +2980,7 @@ void renderCharacter()
     {
         if (level >= 4)
         {
-            if (g_sEnemy[i].m_dHealth > 0) 
+            if (g_sEnemy[i].m_dHealth > 0)
             {
                 enemyColor[i] = 0x4F;
                 c5[i] = 157;
@@ -2990,17 +2993,25 @@ void renderCharacter()
                 enemyColor[i] = BGcolor;
             }
         }
-        /*if (c5[i] == 0)
-        {
-            if (g_uSpawn > 3)
-            {
-                c5[i] = 152;
-                enemyColor[i] = 0x4F;
-                g_sEnemy[i].m_dHealth = 5;
-                g_uSpawn = 0;
-            }
-        }*/
     }
+    for (int i = 0; i <= 3; i++)
+    {
+        if (level == 6)
+        {
+            if (g_sObj[0].m_dHealth > 0 || g_sObj[1].m_dHealth > 0)
+            {
+                if (g_uSpawn > 3 && c5[i] == 0)
+                {
+                    c5[i] = 152;
+                    enemyColor[i] = 0x4F;
+                    g_sEnemy[i].m_dHealth = 5;
+                    g_uSpawn = 0;
+                    g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]);
+                }
+            }
+        }
+    }
+
 
     if (level == 4)
     {
@@ -3138,6 +3149,23 @@ void renderObj()
             NPC[8] = 241;
             NPCcolor[8] = 0x0F;
             g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+        }
+    }
+    else if (level == 6)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
+            {
+                c0[i] = 144;
+                ObjColor[i] = 0x4E;
+                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+            }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
         }
     }
 

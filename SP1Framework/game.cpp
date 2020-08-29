@@ -35,6 +35,7 @@ double  g_suElapsedTime;//Seraph ult elapsed time
 double  g_udElapsedTime;//Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
 double  g_cElapsedTime; //Cutscene Elapsed time
+double  g_cDelayTime;   //Some cutscene delays
 int characterSelect; int startMenuSelect; int pauseMenuSelect;
 int oneTime; int canDo; int saveTimer;  int level;
 
@@ -124,12 +125,13 @@ SGameChar   g_sChar; SGameChar g_sCharSpawn; SGameChar g_sProj; //Player specifi
 SGameChar   g_sEnemy[10]; SGameChar g_sEProj[10]; //Enemy specific chars
 SGameChar   g_sPortal;
 SGameChar   g_sBearSpirit[2];   //Thorfinn's bear
-SGameChar   g_sBossP1;       //Boss bottom half
-SGameChar   g_sBossP2;       //Boss top half
+SGameChar   g_sBoss1[2];       //Boss top and bottom half
 SGameChar   g_sNPC[9];       //NPC
 SGameChar   g_sPotion[5];     //Potion Object
 SGameChar   g_sObj[25];      //Any obj
-SGameChar   g_sPrimeObj[2];  //Obj used in cutscenes
+SGameChar   g_sbCutscene[10000];  //Cutscene bacground
+SGameChar   g_sTrainTracks[100]; //Train tracks for train scene 
+SGameChar   g_sPrimeObj[2];  //Collidable Obj used in cutscenes
 EGAMESTATES g_eGameState = S_START; // initial state
 
 // Console object
@@ -186,7 +188,7 @@ void init(void) {
                 g_sObj[i].m_dHealth = 20;
             }
         }
-        g_sBossP1.m_dHealth = 100;
+        g_sBoss1[0].m_dHealth = 100;
     }
     else
     {
@@ -433,6 +435,7 @@ void updateTime(double dt) {
     g_suElapsedTime += dt;  //Seraph ultimate time elapsed
     g_udElapsedTime += dt;  //Seraph ulti delay
     g_cElapsedTime += dt;   //Cutscene elapsed time
+    g_cDelayTime += dt;     //Some cutscene delay
     g_delay1 += dt;         //boss movement delay 1
     g_delay2 += dt;         //boss movement delay 2
     g_slashdelay += dt;     //delay after each slash (applies to melee attacks)
@@ -479,8 +482,8 @@ void updateGame() {     // gameplay logic
             slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
             downslam();             //Seraph down slam attack
             seraphUlt();            //seraph star combo breaker
-            setUltimate(200);        //Set ultimate capacity to *50
-            moveCharacter(1);       // moves the player by *2 steps, collision detection, physics, etc
+            setUltimate(200);        //Set ultimate capacity to *200
+            SeraphIntro();
         }
         if (characterSelect == 2) { //Gin
             slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
@@ -512,7 +515,7 @@ void updateGame() {     // gameplay logic
 
 void updateEnemy()
 {
-    if (characterSelect == 3) //Dewm Guy's Levels
+    if (characterSelect == 0) //Dewm Guy's Levels
     {
         if (level == 4)
         {
@@ -1589,43 +1592,54 @@ void downslam()
             g_sElapsedTime = 0;
             slam++;
         }
-        for (int i = 0; i < g_iPlatforms; i++) {
+        for (int i = 0; i <= g_iPlatforms; i++) {
             if (slam >= 3 && slam < 6 && g_sChar.m_cLocation.Y + 1 != g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
             {
                 g_sChar.m_cLocation.Y++;
-                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                    g_sChar.m_cLocation.Y--;
-                }
                 slam++;
                 g_sElapsedTime = 0;
+                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                {
+                    g_sChar.m_cLocation.Y--;
+                }
             }
             if (slam == 6)
             {
                 if (g_sChar.m_cLocation.Y + 1 != g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
                 {
                     g_sChar.m_cLocation.Y++;
-                    if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) 
-                    {
-                        g_sChar.m_cLocation.Y--;
-                    }
+                }
+                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i])
+                {
+                    g_sChar.m_cLocation.Y--;
                 }
                 else
                 {
                     slam = 0;
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < ne; i++)
                     {
                         if (g_sChar.m_cLocation.X + 3 >= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X > g_sChar.m_cLocation.X)
                         {
                             g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X + 3;
                             g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
                             g_stun = -1;
                         }
                         if (g_sChar.m_cLocation.X - 3 <= g_sEnemy[i].m_cLocation.X && g_sEnemy[i].m_cLocation.X < g_sChar.m_cLocation.X)
                         {
                             g_sEnemy[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X - 3;
                             g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-                            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+                            g_stun = -1;
+                        }
+                         if (g_sChar.m_cLocation.X + 3 >= g_sObj[i].m_cLocation.X && g_sObj[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                        {
+                            g_sObj[i].m_cLocation.X = g_sObj[i].m_cLocation.X + 3;
+                            g_sObj[i].m_dHealth = g_sObj[i].m_dHealth - 2;
+                            g_stun = -1;
+                        }
+                        if (g_sChar.m_cLocation.X - 3 <= g_sObj[i].m_cLocation.X && g_sObj[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                        {
+                            g_sObj[i].m_cLocation.X = g_sObj[i].m_cLocation.X - 3;
+                            g_sObj[i].m_dHealth = g_sObj[i].m_dHealth - 2;
                             g_stun = -1;
                         }
                     }
@@ -1820,7 +1834,7 @@ void seraphUlt()
             {
                 g_sEnemy[i].m_dHealth = 0;
             }
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 50;
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 50;
         }
         else if (g_udElapsedTime > 3)
         {
@@ -2056,9 +2070,9 @@ void focusUlt() //Gin's Focus ultimate
                         g_sEnemy[i].m_dHealth = 0;
                     }
                 }
-                if (g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
+                if (g_sBoss1[0].m_cLocation.Y == g_sChar.m_cLocation.Y)
                 {
-                    g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 50;
+                    g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 50;
                 }
 
             }
@@ -2107,7 +2121,7 @@ void spiritUlt()
                         g_suElapsedTime = 0;
                     }
                 }
-                if ((g_sBearSpirit[0].m_cLocation.X + 3 == g_sEnemy[i].m_cLocation.X || g_sBearSpirit[0].m_cLocation.X == g_sBossP1.m_cLocation.X) || su > 1 && g_sEnemy[i].m_dHealth >= 0)
+                if ((g_sBearSpirit[0].m_cLocation.X + 3 == g_sEnemy[i].m_cLocation.X || g_sBearSpirit[0].m_cLocation.X == g_sBoss1[0].m_cLocation.X) || su > 1 && g_sEnemy[i].m_dHealth >= 0)
                 {
                     su++;
                     if (g_suElapsedTime > 0.05)
@@ -2193,11 +2207,11 @@ void setdamage()
             g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
         }
     }
-    if ((g_sBossP1.m_cLocation.X == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBossP1.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBossP1.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    if ((g_sBoss1[0].m_cLocation.X == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBoss1[0].m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.2)
         {
-            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
+            if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
             {
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
             }
@@ -2205,11 +2219,11 @@ void setdamage()
         }
         if (g_sAttackState == true)
         {
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 1; //program recognises as 2 damage
         }
         if (g_sFocus == true || g_sSpirit == true)
         {
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 10;
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 10;
         }
     }
     //for (int i = 0; i < ne; i++) //melee damage for enemy
@@ -2295,15 +2309,15 @@ void setdamage()
         }
     }
     //to Boss
-    if (g_sProj.m_cLocation.X == g_sBossP1.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBossP1.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
+    if (g_sProj.m_cLocation.X == g_sBoss1[0].m_cLocation.X && g_sProj.m_cLocation.Y == g_sBoss1[0].m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
         if (!g_sRage)
         {
-            g_sBossP1.m_dHealth--;
+            g_sBoss1[0].m_dHealth--;
         }
         else
         {
-            g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 2;
         }
         if (characterSelect == 3)
         {
@@ -2346,7 +2360,7 @@ void setdamage()
             }
         }
     }
-    if (g_sBossP1.m_dHealth <= 0)
+    if (g_sBoss1[0].m_dHealth <= 0)
     {
         c6 = 0;
         c7 = 0;
@@ -2554,9 +2568,9 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
 
 void moveBoss(int n, double t, double t2, int d)
 {
-    if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sFocus)
+    if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
     {
-        if (g_sBossP1.m_dHealth <= 50)
+        if (g_sBoss1[0].m_dHealth <= 50)
         {
             t2 = t2 / 3;
             t = t / 2;
@@ -2567,8 +2581,8 @@ void moveBoss(int n, double t, double t2, int d)
             {
                 if (g_delay1 > t2) //go to right
                 {
-                    g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X + 2;
-                    g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X + 2;
+                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X + 2;
+                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X + 2;
                     g_bElapsedTime = 0;
                     k++;
                     g_delay2 = 0;
@@ -2578,11 +2592,11 @@ void moveBoss(int n, double t, double t2, int d)
             {
                 if (g_delay2 > t2) //go to left
                 {
-                    g_sBossP1.m_cLocation.X = g_sBossP1.m_cLocation.X - 2;
-                    g_sBossP2.m_cLocation.X = g_sBossP2.m_cLocation.X - 2;
+                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X - 2;
+                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X - 2;
                     g_bElapsedTime = 0;
                     g_delay1 = 0;
-                    if (g_sBossP1.m_cLocation.X <= d)
+                    if (g_sBoss1[0].m_cLocation.X <= d)
                     {
                         k = 0;
                     }
@@ -3278,6 +3292,63 @@ void DewmIntro()
     }
 }
 
+void SeraphIntro()
+{
+    if (level == 0)
+    {
+        if (g_sChar.m_cLocation.X == 15 && g_sChar.m_cLocation.Y == 23 && cut == 0)
+        {
+            g_sCutscene = true;
+            cut++;
+        }
+        if (cut < 91 && g_sCutscene == true)
+        {
+            if (g_cElapsedTime > 0.3)
+            {
+                if (cut >= 1 && cut < 7)
+                {
+                    g_sNPC[0].m_cLocation.X--;
+                    g_sNPC[1].m_cLocation.X--;
+                    g_sNPC[2].m_cLocation.X--;
+                    g_cElapsedTime = 0;
+                    cut++;
+                    if (cut == 6)
+                    {
+                        g_cDelayTime = 0;
+                    }
+                }
+                if (cut >= 6 && cut <= 61 && g_cDelayTime > 10)
+                {
+                    g_sNPC[0].m_cLocation.X++;
+                    g_sNPC[1].m_cLocation.X++;
+                    g_sNPC[2].m_cLocation.X++;
+                    g_sChar.m_cLocation.X++;
+                    g_cElapsedTime = 0;
+                    cut++;
+                    if (cut == 61)
+                    {
+                        g_cDelayTime = 0;
+                        cut++;
+                    }
+                }
+                if (cut > 61 && cut <= 91 && g_cDelayTime > 10)
+                {
+                    g_sNPC[0].m_cLocation.X++;
+                    g_sNPC[1].m_cLocation.X++;
+                    g_sNPC[2].m_cLocation.X++;
+                    g_sChar.m_cLocation.X++;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+            }
+        }
+        else
+        {
+            g_sCutscene = false;
+        }
+    }
+}
+
 void processUserInput() {
     // process inputs depending on game states
     if (g_skKeyEvent[K_ESCAPE].keyReleased) {
@@ -3745,10 +3816,10 @@ void renderEnemyStats() {
     }
     if (level == 7)
     {
-        if (g_sBossP1.m_dHealth > 0) 
+        if (g_sBoss1[0].m_dHealth > 0)
         {
-            int bosshealth = g_sBossP1.m_dHealth;
-            g_Console.writeToBuffer(g_sBossP1.m_cLocation.X + 1, g_sBossP1.m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+            int bosshealth = g_sBoss1[0].m_dHealth;
+            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
         }
     }
 }
@@ -3763,7 +3834,7 @@ void renderGame() {
     {
         renderPortal();
     }
-    else if (level == 7 && g_sBossP1.m_dHealth <= 0)
+    else if (level == 7 && g_sBoss1[0].m_dHealth <= 0)
     {
         renderPortal();
     }
@@ -3849,6 +3920,7 @@ void nextLevel() {
         {
             g_sObj[i].m_cLocation.X = 0;
             g_sObj[i].m_cLocation.Y = 0;
+            g_sObj[i].m_dHealth = 5;
         }
         for (int i = 0; i <= 1; i++)
         {
@@ -3871,14 +3943,15 @@ void nextLevel() {
             i[e] = 0;
             ip[e] = 0;
         }
-        for (int i = 0; i < obj; i++)
+        for (int i = 0; i < 10000; i++)
         {
-            g_sObj[i].m_dHealth = 5;
+            g_sbCutscene[i].m_cLocation.X = 0;
+            g_sbCutscene[i].m_cLocation.Y = 0;
         }
-        g_sBossP1.m_cLocation.X = 0;
-        g_sBossP1.m_cLocation.Y = 0;
-        g_sBossP2.m_cLocation.X = 0;
-        g_sBossP2.m_cLocation.Y = 0;
+        g_sBoss1[0].m_cLocation.X = 0;
+        g_sBoss1[0].m_cLocation.Y = 0;
+        g_sBoss1[1].m_cLocation.X = 0;
+        g_sBoss1[1].m_cLocation.Y = 0;
         g_sBearSpirit[0].m_cLocation.X = 0;
         g_sBearSpirit[0].m_cLocation.Y = 0;
         g_sBearSpirit[1].m_cLocation.X = 0;
@@ -3991,34 +4064,69 @@ void renderMap() {
             for (int x = 0; x < perLine.length(); x++) {
                 if (perLine[x] == '.') {
                     g_Console.writeToBuffer(x, y, " ", BGcolor);
-                }
+                }  
             }
             y++;
         }
     }
     map.close();
     renderPlatform();
-    if (level == 0) {
-        if (g_sChar.m_cLocation.X == 45) 
-        {
-            renderDialogue("Press <Space> to awaken", 11, 16);
+    if (characterSelect == 0)
+    {
+        if (level == 0) {
+            if (g_sChar.m_cLocation.X == 45)
+            {
+                renderDialogue("Press <Space> to awaken", 11, 16);
+            }
+            else
+            {
+                renderDialogue("Press <AD> to move left and right", 11, 16);
+            }
         }
-        else
+        if (level == 1)
+            renderDialogue("Press <W> to jump", 11, 16);
+        if (level == 2) {
+            renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
+            renderDialogue("Left Click to shoot", 11, 15);
+        }
+        if (level == 3)
         {
-            renderDialogue("Press <AD> to move left and right", 11, 16);
+            renderDialogue("When Rage meter is full,", 10, 11);
+            renderDialogue("press space to unleash havoc", 10, 12);
         }
     }
-    if (level == 1)
-        renderDialogue("Press <W> to jump", 11, 16);
-    if (level == 2) {
-        renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
-        renderDialogue("Left Click to shoot", 11, 15);
+    if (characterSelect == 1)
+    {
+        if (level == 0) 
+        {
+            renderDialogue("Press <AD> to move left and right", 40, 13);
+            renderDialogue("Press <W> to jump", 40, 14);
+        }
+        if (level == 1)
+        {
+            renderDialogue("PINK symbolises an enemy, WHITE symbolises a portal", 33, 10);
+            renderDialogue("Left click to attack", 33, 11);
+            renderDialogue("When in the air, press S to downslam to do AOE", 33, 12);
+        }
+        if (level == 2)
+        {
+            renderDialogue("When ultimate meter is full,", 33, 21);
+            renderDialogue("press space to limit break", 33, 22);
+        }
     }
 }
 
 void renderDialogue(string d, int x, int y) {
-    if (x > 0 && x < g_Console.getConsoleSize().X)
-        g_Console.writeToBuffer(x, y, d, 0x80);
+    if (characterSelect == 0)
+    {
+        if (x > 0 && x < g_Console.getConsoleSize().X)
+            g_Console.writeToBuffer(x, y, d, 0x80);
+    }
+    if (characterSelect == 1)
+    {
+        if (x > 0 && x < g_Console.getConsoleSize().X)
+            g_Console.writeToBuffer(x, y, d, 0x0E);
+    }
 }
 
 void renderEditor() {
@@ -4172,7 +4280,7 @@ void renderCharacter()
 
 void renderEnemy()
 {
-    if (characterSelect == 3) //rendering for Dewm Guy
+    if (characterSelect == 0) //rendering for Dewm Guy
     {
         for (int i = 0; i < ne; i++) //Enemy
         {
@@ -4248,118 +4356,172 @@ void renderEnemy()
 
         if (level == 7) //mini - boss level
         {
-            g_Console.writeToBuffer(g_sBossP1.m_cLocation, boss1, bossColor);
-            g_Console.writeToBuffer(g_sBossP2.m_cLocation, boss2, bossColor);
+            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation, boss1, bossColor);
+            g_Console.writeToBuffer(g_sBoss1[1].m_cLocation, boss2, bossColor);
         }
     }
 }
 
 void renderObj()
 {
-    if (level == 0)
+    if (characterSelect == 0)
     {
-        for (int i = 0; i <= 3; i++)
+        if (level == 0)
         {
-            if (g_sObj[i].m_dHealth > 0)
+            for (int i = 0; i <= 3; i++)
             {
-                c0[i] = 221;
-                ObjColor[i] = 0x44;
-            }
-            else
-            {
-                ObjColor[i] = BGcolor;
-                c0[i] = 0;
-            }
-            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
-            g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x44);
-        }
-    }
-    else if (level == 2)
-    {
-        for (int i = 0; i <= 4; i++)
-        {
-            if (g_sObj[i].m_dHealth > 0)
-            {
-                c0[i] = 237;
-                ObjColor[i] = 0x40;
-            }
-            else
-            {
-                ObjColor[i] = BGcolor;
-                c0[i] = 0;
-            }
-            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
-        }
-    }
-    else if (level == 3)
-    {
-        for (int i = 0; i <= 24; i++)
-        {
-            if (g_sObj[i].m_dHealth > 0)
-            {
-                c0[i] = 219;
-                ObjColor[i] = 0x00;
-            }
-            else
-            {
-                ObjColor[i] = BGcolor;
-                c0[i] = 0;
-            }
-            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
-        }
-        for (int i = 1; i <= 8; i++)
-        {
-            NPC[i] = 246;
-            NPCcolor[i] = 0x9F;
-            NPCcolor[5] = 0x9C;
-            NPC[8] = 241;
-            NPCcolor[8] = 0x0F;
-            g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
-        }
-    }
-    else if (level >= 5) //potion rendering
-    {
-        for (int i = 0; i <= hp; i++)
-        {
-            if (g_sChar.m_cLocation.X == g_sPotion[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPotion[i].m_cLocation.Y && cO[i] != 0)
-            {
-                cO[i] = 0;
-                PotionColor[i] = BGcolor;
-            }
-            else
-            {
-                if (level >= 5 && level < 8)
+                if (g_sObj[i].m_dHealth > 0)
                 {
-                    PotionColor[i] = 0x4A;
+                    c0[i] = 221;
+                    ObjColor[i] = 0x44;
                 }
-                else if (level >= 8 && level < 16)
+                else
                 {
-                    PotionColor[i] = 0x1A;
+                    ObjColor[i] = BGcolor;
+                    c0[i] = 0;
                 }
-                else if (level > 16)
-                {
-                    PotionColor[i] = 0x3A;
-                }
-                g_Console.writeToBuffer(g_sPotion[i].m_cLocation, cO[i], PotionColor[i]);
+                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x44);
             }
         }
-    }
-    else if (level == 6)
-    {
-        for (int i = 2; i < 4; i++)
+        if (level == 2)
         {
-            if (g_sObj[i].m_dHealth > 0)
+            for (int i = 0; i <= 4; i++)
             {
-                c0[i] = 144;
-                ObjColor[i] = 0x4E;
+                if (g_sObj[i].m_dHealth > 0)
+                {
+                    c0[i] = 237;
+                    ObjColor[i] = 0x40;
+                }
+                else
+                {
+                    ObjColor[i] = BGcolor;
+                    c0[i] = 0;
+                }
                 g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
             }
-            else
+        }
+        if (level == 3)
+        {
+            for (int i = 0; i <= 24; i++)
             {
-                ObjColor[i] = BGcolor;
-                c0[i] = 0;
+                if (g_sObj[i].m_dHealth > 0)
+                {
+                    c0[i] = 219;
+                    ObjColor[i] = 0x00;
+                }
+                else
+                {
+                    ObjColor[i] = BGcolor;
+                    c0[i] = 0;
+                }
+                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+            }
+            for (int i = 1; i <= 8; i++)
+            {
+                NPC[i] = 246;
+                NPCcolor[i] = 0x9F;
+                NPCcolor[5] = 0x9C;
+                NPC[8] = 241;
+                NPCcolor[8] = 0x0F;
+                g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
             }
         }
+        if (level >= 5) //potion rendering
+        {
+            for (int i = 0; i <= hp; i++)
+            {
+                if (g_sChar.m_cLocation.X == g_sPotion[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPotion[i].m_cLocation.Y && cO[i] != 0)
+                {
+                    cO[i] = 0;
+                    PotionColor[i] = BGcolor;
+                }
+                else
+                {
+                    if (level >= 5 && level < 8)
+                    {
+                        PotionColor[i] = 0x4A;
+                    }
+                    else if (level >= 8 && level < 16)
+                    {
+                        PotionColor[i] = 0x1A;
+                    }
+                    else if (level > 16)
+                    {
+                        PotionColor[i] = 0x3A;
+                    }
+                    g_Console.writeToBuffer(g_sPotion[i].m_cLocation, cO[i], PotionColor[i]);
+                }
+            }
+        }
+        if (level == 6)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                if (g_sObj[i].m_dHealth > 0)
+                {
+                    c0[i] = 144;
+                    ObjColor[i] = 0x4E;
+                    g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                }
+                else
+                {
+                    ObjColor[i] = BGcolor;
+                    c0[i] = 0;
+                }
+            }
+        }
+    }
+    if (characterSelect == 1) //rendering background and NPCs
+    {
+        if (level == 0)
+        {
+            for (int i = 0; i <= 2; i++)
+            {
+                NPC[0] = 194;
+                NPCcolor[0] = 0x05;
+                NPC[1] = 205;
+                NPCcolor[1] = 0x06;
+                NPC[2] = 236;
+                NPCcolor[2] = 0x0F;
+                g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+            }
+            for (int i = 0; i < 384; i++)
+            {
+                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x80);
+            }
+            for (int i = 0; i < 96; i++)
+            {
+                g_Console.writeToBuffer(g_sTrainTracks[i].m_cLocation, " ", 0x70);
+            }
+        }
+        if (level == 1) {
+            for (int i = 0; i < 1500; i++)
+            {
+                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                if (g_sObj[i].m_dHealth > 0)
+                {
+                    c0[i] = 173;
+                    ObjColor[i] = 0x50;
+                    g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                }
+                else
+                {
+                    ObjColor[i] = BGcolor;
+                    c0[i] = 0;
+                }
+            }
+        }
+        if (level == 2) {
+            for (int i = 0; i < 117; i++)
+            {
+                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+            }
+        }
+
     }
 
 }
@@ -4392,7 +4554,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/su << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/cut << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -4476,73 +4638,145 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0; int n = 0; int b = 0; int h = 0;
     int y = 0; int e = 0; int o = 0; int po = 0;
+    int t = 0; int tt = 0;
     std::string levelFile;
     std::string line2;
-    if (number == 0) {
-        BGcolor = 0x80;
-        levelFile = "tutorial_1.txt";
+    if (characterSelect == 0)
+    {
+        if (number == 0) {
+            BGcolor = 0x80;
+            levelFile = "Dewmtutorial_1.txt";
+        }
+        if (number == 1) {
+            levelFile = "Dewmtutorial_2.txt";
+        }
+        if (number == 2) {
+            levelFile = "Dewmtutorial_3.txt";
+        }
+        if (number == 3) {
+            levelFile = "DewmIntro.txt";
+        }
+        if (number == 4) {
+            BGcolor = 0x40;
+            levelFile = "lvlDewm1.txt";
+        }
+        if (number == 5) {
+            levelFile = "lvlDewm2.txt";
+        }
+        if (number == 6) {
+            levelFile = "lvlDewm3.txt";
+        }
+        if (number == 7) {
+            levelFile = "lvlDewm4.txt";
+        }
+        if (number == 8) {
+            BGcolor = 0x10;
+            levelFile = "lvlSeraph1.txt";
+        }
+        if (number == 9) {
+            levelFile = "lvlSeraph2.txt";
+        }
+        if (number == 10) {
+            levelFile = "lvlSeraph3.txt";
+        }
+        if (number == 11) {
+            levelFile = "lvlSeraph4.txt";
+        }
+        if (number == 12) {
+            BGcolor = 0x10;
+            levelFile = "lvlNinja1.txt";
+        }
+        if (number == 13) {
+            levelFile = "lvlNinja2.txt";
+        }
+        if (number == 14) {
+            levelFile = "lvlNinja3.txt";
+        }
+        if (number == 15) {
+            BGcolor = 0x70;
+            levelFile = "lvlNinja4.txt";
+        }
+        if (number == 16) {
+            BGcolor = 0x30;
+            levelFile = "lvlVik1.txt";
+        }
+        if (number == 17) {
+            levelFile = "lvlVik2.txt";
+        }
+        if (number == 18) {
+            levelFile = "lvlVik3.txt";
+        }
+        if (number == 19) {
+            levelFile = "lvlVik4.txt";
+        }
     }
-    if (number == 1) {
-        levelFile = "tutorial_2.txt";
-    }
-    if (number == 2) {
-        levelFile = "tutorial_3.txt";
-    }
-    if (number == 3) {
-        levelFile = "Intro.txt";
-    }
-    if (number == 4) {
-        BGcolor = 0x40;
-        levelFile = "lvlDewm1.txt";
-    }
-    if (number == 5) {
-        levelFile = "lvlDewm2.txt";
-    }
-    if (number == 6) {
-        levelFile = "lvlDewm3.txt";
-    }
-    if (number == 7) {
-        levelFile = "lvlDewm4.txt";
-    }
-    if (number == 8) {
-        BGcolor = 0x10;
-        levelFile = "lvlSeraph1.txt";
-    }
-    if (number == 9) {
-        levelFile = "lvlSeraph2.txt";
-    }
-    if (number == 10) {
-        levelFile = "lvlSeraph3.txt";
-    }
-    if (number == 11) {
-        levelFile = "lvlSeraph4.txt";
-    }
-    if (number == 12) {
-        BGcolor = 0x10;
-        levelFile = "lvlNinja1.txt";
-    }
-    if (number == 13) {
-        levelFile = "lvlNinja2.txt";
-    }
-    if (number == 14){
-        levelFile = "lvlNinja3.txt";
-    }
-    if (number == 15) {
-        BGcolor = 0x70;
-        levelFile = "lvlNinja4.txt";
-    }
-    if (number == 16) {
-        BGcolor = 0x30;
-        levelFile = "lvlVik1.txt";
-    }
-    if (number == 17) {
-        levelFile = "lvlVik2.txt";
-    }
-    if (number == 18) {
-        levelFile = "lvlVik3.txt";
-    }
-    if (number == 19) {
-        levelFile = "lvlVik4.txt";
+    else if (characterSelect == 1)
+    {
+        if (number == 0) {
+            BGcolor = 0x10;
+            levelFile = "SeraphIntro.txt";
+        }
+        if (number == 1) {
+            levelFile = "Seraphtutorial_1.txt";
+        }
+        if (number == 2) {
+            levelFile = "Seraphtutorial_2.txt";
+        }
+        if (number == 3) {
+            levelFile = "Seraphtutorial_3.txt";
+        }
+        if (number == 4) {
+            levelFile = "lvlSeraph1.txt";
+        }
+        if (number == 5) {
+            levelFile = "lvlSeraph2.txt";
+        }
+        if (number == 6) {
+            levelFile = "lvlSeraph3.txt";
+        }
+        if (number == 7) {
+            levelFile = "lvlSeraph4.txt";
+        }
+        if (number == 8) {
+            BGcolor = 0x40;
+            levelFile = "lvlDewm1.txt";
+        }
+        if (number == 9) {
+            levelFile = "lvlDewm2.txt";
+        }
+        if (number == 10) {
+            levelFile = "lvlDewm3.txt";
+        }
+        if (number == 11) {
+            levelFile = "lvlDewm4.txt";
+        }
+        if (number == 12) {
+            BGcolor = 0x10;
+            levelFile = "lvlNinja1.txt";
+        }
+        if (number == 13) {
+            levelFile = "lvlNinja2.txt";
+        }
+        if (number == 14) {
+            levelFile = "lvlNinja3.txt";
+        }
+        if (number == 15) {
+            BGcolor = 0x70;
+            levelFile = "lvlNinja4.txt";
+        }
+        if (number == 16) {
+            BGcolor = 0x30;
+            levelFile = "lvlVik1.txt";
+        }
+        if (number == 17) {
+            levelFile = "lvlVik2.txt";
+        }
+        if (number == 18) {
+            levelFile = "lvlVik3.txt";
+        }
+        if (number == 19) {
+            levelFile = "lvlVik4.txt";
+        }
     }
     std::ifstream level;
     std::ifstream levelPtr(levelFile);
@@ -4613,10 +4847,10 @@ void loadLevelData(int number) {
                     g_sEnemy[9].m_cLocation.Y = y;
                 }
                 if (perLine[x] == 'B') {
-                    g_sBossP1.m_cLocation.X = x;
-                    g_sBossP1.m_cLocation.Y = y;
-                    g_sBossP2.m_cLocation.X = x;
-                    g_sBossP2.m_cLocation.Y = y - 1;
+                    g_sBoss1[0].m_cLocation.X = x;
+                    g_sBoss1[0].m_cLocation.Y = y;
+                    g_sBoss1[1].m_cLocation.X = x;
+                    g_sBoss1[1].m_cLocation.Y = y - 1;
                 }
                 if (perLine[x] == 'O')
                 {
@@ -4646,6 +4880,18 @@ void loadLevelData(int number) {
                     g_sPrimeObj[po].m_cLocation.X = x;
                     g_sPrimeObj[po].m_cLocation.Y = y;
                     po++;
+                }
+                if (perLine[x] == 'T')
+                {
+                    g_sbCutscene[t].m_cLocation.X = x;
+                    g_sbCutscene[t].m_cLocation.Y = y;
+                    t++;
+                }
+                if (perLine[x] == 'U')
+                {
+                    g_sTrainTracks[tt].m_cLocation.X = x;
+                    g_sTrainTracks[tt].m_cLocation.Y = y;
+                    tt++;
                 }
             }
             y++;
@@ -4757,7 +5003,7 @@ void reset() {
     {
         g_sObj[i].m_dHealth = 5;
     }
-    g_sBossP1.m_dHealth = 100;
+    g_sBoss1[0].m_dHealth = 100;
     g_sChar.m_dMana = 50;
     g_sChar.m_dHealth = 50;
 }
@@ -4766,16 +5012,16 @@ void reset() {
 void renderIntro() {
     string introFile; string line; int y = 0;
     if (characterSelect == 0) {
-        introFile = "dewmIntro.txt";
+        introFile = "dewmIntroscreen.txt";
     }
     if (characterSelect == 1) {
-        introFile = "seraphIntro.txt";
+        introFile = "seraphIntroscreen.txt";
     }
     if (characterSelect == 2) {
-        introFile = "ginIntro.txt";
+        introFile = "ginIntroscreen.txt";
     }
     if (characterSelect == 3) {
-        introFile = "thorfinnIntro.txt";
+        introFile = "thorfinnIntroscreen.txt";
     }
     ifstream intro(introFile);
     if (intro.is_open()) {
@@ -4882,10 +5128,10 @@ void loadSavedGame() {
     }
     level = state.returnLevel();
     if (level > 4) {
-        g_sBossP1.m_dHealth = state.returnBossH();
-        g_sBossP1.m_cLocation.X = state.returnBossX();
-        g_sBossP1.m_cLocation.Y = state.returnBossY();
-        g_sBossP2.m_cLocation.X = state.returnBossX();
-        g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
+        g_sBoss1[0].m_dHealth = state.returnBossH();
+        g_sBoss1[0].m_cLocation.X = state.returnBossX();
+        g_sBoss1[0].m_cLocation.Y = state.returnBossY();
+        g_sBoss1[1].m_cLocation.X = state.returnBossX();
+        g_sBoss1[1].m_cLocation.Y = state.returnBossY() - 1;
     }
 }

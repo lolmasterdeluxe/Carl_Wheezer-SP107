@@ -73,7 +73,8 @@ bool g_bPlayGame = false; bool g_sAttackState = false;
 bool g_sInvulnerable = false; bool g_sUltimate = false;
 bool g_sRage = false; bool g_sFocus = false;
 bool g_sCutscene = false; bool collide = false;
-bool g_ninjaState[10] = { false,false,false,false,false,false,false,false,false,false };
+bool g_sLeftSlash[10]; bool g_sRightSlash[10];
+bool g_ninjaState[10];
 
 
 char c1 = 203;                     //main player's ascii characters
@@ -160,6 +161,9 @@ void init(void) {
         for (int i = 0; i <= ne; i++)
         {
             g_sEnemy[i].m_dHealth = 5;
+            g_ninjaState[i] = false;
+            g_sRightSlash[i] = false;
+            g_sLeftSlash[i] = false;
         }
         for (int i = 0; i <= obj; i++)
         {
@@ -486,8 +490,8 @@ void updateEnemy()
     {
         if (level == 4)
         {
+            vikingAttack(i[0], 18, 0.5, 50, 0);
             //moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            ninjaAttack(i[0], ip[0], 18, 0.03, 50, 0);
             moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
             EnemyProjectile(i[2], 2, 0.1, 19);       //Enemy int counter, Enemy array number, delay between shots and distance
             moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
@@ -589,6 +593,38 @@ void updateEnemy()
             moveEnemy(i[4], 'r', 23, 0.2, 34, 4);
             EnemyProjectile(ip[5], 5, 0.05, 67);
             ne = 6;
+        }
+        if (level == 12)
+        {
+            ninjaAttack(i[0], ip[0], 20, 0.03, 55, 0);
+            ninjaAttack(i[1], ip[1], 18, 0.03, 89, 1);
+            ninjaAttack(i[2], ip[2], 8, 0.03, 89, 2);
+            //ninjaAttack(i[3], ip[3], 8, 0.03, 94, 3);
+            ne = 3;
+        }
+        if (level == 13)
+        {
+            ninjaAttack(i[0], ip[0], 29, 0.03, 49, 0);
+            ninjaAttack(i[1], ip[1], 48, 0.03, 67, 1);
+            EnemyProjectile(ip[2], 2, 0.1, 90);
+            ninjaAttack(i[3], ip[3], 14, 0.03, 21, 3);
+            ninjaAttack(i[4], ip[4], 20, 0.03, 63, 4);
+            EnemyProjectile(ip[5], 5, 0.1, 69);
+            ninjaAttack(i[6], ip[6], 18, 0.03, 52, 6);
+            ninjaAttack(i[7], ip[7], 32, 0.03, 67, 7);
+            EnemyProjectile(ip[8], 8, 0.1, 58);
+            ne = 9;
+        }
+        if (level == 14)
+        {
+            ninjaAttack(i[0], ip[0], 12, 0.03, 67, 0);
+            ninjaAttack(i[1], ip[1], 12, 0.03, 29, 1);
+            ninjaAttack(i[2], ip[2], 10, 0.03, 57, 2);
+            ninjaAttack(i[3], ip[3], 30, 0.03, 96, 3);
+            ninjaAttack(i[4], ip[4], 28, 0.03, 69, 4);
+            ninjaAttack(i[5], ip[5], 58, 0.03, 60, 5);
+            EnemyProjectile(ip[6], 6, 0.05, 87);
+            ne = 7;
         }
     }
     if (characterSelect == 1) //Seraph's levels
@@ -2307,19 +2343,23 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
         {
             if (g_eElapsedTime[e] > t && g_enemyDelay[e] > 3)
             {
-                if (g_sChar.m_cLocation.X > g_sEnemy[e].m_cLocation.X) //attack to right
+                if (g_sChar.m_cLocation.X > g_sEnemy[e].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && g_sLeftSlash[e] == false) //attack to right
                 {
                     if (i == 0 && a == 0 && g_sChar.m_cLocation.X <= (g_sEnemy[e].m_cLocation.X + n) && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y) //direction = right
                     {
                         i++;
+                        g_sRightSlash[e] = true;
                     }
-                    else if (i == 1 && a == 0)
+                }
+                if (g_sRightSlash[e] == true)
+                {
+                    if (i == 1)
                     {
                         g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
                         i++;
                         g_eElapsedTime[e] = 0;
                     }
-                    else if (i > 1 && a == 0 && (g_sChar.m_cLocation.X - g_sEnemy[e].m_cLocation.X != 1))
+                    else if (i > 1 && (g_sChar.m_cLocation.X - g_sEnemy[e].m_cLocation.X >= 1))
                     {
                         g_ninjaState[e] = true;
                         g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
@@ -2327,20 +2367,20 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
                         i++;
                         g_eElapsedTime[e] = 0;
                     }
-                    else if (a == 0 && (g_sChar.m_cLocation.X == g_sEnemy[e].m_cLocation.X + 1)) //slam down on player
+                    else if (a == 0 && (g_sChar.m_cLocation.X <= g_sEnemy[e].m_cLocation.X + 1)) //slam down on player
                     {
                         g_ninjaState[e] = false;
                         c5[e] = 157;
                         g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //knockback
-                        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sInvulnerable && !g_sAttackState)
+                        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sRage && !g_sInvulnerable && !g_sAttackState)
                         {
                             g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
                         }
                         i = 0;
-                        a++;
                         g_eElapsedTime[e] = 0;
                         g_enemyDelay[e] = 0;
+                        a++;
                     }
                     if (g_enemyDelay[e] > 3)
                     {
@@ -2358,28 +2398,33 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
                             if (g_sEnemy[e].m_cLocation.X <= d)
                             {
                                 g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
-                                a = 0;
-                                i = 0;
                                 g_enemyDelay[e] = 0;
                                 c5[e] = 157;
+                                a = 0;
+                                i = 0;
                                 g_ninjaState[e] = false;
+                                g_sRightSlash[e] = false;
                             }
                         }
                     }
-                }
-                if (g_sChar.m_cLocation.X < g_sEnemy[e].m_cLocation.X) //attack to left
+                }  
+                if (g_sChar.m_cLocation.X < g_sEnemy[e].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && g_sRightSlash[e] == false) //attack to left
                 {
                     if (i == 0 && a == 0 && g_sChar.m_cLocation.X >= (g_sEnemy[e].m_cLocation.X - n) && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y) //direction = right
                     {
                         i++;
-                    }
-                    else if (i == 1 && a == 0)
+                        g_sLeftSlash[e] = true;
+                    }     
+                }
+                if (g_sLeftSlash[e] == true)
+                {
+                    if (i == 1)
                     {
                         g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
                         i++;
                         g_eElapsedTime[e] = 0;
                     }
-                    else if (i > 1 && a == 0 && (g_sEnemy[e].m_cLocation.X - g_sChar.m_cLocation.X != 1))
+                    else if (i > 1 && (g_sEnemy[e].m_cLocation.X - g_sChar.m_cLocation.X >= 1))
                     {
                         g_ninjaState[e] = true;
                         g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
@@ -2387,20 +2432,20 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
                         i++;
                         g_eElapsedTime[e] = 0;
                     }
-                    else if (a == 0 && (g_sChar.m_cLocation.X == g_sEnemy[e].m_cLocation.X - 1)) //slam down on player
+                    else if (a == 0 && (g_sChar.m_cLocation.X >= g_sEnemy[e].m_cLocation.X - 1)) //slam down on player
                     {
                         g_ninjaState[e] = false;
                         c5[e] = 157;
                         g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
                         g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //knockback
-                        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sInvulnerable && !g_sAttackState)
+                        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sRage && !g_sInvulnerable && !g_sAttackState)
                         {
                             g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
                         }
                         i = 0;
-                        a++;
                         g_eElapsedTime[e] = 0;
                         g_enemyDelay[e] = 0;
+                        a++;
                     }
                     if (g_enemyDelay[e] > 3)
                     {
@@ -2418,20 +2463,167 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
                             if (g_sEnemy[e].m_cLocation.X >= d)
                             {
                                 g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
-                                a = 0;
-                                i = 0;
                                 g_enemyDelay[e] = 0;
                                 c5[e] = 157;
                                 g_ninjaState[e] = false;
+                                a = 0;
+                                i = 0;
+                                g_sLeftSlash[e] = false;
                             }
                         }
                     }
                 }
+                
             }
+        }
+    }
+    for (int k = 0; k <= g_iPlatforms; k++)
+    {
+        if (g_sEnemy[e].m_cLocation.Y == g_aPlatformsY[k] && g_sEnemy[e].m_cLocation.X == g_aPlatformsX[k] && g_sLeftSlash[e] == false && g_sRightSlash[e] == false)
+        {
+            g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
+            a = 0;
+            i = 0;
         }
     }
 }
 
+
+void vikingAttack(int& i, int n, double t, int d, int e) //stores 2 counters, boundary of attack, attack speed, original position and enemy array
+{
+    if (g_sEnemy[e].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
+    {
+        if (g_stun > 2)
+        {
+            if (g_eElapsedTime[e] > t && g_enemyDelay[e] > 3)
+            {
+                if (g_sChar.m_cLocation.X > g_sEnemy[e].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && g_sLeftSlash[e] == false) //attack to right
+                {
+                    if (i == 0 && g_sChar.m_cLocation.X <= (g_sEnemy[e].m_cLocation.X + n) && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y) //direction = right
+                    {
+                        i++;
+                        g_sRightSlash[e] = true;
+                    }
+                }
+                if (g_sRightSlash[e] == true)
+                {
+                    if (i >= 1 && (g_sChar.m_cLocation.X - g_sEnemy[e].m_cLocation.X >= 1))
+                    {
+                        g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
+                        c5[e] = 0;
+                        i++;
+                        g_eElapsedTime[e] = 0;
+                    }
+                    else if (g_sChar.m_cLocation.X <= g_sEnemy[e].m_cLocation.X + 1) //slam down on player
+                    {
+                        c5[e] = 157;
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2; //knockback
+                        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sRage && !g_sInvulnerable && !g_sAttackState)
+                        {
+                            g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
+                        }
+                        i = 0;
+                        g_eElapsedTime[e] = 0;
+                        g_enemyDelay[e] = 0;
+                    }
+                    if (g_enemyDelay[e] > 3)
+                    {
+                        if (i == 0 && g_sEnemy[e].m_cLocation.X != d)
+                        {
+                            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
+                            g_eElapsedTime[e] = 0;
+                            
+                        } 
+                        else if (g_sEnemy[e].m_cLocation.X == d)
+                        {
+                            g_sRightSlash[e] = false;
+                        }
+                        else if (i > 1) //go back
+                        {
+                            
+                            g_sRightSlash[e] = true;
+                            
+                        } 
+                    }
+                }
+                //if (g_sChar.m_cLocation.X < g_sEnemy[e].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && g_sRightSlash[e] == false) //attack to left
+                //{
+                //    if (i == 0 && a == 0 && g_sChar.m_cLocation.X >= (g_sEnemy[e].m_cLocation.X - n) && g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y) //direction = right
+                //    {
+                //        i++;
+                //        g_sLeftSlash[e] = true;
+                //    }
+                //}
+                //if (g_sLeftSlash[e] == true)
+                //{
+                //    if (i == 1)
+                //    {
+                //        g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
+                //        i++;
+                //        g_eElapsedTime[e] = 0;
+                //    }
+                //    else if (i > 1 && (g_sEnemy[e].m_cLocation.X - g_sChar.m_cLocation.X >= 1))
+                //    {
+                //        g_ninjaState[e] = true;
+                //        g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X - 1;
+                //        c5[e] = 0;
+                //        i++;
+                //        g_eElapsedTime[e] = 0;
+                //    }
+                //    else if (a == 0 && (g_sChar.m_cLocation.X >= g_sEnemy[e].m_cLocation.X - 1)) //slam down on player
+                //    {
+                //        g_ninjaState[e] = false;
+                //        c5[e] = 157;
+                //        g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
+                //        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2; //knockback
+                //        if (g_sChar.m_cLocation.Y == g_sEnemy[e].m_cLocation.Y && !g_sRage && !g_sInvulnerable && !g_sAttackState)
+                //        {
+                //            g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
+                //        }
+                //        i = 0;
+                //        g_eElapsedTime[e] = 0;
+                //        g_enemyDelay[e] = 0;
+                //        a++;
+                //    }
+                //    if (g_enemyDelay[e] > 3)
+                //    {
+                //        if (a == 1)
+                //        {
+                //            g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
+                //            a++;
+                //        }
+                //        else if (a > 1) //go back
+                //        {
+                //            g_ninjaState[e] = true;
+                //            c5[e] = 0;
+                //            g_sEnemy[e].m_cLocation.X = g_sEnemy[e].m_cLocation.X + 1;
+                //            g_eElapsedTime[e] = 0;
+                //            if (g_sEnemy[e].m_cLocation.X >= d)
+                //            {
+                //                g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y + 1;
+                //                g_enemyDelay[e] = 0;
+                //                c5[e] = 157;
+                //                g_ninjaState[e] = false;
+                //                a = 0;
+                //                i = 0;
+                //                g_sLeftSlash[e] = false;
+                //            }
+                //        }
+                //    }
+                //}
+
+            }
+        }
+    }
+    for (int k = 0; k <= g_iPlatforms; k++)
+    {
+        if (g_sEnemy[e].m_cLocation.Y == g_aPlatformsY[k] && g_sEnemy[e].m_cLocation.X == g_aPlatformsX[k] && g_sLeftSlash[e] == false && g_sRightSlash[e] == false)
+        {
+            g_sEnemy[e].m_cLocation.Y = g_sEnemy[e].m_cLocation.Y - 1;
+            i = 0;
+        }
+    }
+}
 
 void DewmAwaken()
 {
@@ -2990,7 +3182,15 @@ void renderEnemyStats() {
         }
         else if (level > 7 && level < 12)
         {
-            Healthcolor = 0x9E;
+            Healthcolor = 0x1E;
+        }
+        else if (level == 12)
+        {
+            Healthcolor = 0x1E;
+        }
+        else if (level > 12 && level < 16)
+        {
+            Healthcolor = 0x7E;
         }
         for (int e = 0; e < ne; e++)
         {
@@ -3101,13 +3301,15 @@ void nextLevel() {
             g_sPrimeObj[i].m_cLocation.X = 0;
             g_sPrimeObj[i].m_cLocation.Y = 0;
         }
-        for (int i = 0; i < ne; i++)
+        for (int e = 0; e < ne; e++)
         {
-            g_sEnemy[i].m_dHealth = 5;
-            g_sEnemy[i].m_cLocation.X = 0;
-            g_sEnemy[i].m_cLocation.Y = 0;
-            g_sEProj[i].m_cLocation.X = 0;
-            g_sEProj[i].m_cLocation.Y = 0;
+            g_sEnemy[e].m_dHealth = 5;
+            g_sEnemy[e].m_cLocation.X = 0;
+            g_sEnemy[e].m_cLocation.Y = 0;
+            g_sEProj[e].m_cLocation.X = 0;
+            g_sEProj[e].m_cLocation.Y = 0;
+            i[e] = 0;
+            ip[e] = 0;
         }
         for (int i = 0; i < obj; i++)
         {
@@ -3145,6 +3347,14 @@ void nextLevel() {
             loadLevelData(10);
         if (level == 11)
             loadLevelData(11);
+        if (level == 12)
+            loadLevelData(12);
+        if (level == 13)
+            loadLevelData(13);
+        if (level == 14)
+            loadLevelData(14);
+        if (level == 15)
+            loadLevelData(15);
         oneTime = 1;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
         g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
@@ -3279,9 +3489,13 @@ void renderCharacter()
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
                 }
-                else if (level > 7 && level < 12)
+                else if (level > 7 && level < 13)
                 {
-                    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x9E);
+                    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1E);
+                }
+                else if (level >= 13 && level < 16)
+                {
+                    g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x7E);
                 }
             }
             g_Console.writeToBuffer(g_sChar.m_cLocation, c3, charColor);
@@ -3348,16 +3562,16 @@ void renderEnemy()
                     else if (level > 7 && level < 12)
                     {
                         enemyColor[i] = 0x8C;
-                        EProjColor[i] = 0x9C;
+                        EProjColor[i] = 0x1C;
                         c5[i] = 232;
                         cP5[i] = 247;
                     }
-                    else if (level > 12 && level < 18)
+                    else if (level >= 12 && level < 15)
                     {
                         enemyColor[i] = 0x0B;
-                        EProjColor[i] = 0x0F;
+                        EProjColor[i] = 0x78;
                         c5[i] = 223;
-                        cP5[i] = 78;
+                        cP5[i] = 43;
                     }
                     if ((g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X || g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X) && g_sEProj[i].m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
                     {
@@ -3623,7 +3837,7 @@ void loadLevelData(int number) {
         levelFile = "lvlDewm4.txt";
     }
     if (number == 8) {
-        BGcolor = 0x90;
+        BGcolor = 0x10;
         levelFile = "lvlSeraph1.txt";
     }
     if (number == 9) {
@@ -3636,16 +3850,17 @@ void loadLevelData(int number) {
         levelFile = "lvlSeraph4.txt";
     }
     if (number == 12) {
-        BGcolor = 0x0110;
+        BGcolor = 0x10;
         levelFile = "lvlNinja1.txt";
     }
-    if (number == 12) {
+    if (number == 13) {
+        BGcolor = 0x70;
         levelFile = "lvlNinja2.txt";
     }
-    if (number == 13){
+    if (number == 14){
         levelFile = "lvlNinja3.txt";
     }
-    if (number == 14) {
+    if (number == 15) {
         levelFile = "lvlNinja4.txt";
     }
     std::ifstream level;

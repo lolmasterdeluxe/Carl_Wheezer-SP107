@@ -88,7 +88,8 @@ void downslam();                   //Seraph's down slam
 void seraphUlt();                  //Seraph combo breaker
 void focusAttack();                //Gin's focus ability
 void focusUlt();                   //Gin's focus ultimate
-void ninjaAttack(int& i, int& a, int n, double t, int d, int e); //Attack specific to ninja enemies
+void ninjaAttack(int& i, int& a, int n, double t, int d, int e); //Ninja mechanic exclusive to enemies in Gin level
+void vikingAttack(int& i, int n, double t, int d, int e);
 void EnemyProjectile(int& k, int i, double n, int x); //Enemy projectile
 
 // game funcs

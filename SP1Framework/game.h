@@ -35,9 +35,11 @@ enum EKEYS
     K_45,    //Dodge forwards  (E)
     K_55,    //Gin's Ult       (U)
     K_47,    //God mode        (G)
+    K_31,    //Thorfinn melee  (1)
+    K_32,    //Thorfinn Ranged (2)
     K_ENTER,
     K_ESCAPE,
-    K_SPACE,
+    K_SPACE, //Activate Ult/Rage/Focus/Spirit modes
     K_LEFT,
     K_RIGHT,
     K_UP,
@@ -81,6 +83,7 @@ void loadSavedGame();
 // character abilities anad mechanics func
 void moveCharacter(int n);         // moves the character, collision detection, physics, etc
 void sneakCharacter();             //Gin sneak ability
+void healthPotion(int i);          //Potion with specific array
 void moveProjectile();             // moves player projectile
 void dodge(int i);                 // Gin exclusive dodge
 void slashAttack(double n, int i); //Slash attack
@@ -88,8 +91,11 @@ void downslam();                   //Seraph's down slam
 void seraphUlt();                  //Seraph combo breaker
 void focusAttack();                //Gin's focus ability
 void focusUlt();                   //Gin's focus ultimate
+void spiritUlt();                  //Thorfinn's spirit Ultimate
 void ninjaAttack(int& i, int& a, int n, double t, int d, int e); //Ninja mechanic exclusive to enemies in Gin level
-void vikingAttack(int& i, int n, double t, int d, int e);
+void vikingAttack(int& i, int n, double t, int d, int e); //Viking mechanic exclusive to viking enemies in Thorfinn level
+void vikingBow(int& k, int i, double n, double t, int x); //same as move projectile but with delay and faster speed
+void ThorfinnArms(double n1, double n2, int i, int k); //speed of projectile || melee attack, melee attack distance and projectile distance
 void EnemyProjectile(int& k, int i, double n, int x); //Enemy projectile
 
 // game funcs

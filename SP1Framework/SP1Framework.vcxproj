@@ -106,6 +106,10 @@
     <Text Include="lvlSeraph2.txt" />
     <Text Include="lvlSeraph3.txt" />
     <Text Include="lvlSeraph4.txt" />
+    <Text Include="lvlVik1.txt" />
+    <Text Include="lvlVik2.txt" />
+    <Text Include="lvlVik3.txt" />
+    <Text Include="lvlVik4.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />

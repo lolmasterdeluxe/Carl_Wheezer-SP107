@@ -115,5 +115,17 @@
     <Text Include="lvlNinja4.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="lvlVik1.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlVik2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlVik3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlVik4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

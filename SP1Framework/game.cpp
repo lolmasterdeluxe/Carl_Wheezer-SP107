@@ -90,12 +90,12 @@ char c0[25] = { }; //Object Ascii
 char cO[5] = { 160, 160 };  // Potion ascii
 char NPC[9] = { }; //NPC ascii
 
-char b1 = 142;
-char b2 = 142;
-auto bear1 = std::string(2, b1) + b2;
-char b3 = 142;
-char b4 = 142;
-auto bear1 = std::string(2, b1) + b2;
+char b1 = 254; //bear spirit ascii 
+char b2 = 254;
+auto bear1 = std::string(3, b1) + b2;
+char b3 = 249;
+char b4 = 249;
+auto bear2 = std::string(3, b1) + b2; //combined into 2
 
 char c6 = 232;                     //mini - Boss ascii (c6 - 9)
 char c7 = 232;
@@ -106,6 +106,7 @@ auto boss2 = std::string(3, c8) + c9;
 
 WORD enemyColor[10] = { };
 WORD bossColor = 0x4E;
+WORD bearColor = 0x9F;
 WORD BGcolor;
 WORD Healthcolor;
 WORD ObjColor[25] = {};
@@ -493,8 +494,9 @@ void updateGame() {     // gameplay logic
         if (characterSelect == 3)
         {
             ThorfinnArms(0.01, 0.2, 10, 50); //speed of projectile || melee attack, melee attack distance and projectile distance
+            spiritUlt();
             moveCharacter(1);
-            setUltimate(50);      //Set ultimate capacity to *50
+            setUltimate(100);      //Set ultimate capacity to *50
         }
         setdamage();              //find reason for damage
         nextLevel();
@@ -510,7 +512,7 @@ void updateGame() {     // gameplay logic
 
 void updateEnemy()
 {
-    if (characterSelect == 0) //Dewm Guy's Levels
+    if (characterSelect == 3) //Dewm Guy's Levels
     {
         if (level == 4)
         {
@@ -1185,10 +1187,10 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
     }
     if (g_sRanged == true)
     {
-        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
+        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X && g_slashdelay > 1) //shoot to right
         {
             c4 = 246;
-            if (g_pElapsedTime > n1 && g_slashdelay > 2)
+            if (g_pElapsedTime > n1)
             {
                 if (j != k)
                 {
@@ -1206,6 +1208,8 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
                     g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
                     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
                     j = 0;
+                    c4 = 0;
+                    g_slashdelay = 0;
                 }
             }
         }
@@ -1224,15 +1228,15 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
             {
                 g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
                 g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-                g_slashdelay = 0;
                 c4 = 0;
                 j = 0;
+                g_slashdelay = 0;
             }
         }
-        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X) //shoot to left
+        if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X && g_slashdelay > 1) //shoot to left
         {
             c4 = 246;
-            if (g_pElapsedTime > n1 && g_slashdelay > 2)
+            if (g_pElapsedTime > n1)
             {
                 if (j != k)
                 {
@@ -1250,6 +1254,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
                     g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
                     c4 = 0;
                     j = 0;
+                    g_slashdelay = 0;
                 }
             }
         }
@@ -1268,9 +1273,9 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
             {
                 g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
                 g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-                g_slashdelay = 0;
                 c4 = 0;
                 j = 0;
+                g_slashdelay = 0;
             }
         }
     }
@@ -2071,9 +2076,82 @@ void focusUlt() //Gin's Focus ultimate
 
 void spiritUlt()
 {
-    if (g_sSpirit == true)
+    if (g_sSpirit == false)
     {
-
+        g_sBearSpirit[0].m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        g_sBearSpirit[0].m_cLocation.Y = g_sChar.m_cLocation.Y;
+        g_sBearSpirit[1].m_cLocation.X = g_sChar.m_cLocation.X + 2;
+        g_sBearSpirit[1].m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+    }
+    else if (g_sSpirit == true)
+    {
+        for (int i = 0; i <= ne; i++)
+        {
+            if (g_sBearSpirit[0].m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
+            {
+                if (g_sBearSpirit[0].m_cLocation.X < g_sEnemy[i].m_cLocation.X && su == 0) //Go right
+                {
+                    if (g_suElapsedTime > 0.05)
+                    {
+                        g_sBearSpirit[0].m_cLocation.X = g_sBearSpirit[0].m_cLocation.X + 1;
+                        g_sBearSpirit[1].m_cLocation.X = g_sBearSpirit[1].m_cLocation.X + 1;
+                        g_suElapsedTime = 0;
+                    }
+                }
+                if (g_sBearSpirit[0].m_cLocation.X > g_sEnemy[i].m_cLocation.X && su == 0) //Go left
+                {
+                    if (g_suElapsedTime > 0.05)
+                    {
+                        g_sBearSpirit[1].m_cLocation.X = g_sBearSpirit[1].m_cLocation.X - 1;
+                        g_sBearSpirit[0].m_cLocation.X = g_sBearSpirit[0].m_cLocation.X - 1;
+                        g_suElapsedTime = 0;
+                    }
+                }
+                if ((g_sBearSpirit[0].m_cLocation.X + 3 == g_sEnemy[i].m_cLocation.X || g_sBearSpirit[0].m_cLocation.X == g_sBossP1.m_cLocation.X) || su > 1 && g_sEnemy[i].m_dHealth >= 0)
+                {
+                    su++;
+                    if (g_suElapsedTime > 0.05)
+                    {
+                        if (su >= 1 && su < 5)
+                        {
+                            g_sBearSpirit[0].m_cLocation.X = g_sBearSpirit[0].m_cLocation.X - 1;
+                            g_sBearSpirit[1].m_cLocation.X = g_sBearSpirit[1].m_cLocation.X - 1;
+                            su++;
+                            g_suElapsedTime = 0;
+                        }
+                        if (su >= 5 && su < 20)
+                        {
+                            g_sBearSpirit[0].m_cLocation.X = g_sBearSpirit[0].m_cLocation.X + 2;
+                            g_sBearSpirit[1].m_cLocation.X = g_sBearSpirit[1].m_cLocation.X + 2;
+                            su++;
+                            g_suElapsedTime = 0;
+                        }
+                        if (su >= 20 && su < 35)
+                        {
+                            g_sBearSpirit[0].m_cLocation.X = g_sBearSpirit[0].m_cLocation.X - 2;
+                            g_sBearSpirit[1].m_cLocation.X = g_sBearSpirit[1].m_cLocation.X - 2;
+                            su++;
+                            g_suElapsedTime = 0;
+                            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 1;
+                        }
+                        if (g_sEnemy[i].m_dHealth >= 0 && su >= 35)
+                        {
+                            g_suElapsedTime = 0;
+                            su = 5;
+                        }
+                        
+                    }
+                    if (su >= 35 && g_sEnemy[i].m_dHealth >= 0 && (g_sEnemy[i].m_cLocation.X > g_sBearSpirit[0].m_cLocation.X || g_sEnemy[i].m_cLocation.X < g_sBearSpirit[0].m_cLocation.X))
+                    {
+                        su = 0;
+                    }
+                    if (g_sBearSpirit[0].m_cLocation.X == g_sEnemy[i].m_cLocation.X && g_sBearSpirit[0].m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
+                    {
+                        g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 5;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -2086,7 +2164,7 @@ void setdamage()
         {
             if (g_hElapsedTime > 0.3)
             {
-                if (g_sEnemy[i].m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
+                if (g_sEnemy[i].m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
                 {
                     g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
                 }
@@ -2095,7 +2173,7 @@ void setdamage()
                 {
                     g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2; //program recognises as 2 damage
                 }
-                if (g_sFocus == true)
+                if (g_sFocus == true || g_sSpirit)
                 {
                     g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 5;
                 }
@@ -2105,7 +2183,7 @@ void setdamage()
         {
             if (g_hElapsedTime > 0.5)
             {
-                if (g_sChar.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
+                if (g_sChar.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
                 {
                     g_sChar.m_dHealth = g_sChar.m_dHealth - 5;
                 }
@@ -2119,7 +2197,7 @@ void setdamage()
     {
         if (g_hElapsedTime > 0.2)
         {
-            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus)
+            if (g_sBossP1.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
             {
                 g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
             }
@@ -2129,7 +2207,7 @@ void setdamage()
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1; //program recognises as 2 damage
         }
-        if (g_sFocus == true)
+        if (g_sFocus == true || g_sSpirit == true)
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 10;
         }
@@ -2161,6 +2239,7 @@ void setdamage()
             {
                 g_sObj[i].m_dHealth = g_sObj[i].m_dHealth - 2;
                 g_hElapsedTime = 0;
+                
             }
         }
         if (g_sChar.m_cLocation.X - 2 <= g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.X > g_sObj[i].m_cLocation.X && g_sAttackState) //left slash attack
@@ -2203,6 +2282,10 @@ void setdamage()
             }
             j = 0;
             g_sProj.m_cLocation = g_sChar.m_cLocation;
+            if (characterSelect == 3)
+            {
+                g_slashdelay = 0;
+            }
 
         }
         if (g_sEnemy[i].m_dHealth <= 0)
@@ -2222,6 +2305,10 @@ void setdamage()
         {
             g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 2;
         }
+        if (characterSelect == 3)
+        {
+            g_slashdelay = 0;
+        }
         j = 0;
         g_sProj.m_cLocation = g_sChar.m_cLocation;
     }
@@ -2240,6 +2327,10 @@ void setdamage()
             }
             j = 0;
             g_sProj.m_cLocation = g_sChar.m_cLocation;
+            if (characterSelect == 3)
+            {
+                g_slashdelay = 0;
+            }
         }
     }
     //For platforms
@@ -2249,6 +2340,10 @@ void setdamage()
         {
             j = 0;
             g_sProj.m_cLocation = g_sChar.m_cLocation;
+            if (characterSelect == 3)
+            {
+                g_slashdelay = 0;
+            }
         }
     }
     if (g_sBossP1.m_dHealth <= 0)
@@ -2271,7 +2366,7 @@ void setdamage()
 
 void setUltimate(int M)
 {
-    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus) //checks if Player mana is less than 50 and is not in rage mode
+    if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus && !g_sSpirit) //checks if Player mana is less than 50 and is not in rage mode
     {
         if (g_uElapsedTime > 0.5) //increase mana by 1 every * second
         {
@@ -2283,7 +2378,7 @@ void setUltimate(int M)
             g_sChar.m_dMana++;
         }*/
     }
-    else if (g_sUltimate || g_sRage || g_sFocus)
+    else if (g_sUltimate || g_sRage || g_sFocus || g_sSpirit)
     {
         if (g_uElapsedTime > 0.5)
         {
@@ -2305,6 +2400,10 @@ void setUltimate(int M)
             {
                 g_sFocus = !g_sFocus;
             }
+            if (characterSelect == 3)
+            {
+                g_sSpirit = !g_sSpirit;
+            }
         }
     }
     if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
@@ -2323,6 +2422,15 @@ void setUltimate(int M)
         {
             g_sFocus = !g_sFocus;
         }
+        if (characterSelect == 3)
+        {
+            g_sSpirit = !g_sSpirit;
+        }
+        su = 0;
+    }
+    if (g_sChar.m_dMana < M && g_skKeyEvent[K_SPACE].keyReleased && g_sSpirit == true)
+    {
+        g_sSpirit = !g_sSpirit;
         su = 0;
     }
 
@@ -3771,6 +3879,10 @@ void nextLevel() {
         g_sBossP1.m_cLocation.Y = 0;
         g_sBossP2.m_cLocation.X = 0;
         g_sBossP2.m_cLocation.Y = 0;
+        g_sBearSpirit[0].m_cLocation.X = 0;
+        g_sBearSpirit[0].m_cLocation.Y = 0;
+        g_sBearSpirit[1].m_cLocation.X = 0;
+        g_sBearSpirit[1].m_cLocation.Y = 0;
         deletePlatforms();
         
     }
@@ -3985,7 +4097,7 @@ void renderCharacter()
         {
             if (g_sFocus == true)
             {
-                charColor = 0x1A;
+                charColor = 0x5A;
             }
             else if (g_sUltimate == true)
             {
@@ -3993,7 +4105,7 @@ void renderCharacter()
             }
             else
             {
-                charColor = 0x1F;
+                charColor = 0x5F;
             }
             c1 = 234;
             c2 = 234;
@@ -4005,9 +4117,25 @@ void renderCharacter()
             if (g_sSpirit == true)
             {
                 charColor = 0xF7; //Ultimate mode
+                b1 = 254; //bear spirit ascii 
+                b2 = 254;
+                bear1 = std::string(3, b1) + b2;
+                b3 = 221;
+                b4 = 221;
+                bear2 = std::string(3, b1) + b2;
+                bearColor = 0x9F;
+                g_Console.writeToBuffer(g_sBearSpirit[0].m_cLocation, bear1, bearColor);
+                g_Console.writeToBuffer(g_sBearSpirit[1].m_cLocation, bear2, bearColor);
             }
             else
             {
+                b1 = 0;
+                b2 = 0;
+                b3 = 0;
+                b4 = 0;
+                bear1 = std::string(3, b1) + b2;
+                bear2 = std::string(3, b1) + b2;
+                bearColor = BGcolor;
                 charColor = 0x9F;
             }
             c1 = 254;
@@ -4044,7 +4172,7 @@ void renderCharacter()
 
 void renderEnemy()
 {
-    if (characterSelect == 0) //rendering for Dewm Guy
+    if (characterSelect == 3) //rendering for Dewm Guy
     {
         for (int i = 0; i < ne; i++) //Enemy
         {
@@ -4218,7 +4346,7 @@ void renderObj()
     }
     else if (level == 6)
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 2; i < 4; i++)
         {
             if (g_sObj[i].m_dHealth > 0)
             {
@@ -4264,7 +4392,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << 1.0 / g_dDeltaTime << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/su << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());

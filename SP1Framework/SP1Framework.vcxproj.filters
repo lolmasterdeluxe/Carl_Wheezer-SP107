@@ -100,5 +100,11 @@
     <Text Include="DewmIntro.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="lvlSeraph4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlDewm4.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

@@ -22,6 +22,7 @@ double  g_enemyDelay[10] = { };   //enemy attack delay specific to Ninjas && Vik
 double  g_sElapsedTime; //slash elapsed time
 double  g_doElapsedTime;//Dodge elapsed time
 double  g_bElapsedTime; //boss movement elapsed time
+double  g_bpElapsedTime[5]; //Boss projectile elapsed time
 double  g_bjElapsedTime;//boss jump elapsed time
 double  g_jElapsedTime; //player jump elapsed time
 double  g_hElapsedTime; //health elapsed time
@@ -47,6 +48,7 @@ int i[10] = {0,0,0,0,0,0,0,0,0,0}; //enemy movement counter
 int ip[10] = { 0,0,0,0,0,0,0,0,0,0 }; //enemy projectile counter
 int j = 0;       //projectile counter
 int k = 0;       //boss movement counter
+int kp[5] = { 0,0,0,0,0 };//Boss projectile counter
 int l = 0;       //player movement counter
 int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
@@ -87,6 +89,7 @@ char c4;                     //projectile ascii
 
 char c5[10] = { };  //Enemy ascii
 char cP5[10] = { };
+char bP5[5] = { };
 char c0[25] = { }; //Object Ascii
 char cO[5] = { 160, 160 };  // Potion ascii
 char NPC[9] = { }; //NPC ascii
@@ -105,8 +108,13 @@ char c8 = 186;
 char c9 = 186;
 auto boss2 = std::string(3, c8) + c9;
 
+char c10 = 237;
+char c11 = 237;
+auto boss3 = std::string(4, c10) + c11;
+
 WORD enemyColor[10] = { };
-WORD bossColor = 0x4E;
+WORD bossColor[4] = { 0x4E , 0x0E, 0X8E, 0X8E };
+WORD BProjColor[5] = { 0X7E,0X7E,0X7E,0X7E,0X7E };
 WORD bearColor = 0x9F;
 WORD BGcolor;
 WORD Healthcolor;
@@ -126,6 +134,7 @@ SGameChar   g_sEnemy[10]; SGameChar g_sEProj[10]; //Enemy specific chars
 SGameChar   g_sPortal;
 SGameChar   g_sBearSpirit[2];   //Thorfinn's bear
 SGameChar   g_sBoss1[2];       //Boss top and bottom half
+SGameChar   g_sBoss2; SGameChar g_sBProj[5]; // 2nd boss and its projectile
 SGameChar   g_sNPC[9];       //NPC
 SGameChar   g_sPotion[5];     //Potion Object
 SGameChar   g_sObj[25];      //Any obj
@@ -188,7 +197,8 @@ void init(void) {
                 g_sObj[i].m_dHealth = 20;
             }
         }
-        g_sBoss1[0].m_dHealth = 100;
+        g_sBoss1[0].m_dHealth = 300;
+        g_sBoss2.m_dHealth = 300;
     }
     else
     {
@@ -205,12 +215,21 @@ void init(void) {
     {
         c4 = 246;
     }
+    g_sBProj[0].m_cLocation.X = g_sBoss2.m_cLocation.X;
+    g_sBProj[1].m_cLocation.X = g_sBoss2.m_cLocation.X + 1;
+    g_sBProj[2].m_cLocation.X = g_sBoss2.m_cLocation.X + 2;
+    g_sBProj[3].m_cLocation.X = g_sBoss2.m_cLocation.X + 3;
+    g_sBProj[4].m_cLocation.X = g_sBoss2.m_cLocation.X + 4;
+    for (int i = 0; i < 5; i++)
+    {
+        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+    }
     g_sChar.m_dMana = state.returnCharMana();
-    g_sChar.m_dMana = 50;
-    g_sPortal.m_cLocation.X = 97;
-    g_sPortal.m_cLocation.Y = 28;
+    g_sChar.m_dMana = 0;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
+    g_sBoss1[0].m_dHealth = 300;
+    g_sBoss2.m_dHealth = 300;
     
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -424,6 +443,7 @@ void updateTime(double dt) {
         g_eElapsedTime[i] += dt; //Enemy movement time elapsed
         g_epElapsedTime[i] += dt; //Enemy projectile elapsed time
         g_enemyDelay[i] += dt;    //Enemy ninja delay
+        g_bpElapsedTime[i] += dt; //Boss projectile elapsed time
     }
     g_sElapsedTime += dt;   //Slash movement time elapsed
     g_doElapsedTime += dt;  //Dodge time elapsed
@@ -572,7 +592,7 @@ void updateEnemy()
             moveBoss(26, 0.05, 5, 43); //move *26 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *43
             healthPotion(0);
             healthPotion(1);
-            ne = 7;
+            ne = 6;
         }
         if (level == 8)
         {
@@ -632,6 +652,14 @@ void updateEnemy()
             EnemyProjectile(ip[3], 3, 0.1, 34);
             moveEnemy(i[4], 'r', 23, 0.2, 34, 4);
             EnemyProjectile(ip[5], 5, 0.05, 67);
+            BossProjectile(0, 0.3);
+            BossProjectile(1, 0.1);
+            if (g_sBoss2.m_dHealth < 150)
+            {
+                BossProjectile(2, 0.2);
+                BossProjectile(3, 0.4);
+                BossProjectile(4, 0.1);
+            }
             healthPotion(0);
             ne = 6;
         }
@@ -1834,7 +1862,8 @@ void seraphUlt()
             {
                 g_sEnemy[i].m_dHealth = 0;
             }
-            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 50;
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 150;
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 150;
         }
         else if (g_udElapsedTime > 3)
         {
@@ -2207,6 +2236,7 @@ void setdamage()
             g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
         }
     }
+    //Boss 1 damage
     if ((g_sBoss1[0].m_cLocation.X == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBoss1[0].m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.2)
@@ -2226,26 +2256,28 @@ void setdamage()
             g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 10;
         }
     }
-    //for (int i = 0; i < ne; i++) //melee damage for enemy
-    //{
-    //    if (g_sChar.m_cLocation.X + 2 >= g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sAttackState) //right slash attack
-    //    {
-    //        if (g_hElapsedTime > 0.2)
-    //        {
-    //            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-    //            g_hElapsedTime = 0;
-    //        }
-    //    }
-    //    if (g_sChar.m_cLocation.X - 2 <= g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sAttackState) //left slash attack
-    //    {
-    //        if (g_hElapsedTime > 0.2)
-    //        {
-    //            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-    //            g_hElapsedTime = 0;
-    //        }
-    //    }
-    //}
-    for (int i = 0; i < obj; i++) //melee damage for obj
+    //Boss 2 damage
+    if ((g_sBoss2.m_cLocation.X == g_sChar.m_cLocation.X || g_sBoss2.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBoss2.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBoss2.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    {
+        if (g_hElapsedTime > 0.2)
+        {
+            if (g_sBoss2.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
+            {
+                g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+            }
+            g_hElapsedTime = 0;
+        }
+        if (g_sAttackState == true)
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 1; //program recognises as 2 damage
+        }
+        if (g_sFocus == true || g_sSpirit == true)
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 10;
+        }
+    }
+    //Melee damage for obj
+    for (int i = 0; i < obj; i++)
     {
         if (g_sChar.m_cLocation.X + 2 >= g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.X < g_sObj[i].m_cLocation.X && g_sAttackState) //right slash attack
         {
@@ -2265,23 +2297,6 @@ void setdamage()
             }
         }
     }
-    //  Knockback slash for boss not active
-    //if (g_sChar.m_cLocation.X - 2 <= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X > g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
-    //{
-    //    if (g_hElapsedTime > 0.2)
-    //    {
-    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
-    //        g_hElapsedTime = 0;
-    //    }
-    //}
-    //if (g_sChar.m_cLocation.X + 2 >= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X < g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
-    //{
-    //    if (g_hElapsedTime > 0.2)
-    //    {
-    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
-    //        g_hElapsedTime = 0;
-    //    }
-    //}
     for (int i = 0; i < ne; i++)  //check projectile damage to enemy
     {
         if ((g_sProj.m_cLocation.X == g_sEnemy[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5[i] != 0)
@@ -2308,7 +2323,7 @@ void setdamage()
             enemyColor[i] = 0x4A;
         }
     }
-    //to Boss
+    //to Boss 1
     if (g_sProj.m_cLocation.X == g_sBoss1[0].m_cLocation.X && g_sProj.m_cLocation.Y == g_sBoss1[0].m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
         if (!g_sRage)
@@ -2318,6 +2333,24 @@ void setdamage()
         else
         {
             g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 2;
+        }
+        if (characterSelect == 3)
+        {
+            g_slashdelay = 0;
+        }
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+    //to Boss 2
+    if (g_sProj.m_cLocation.X == g_sBoss2.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBoss2.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c10 != 0)
+    {
+        if (!g_sRage)
+        {
+            g_sBoss2.m_dHealth--;
+        }
+        else
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 2;
         }
         if (characterSelect == 3)
         {
@@ -2368,7 +2401,14 @@ void setdamage()
         c8 = 0;
         c9 = 0;
         boss2 = std::string(3, c8) + c9;
-        bossColor = 0x1A;
+        bossColor[0] = BGcolor;
+    }
+    if (g_sBoss2.m_dHealth <= 0)
+    {
+        c10 = 0;
+        c11 = 0;
+        boss1 = std::string(3, c10) + c11;
+        bossColor[1] = BGcolor;
     }
     if (g_sChar.m_cLocation.Y > g_Console.getConsoleSize().Y)
         g_sChar.m_dHealth--;
@@ -2568,37 +2608,40 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
 
 void moveBoss(int n, double t, double t2, int d)
 {
-    if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
-    {
-        if (g_sBoss1[0].m_dHealth <= 50)
+    if (g_sBoss1[0].m_cLocation.Y - 4 <= g_sChar.m_cLocation.Y)
+    { 
+        if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
         {
-            t2 = t2 / 3;
-            t = t / 2;
-        }
-        if (g_bElapsedTime > t)
-        {
-            if (k != n)
+            if (g_sBoss1[0].m_dHealth <= 150)
             {
-                if (g_delay1 > t2) //go to right
-                {
-                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X + 2;
-                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X + 2;
-                    g_bElapsedTime = 0;
-                    k++;
-                    g_delay2 = 0;
-                }
+                t2 = t2 / 3;
+                t = t / 2;
             }
-            else
+            if (g_bElapsedTime > t)
             {
-                if (g_delay2 > t2) //go to left
+                if (k != n)
                 {
-                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X - 2;
-                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X - 2;
-                    g_bElapsedTime = 0;
-                    g_delay1 = 0;
-                    if (g_sBoss1[0].m_cLocation.X <= d)
+                    if (g_delay1 > t2) //go to right
                     {
-                        k = 0;
+                        g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X + 2;
+                        g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X + 2;
+                        g_bElapsedTime = 0;
+                        k++;
+                        g_delay2 = 0;
+                    }
+                }
+                else
+                {
+                    if (g_delay2 > t2) //go to left
+                    {
+                        g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X - 2;
+                        g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X - 2;
+                        g_bElapsedTime = 0;
+                        g_delay1 = 0;
+                        if (g_sBoss1[0].m_cLocation.X <= d)
+                        {
+                            k = 0;
+                        }
                     }
                 }
             }
@@ -2670,6 +2713,110 @@ void moveBoss(int n, double t, double t2, int d)
         //{
         //    m = 0;
         //}
+    }
+}
+
+void BossProjectile(int i,  double n)
+{
+    if (g_sBoss2.m_dHealth > 0 && !g_sUltimate && !g_sFocus) 
+    {
+        if (g_sChar.m_cLocation.X > g_sBoss2.m_cLocation.X && g_sChar.m_cLocation.Y == g_sBoss2.m_cLocation.Y)
+        {
+
+            if (g_sChar.m_cLocation.X <= g_sBoss2.m_cLocation.X + x) //shoot to right
+            {
+                bP5[i] = 233;
+                if (g_bpElapsedTime[i] > n) //time between shots
+                {
+                    if (kp[i] >= 0 && kp[i] < 5)
+                    {
+                        g_sBProj[i].m_cLocation.Y--;
+                        g_bpElapsedTime[i] = 0;
+                        kp[i]++;
+                    }
+                    if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X--;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                    {
+                        g_sBProj[i].m_cLocation.Y++;
+                        kp[i]++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X + 3 >= g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
+                    {
+                        if (!g_sUltimate && !g_sFocus && !g_sRage && !g_sSpirit && !g_sAttackState)
+                        {
+                            g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+                        }
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                        g_sBProj[i].m_cLocation.X = g_sBoss2.m_cLocation.X;
+                        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+                        kp[i] = 0;
+                    }
+                    else if (kp[i] >= 10 && kp[i] < 30)
+                    {
+                        g_sBoss2.m_cLocation.X = g_sBoss2.m_cLocation.X + 1;
+                    }
+                }
+            }
+
+        }
+        if (g_sChar.m_cLocation.X < g_sBoss2.m_cLocation.X && g_sChar.m_cLocation.Y == g_sBoss2.m_cLocation.Y)
+        {
+            if (g_sChar.m_cLocation.X >= g_sBoss2.m_cLocation.X - x) //shoot to left
+            {
+                bP5[i] = 233;
+                if (g_bpElapsedTime[i] > n) //time between shots
+                {
+                    if (kp[i] >= 0 && kp[i] < 5)
+                    {
+                        g_sBProj[i].m_cLocation.Y--;
+                        g_bpElapsedTime[i] = 0;
+                        kp[i]++;
+                    }
+                    if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X--;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                    {
+                        g_sBProj[i].m_cLocation.Y++;
+                        kp[i]++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X - 3 <= g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
+                    {
+                        if (!g_sUltimate && !g_sFocus && !g_sRage && !g_sSpirit && !g_sAttackState)
+                        {
+                            g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+                        }
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                        g_sBProj[i].m_cLocation.X = g_sBoss2.m_cLocation.X;
+                        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+                        kp[i] = 0;
+                    }
+                    else if (kp[i] >= 10 && kp[i] < 30)
+                    {
+                        g_sBoss2.m_cLocation.X = g_sBoss2.m_cLocation.X - 1;
+                    }
+                }
+            }
+
+        }
     }
 }
 
@@ -3684,19 +3831,26 @@ void renderNewGameOption() {
     c.Y += 2;
     c.X = 0;
     if (characterSelect == 0) {
-        desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the ice of   Elsa, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
+        desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the frost of  ice, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
     }
     if (characterSelect == 1) {
-        desc = "Uses a buster sword (close range), High health, high damage, low speed, can charge attack, build charge metre to do special move";
+        desc = "The Cetra people were the first civilization to occupy the Planet. Originating from the outer confines of the universe, these nomadic people saw the Planet as their Promised Land, a perfect place in harmony with their vision of supreme happiness : a paradise. Nevertheless,the concept of a Promised Land is subject to individual appraisal; it is not the same for everyone. And so, some of the Cetra left the Planet when they did not find the fulfillment they were seeking. In contrast, those who remained became its permanent residents.";
     }
     if (characterSelect == 2) {
-        desc = "Uses a katana (close range), low health, highest damage, highest speed, can dodge backwards and through enemy, build focus metre to insta kill anything in a straight line, can sneak such that is unnoticeable and cannot be attacked by enemies";
+        desc = "In the late 13th century, the Sushi empire has laid waste to entire nations along their campaign to conquer the East. Sashimi Island is all that stands between mainland Japan and a massive Ninja invasion fleet led by the ruthless and cunning general, Wasabi. As the island burns in the wake of the first wave of the Sushi assault, samurai warrior Gin Isei stands as one of the last surviving members of his clan. He is resolved to do whatever it takes, at any cost, to protect his people and reclaim his home. He must set aside the traditions that have shaped him as a warrior to forge a new path, the path of the Ghost, and wage an unconventional war for the freedom of Sashimi";
     }
     if (characterSelect == 3) {
-        desc = "Uses an axe (close range) and can change to bow (long range) , highest health, balanced damage, lowest speed, spirit metre slowly builds up overtime, or when enemies slain, and is used to summon a bear spirit which can attack enemies for him, whilst becoming invincible";
+        desc = "Many years have passed since Thorfinn took his vengeance against the Norse gods. Having survived his final encounter with his father Thor, Thorfinn has since travelled to Olympus in Ancient Greece and now lives with his young son Askeladd in the world of the Olympian gods, a savage land inhabited by many ferocious monsters and warriors. In order to teach his son, whose mother has recently died, how to survive in such a world, Thorfinn must master the spirit that has driven him for many years and embrace his newfound role as a father and a mentor.";
     }
     g_Console.writeToBuffer(c, desc, color);
-    c.Y += 6;
+    if (characterSelect == 2)
+    {
+        c.Y += 7;
+    }
+    else
+    {
+        c.Y += 6;
+    }
     c.X = g_Console.getConsoleSize().X / 2 - 20;
     g_Console.writeToBuffer(c, "Arrow Keys to switch characters", 0x0F);
     c.Y += 2;
@@ -3773,10 +3927,10 @@ void renderMenuBackground() {
                     g_Console.writeToBuffer(x, y, " ", 0X0000);
                 }
                 if (perLine[x] == '8') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
+                    g_Console.writeToBuffer(x, y, " ", 0xA0);
                 }
                 if (perLine[x] == '7') {
-                    g_Console.writeToBuffer(x, y, " ", 0x30);
+                    g_Console.writeToBuffer(x, y, " ", 0xB0);
                 }
             }
             y++;
@@ -3785,41 +3939,48 @@ void renderMenuBackground() {
 }
 
 void renderEnemyStats() {
-    if (level >= 4) 
+    if (characterSelect == 0)
     {
-        if (level < 7)
+        if (level >= 4)
         {
-            Healthcolor = 0x4E;
-        }
-        else if (level > 7 && level < 12)
-        {
-            Healthcolor = 0x1E;
-        }
-        else if (level >= 12 && level < 15)
-        {
-            Healthcolor = 0x1E;
-        }
-        else if (level == 16)
-        {
-            Healthcolor = 0x37;
-        }
-        for (int e = 0; e < ne; e++)
-        {
-            int enemyhealth = g_sEnemy[e].m_dHealth;
-            if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
-                if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
-                    g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
-                }
+            if (level < 7) //Demw guy lvls
+            {
+                Healthcolor = 0x4E;
             }
-            
+            else if (level > 7 && level < 15) // Seraph's and Gin's levels
+            {
+                Healthcolor = 0x1E;
+            }
+            else if (level == 16) //Thorfinn's levels
+            {
+                Healthcolor = 0x37;
+            }
+            for (int e = 0; e < ne; e++) //Render health stats
+            {
+                int enemyhealth = g_sEnemy[e].m_dHealth;
+                if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
+                    if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
+                        g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
+                    }
+                }
+
+            }
         }
-    }
-    if (level == 7)
-    {
-        if (g_sBoss1[0].m_dHealth > 0)
+        if (level == 7) //first boss in Dewm
         {
-            int bosshealth = g_sBoss1[0].m_dHealth;
-            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+            if (g_sBoss1[0].m_dHealth > 0)
+            {
+                int bosshealth = g_sBoss1[0].m_dHealth;
+                g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+            }
+        }
+        if (level == 11) //Second boss in Seraph
+        {
+            if (g_sBoss2.m_dHealth > 0)
+            {
+                int bosshealth = g_sBoss2.m_dHealth;
+                g_Console.writeToBuffer(g_sBoss2.m_cLocation.X + 1, g_sBoss2.m_cLocation.Y - 2, std::to_string(bosshealth), 0x1A);
+            }
         }
     }
 }
@@ -3827,8 +3988,8 @@ void renderEnemyStats() {
 void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderObj();        // renders obj under char
-    renderEnemy();      // renders enemies into the buffer
     renderCharacter();  // renders the character into the buffer
+    renderEnemy();      // renders enemies into the buffer
     renderHUD();
     if (level != 7)
     {
@@ -3948,6 +4109,7 @@ void nextLevel() {
             g_sbCutscene[i].m_cLocation.X = 0;
             g_sbCutscene[i].m_cLocation.Y = 0;
         }
+        k = 0;
         g_sBoss1[0].m_cLocation.X = 0;
         g_sBoss1[0].m_cLocation.Y = 0;
         g_sBoss1[1].m_cLocation.X = 0;
@@ -4356,8 +4518,18 @@ void renderEnemy()
 
         if (level == 7) //mini - boss level
         {
-            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation, boss1, bossColor);
-            g_Console.writeToBuffer(g_sBoss1[1].m_cLocation, boss2, bossColor);
+            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation, boss1, bossColor[0]);
+            g_Console.writeToBuffer(g_sBoss1[1].m_cLocation, boss2, bossColor[0]);
+        }
+        if (level == 11)
+        {
+            for (int i = 0; i <= 5; i++) {
+                if (g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                {
+                    g_Console.writeToBuffer(g_sBProj[i].m_cLocation, bP5[i], BProjColor[i]);
+                }
+            }
+            g_Console.writeToBuffer(g_sBoss2.m_cLocation, boss3, bossColor[1]);
         }
     }
 }
@@ -4554,7 +4726,7 @@ void renderFramerate() {
     // displays the framerate
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(0);
-    ss << /*1.0 / g_dDeltaTime*/cut << "FPS";
+    ss << /*1.0 / g_dDeltaTime*/g_sBProj[0].m_cLocation.Y << "FPS";
     c.X = g_Console.getConsoleSize().X - 5;
     c.Y = 0;
     g_Console.writeToBuffer(c, ss.str());
@@ -4638,7 +4810,7 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0; int n = 0; int b = 0; int h = 0;
     int y = 0; int e = 0; int o = 0; int po = 0;
-    int t = 0; int tt = 0;
+    int t = 0; int tt = 0; int bp = 0;
     std::string levelFile;
     std::string line2;
     if (characterSelect == 0)
@@ -4852,6 +5024,16 @@ void loadLevelData(int number) {
                     g_sBoss1[1].m_cLocation.X = x;
                     g_sBoss1[1].m_cLocation.Y = y - 1;
                 }
+                if (perLine[x] == 'S')
+                {
+                    g_sBoss2.m_cLocation.X = x;
+                    g_sBoss2.m_cLocation.Y = y;
+                }
+                if (perLine[x] == 'M')
+                {
+                    g_sBProj[bp].m_cLocation.X = x;
+                    g_sBProj[bp].m_cLocation.Y = y;
+                }
                 if (perLine[x] == 'O')
                 {
                     g_sPortal.m_cLocation.X = x;
@@ -5003,7 +5185,6 @@ void reset() {
     {
         g_sObj[i].m_dHealth = 5;
     }
-    g_sBoss1[0].m_dHealth = 100;
     g_sChar.m_dMana = 50;
     g_sChar.m_dHealth = 50;
 }
@@ -5100,7 +5281,7 @@ string sendSaveData() {
         save = save + enx[i] + eny[i] + enh[i];
     }
 
-    bx = g_sBossP1.m_cLocation.X; by = g_sBossP1.m_cLocation.Y; bh = g_sBossP1.m_dHealth;
+    bx = g_sBoss1[0].m_cLocation.X; by = g_sBoss1[0].m_cLocation.Y; bh = g_sBoss1[0].m_dHealth;
     bosx = to_string(bx); bosy = to_string(by); bosh = to_string(bh);
     if (bosx.length() == 1) bosx = "0" + bosx;
     if (bosy.length() == 1) bosy = "0" + bosy;

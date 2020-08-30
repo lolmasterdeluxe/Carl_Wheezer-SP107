@@ -97,6 +97,7 @@ void vikingAttack(int& i, int n, double t, int d, int e); //Viking mechanic excl
 void vikingBow(int& k, int i, double n, double t, int x); //same as move projectile but with delay and faster speed
 void ThorfinnArms(double n1, double n2, int i, int k); //speed of projectile || melee attack, melee attack distance and projectile distance
 void EnemyProjectile(int& k, int i, double n, int x); //Enemy projectile
+void BossProjectile(int i, double n);                //Boss Projectile
 
 // game funcs
 void setdamage();           //damage conditions

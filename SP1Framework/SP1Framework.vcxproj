@@ -95,6 +95,8 @@
   <ItemGroup>
     <Text Include="DewmIntro.txt" />
     <Text Include="Intro.txt" />
+    <Text Include="lvlDewm4.txt" />
+    <Text Include="lvlSeraph4.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />

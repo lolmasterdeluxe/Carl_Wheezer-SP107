@@ -111,10 +111,15 @@ auto boss2 = std::string(3, c8) + c9;
 
 char c10 = 237;
 char c11 = 237;
-auto boss3 = std::string(4, c10) + c11;
+auto boss3 = std::string(4, c10) + c11; //2nd boss ascii
 
+char c12 = 207;
+char c13 = 207;
+auto boss4 = std::string(4, c12) + c13; //3rd boss ascii
+
+//Colours for entities, backgrounds 
 WORD enemyColor[10] = { };
-WORD bossColor[4] = { 0x4E , 0x0E, 0X8E, 0X8E };
+WORD bossColor[4] = { 0x4E , 0x0E, 0X01, 0X8E };
 WORD BProjColor[5] = { 0X7E,0X7E,0X7E,0X7E,0X7E };
 WORD bearColor = 0x9F;
 WORD BGcolor;
@@ -136,6 +141,7 @@ SGameChar   g_sPortal;
 SGameChar   g_sBearSpirit[2];   //Thorfinn's bear
 SGameChar   g_sBoss1[2];       //Boss top and bottom half
 SGameChar   g_sBoss2; SGameChar g_sBProj[5]; // 2nd boss and its projectile
+SGameChar   g_sBoss3; //3rd boss
 SGameChar   g_sNPC[9];       //NPC
 SGameChar   g_sPotion[5];     //Potion Object
 SGameChar   g_sObj[25];      //Any obj
@@ -516,13 +522,25 @@ void updateGame() {     // gameplay logic
             }
         }
         if (characterSelect == 2) { //Gin
-            slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
-            sneakCharacter();     // Gin sneak ability
-            dodge(5);             //dodge for Gin (10 steps)
-            focusAttack();        //Gin's focus ability
-            focusUlt();           //Gin's focus ultimate
-            setUltimate(75);      //Set ultimate capacity to *75
-            moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
+            if (level == 0)
+            {
+                GinIntro();
+            }
+            
+            if (g_sCutscene == false)
+            {
+                moveCharacter(2);     // moves the player by *2 steps, collision detection, physics, etc
+                slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
+                sneakCharacter();     // Gin sneak ability
+                dodge(5);             //dodge for Gin (10 steps)
+                
+            }
+            if (levelFile == "Gintutorial_3.txt")
+            {
+                focusAttack();        //Gin's focus ability
+                focusUlt();           //Gin's focus ultimate
+                setUltimate(75);      //Set ultimate capacity to *75
+            }
         }
         if (characterSelect == 3)
         {
@@ -545,6 +563,7 @@ void updateGame() {     // gameplay logic
 
 void updateEnemy()
 {
+    //loading of enemies in levels with specific behaviours and counters
     if (levelFile == "lvlDewm1.txt")
     {
         moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
@@ -557,6 +576,8 @@ void updateEnemy()
         moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
         moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
         EnemyProjectile(i[9], 9, 0.1, 28);
+        ne = 10;
+        hp = -1; //health potion count
     }
     if (levelFile == "lvlDewm2.txt")
     {
@@ -571,6 +592,7 @@ void updateEnemy()
         moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
         EnemyProjectile(ip[9], 9, 0.1, 24);
         healthPotion(0);
+        ne = 10;
         hp = 0;
     }
     if (levelFile == "lvlDewm3.txt")
@@ -587,6 +609,7 @@ void updateEnemy()
         moveEnemy(i[9], 'l', 17, 0.1, 51, 9);
         healthPotion(0);
         healthPotion(1);
+        ne = 10;
         hp = 1;
     }
     if (levelFile == "lvlDewm4.txt")
@@ -601,6 +624,7 @@ void updateEnemy()
         healthPotion(0);
         healthPotion(1);
         ne = 6;
+        hp = 1;
     }
     if (levelFile == "lvlSeraph1.txt")
     {
@@ -617,8 +641,9 @@ void updateEnemy()
         healthPotion(0);
         healthPotion(1);
         ne = 9;
+        hp = 1;
     }
-    if (levelFile == "lvlSeraph3.txt")
+    if (levelFile == "lvlSeraph2.txt")
     {
         moveEnemy(i[0], 'l', 7, 0.2, 56, 0);
         EnemyProjectile(ip[1], 1, 0.1, 12);
@@ -651,6 +676,8 @@ void updateEnemy()
         moveEnemy(i[8], 'l', 15, 0.3, 56, 8);
         EnemyProjectile(ip[9], 9, 0.1, 29);
         healthPotion(0);
+        hp = 0;
+        ne = 10;
     }
     if (levelFile == "lvlSeraph4.txt")
     {
@@ -670,6 +697,20 @@ void updateEnemy()
         }
         healthPotion(0);
         ne = 6;
+        hp = 0;
+    }
+    if (levelFile == "Gintutorial_1.txt")
+    {
+        ne = 3;
+        hp = -1;
+    }
+    if (levelFile == "Gintutorial_2.txt")
+    {
+        EnemyProjectile(ip[0], 0, 0.05, 75);
+        ninjaAttack(i[1], ip[1], 36, 0.03, 58, 1);
+        healthPotion(0);
+        ne = 2;
+        hp = 0;
     }
     if (levelFile == "lvlGin1.txt")
     {
@@ -678,6 +719,7 @@ void updateEnemy()
         ninjaAttack(i[2], ip[2], 8, 0.03, 89, 2);
         healthPotion(0);
         ne = 3;
+        hp = 0;
     }
     if (levelFile == "lvlGin2.txt")
     {
@@ -692,6 +734,7 @@ void updateEnemy()
         EnemyProjectile(ip[8], 8, 0.1, 58);
         healthPotion(0);
         ne = 9;
+        hp = 0;
     }
     if (levelFile == "lvlGin3.txt")
     {
@@ -709,7 +752,7 @@ void updateEnemy()
     }
     if (levelFile == "lvlGin4.txt")
     {
-        //boss is here
+        //ninja boss is here
         ne = 0;
         hp = 0;
     }
@@ -737,6 +780,7 @@ void updateEnemy()
         vikingAttack(i[6], 6, 0.03, 70, 6);
         moveEnemy(i[7], 'r', 7, 0.2, 68, 7);
         healthPotion(0);
+        hp = 0;
         ne = 8;
     }
     if (levelFile == "lvlVik3.txt")
@@ -747,11 +791,14 @@ void updateEnemy()
         vikingAttack(i[3], 21, 0.03, 40, 3);
         vikingBow(i[4], 4, 0.01, 3, 39);
         healthPotion(0);
+        hp = 0;
         ne = 5;
     }
     if (levelFile == "lvlVik4.txt")
     {
         //viking boss here
+        hp = 0;
+        ne = 0;
     }
   
 }
@@ -778,7 +825,7 @@ void moveCharacter(int n)
                 l++;
                 g_sChar.m_cLocation.Y++;
             }
-            else if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[j]) //Jump up
+            else if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[j]) //Jump up
             {
                 l = 0;
                 l++;
@@ -881,7 +928,7 @@ void moveCharacter(int n)
             l++;
         }
     }
-    for (int j = 0; j < g_iPlatforms; j++) {
+    for (int j = 0; j < g_iPlatforms; j++) { //check for collision with platforms
         if (l >= 4 && g_sUltimate == false && g_sChar.m_cLocation.Y - 1 != g_aPlatformsY[j]) //check if l is 3 and push down for gravity
         {
             if (g_jElapsedTime > 0.05)
@@ -1041,7 +1088,7 @@ void moveCharacter(int n)
 
 }
 
-void sneakCharacter()
+void sneakCharacter() //sneak ability
 {
     if (g_skKeyEvent[K_41].keyDown)
     {
@@ -1071,7 +1118,7 @@ void sneakCharacter()
     }
 }
 
-void moveProjectile()
+void moveProjectile() //projectile movement animation
 {
     double n = 0;
     if (g_sRage == true)
@@ -1080,6 +1127,7 @@ void moveProjectile()
         n = 0.02;
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
     { 
+        PlaySound(TEXT("DewmShot.wav"), NULL, SND_ALIAS | SND_ASYNC);
         c4 = 205;
         if (g_pElapsedTime > n) 
         {
@@ -1104,6 +1152,7 @@ void moveProjectile()
     }
     else if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X)
     {
+        PlaySound(TEXT("DewmShot.wav"), NULL, SND_ALIAS | SND_ASYNC);
         if (j > 0 && j < 20)
         {
             if (g_pElapsedTime > n)
@@ -1168,11 +1217,11 @@ void moveProjectile()
 
 void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || melee attack, melee attack distance and projectile distance
 {
-    if (g_skKeyEvent[K_32].keyReleased)
+    if (g_skKeyEvent[K_32].keyReleased) //1
     {
         g_sRanged = true;
     }
-    else if (g_skKeyEvent[K_31].keyReleased)
+    else if (g_skKeyEvent[K_31].keyReleased) //2
     {
         g_sRanged = false;
     }
@@ -1180,6 +1229,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
     {
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X && g_slashdelay > 1) //shoot to right
         {
+            PlaySound(TEXT("ThorfinnBow.wav"), NULL, SND_ALIAS | SND_ASYNC);
             c4 = 246;
             if (g_pElapsedTime > n1)
             {
@@ -1226,6 +1276,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         }
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X && g_slashdelay > 1) //shoot to left
         {
+            PlaySound(TEXT("ThorfinnBow.wav"), NULL, SND_ALIAS | SND_ASYNC);
             c4 = 246;
             if (g_pElapsedTime > n1)
             {
@@ -1275,6 +1326,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         g_sAttackState = false;
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
         {
+            PlaySound(TEXT("ThorfinnAxe.wav"), NULL, SND_ALIAS | SND_ASYNC);
             g_sAttackState = true;
             if (g_sElapsedTime > n2)
             {
@@ -1320,6 +1372,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         }
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
         {
+            PlaySound(TEXT("ThorfinnAxe.wav"), NULL, SND_ALIAS | SND_ASYNC);
             g_sAttackState = true;
             if (g_sElapsedTime > n2)
             {
@@ -1379,7 +1432,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         }
     }
 }
-void dodge(int i)
+void dodge(int i) //dodge ability
 {
     if (g_skKeyEvent[K_51].keyDown && g_sChar.m_cLocation.X > 2) //dodge left
     {
@@ -1447,11 +1500,12 @@ void dodge(int i)
     }
 }
 
-void slashAttack(double n, int i)
+void slashAttack(double n, int i) //slash ability
 {
     g_sAttackState = false;
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
     {
+        PlaySound(TEXT("SeraphSish.wav"), NULL, SND_ALIAS | SND_ASYNC);
         g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
@@ -1497,6 +1551,7 @@ void slashAttack(double n, int i)
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
     {
+        PlaySound(TEXT("SeraphSish.wav"), NULL, SND_ALIAS | SND_ASYNC);
         g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
@@ -1556,7 +1611,7 @@ void slashAttack(double n, int i)
     }
 }
 
-void downslam()
+void downslam() //down slam ability
 {
     if (g_skKeyEvent[K_53].keyDown && p != 3 && !g_sUltimate) //DOWN slam attack with S
     {
@@ -1639,7 +1694,7 @@ void downslam()
     }
 }
 
-void seraphUlt()
+void seraphUlt() //Seraph's ultimate animation
 {
     if (g_sUltimate == true)
     {
@@ -1818,6 +1873,7 @@ void seraphUlt()
         }
         else if (g_udElapsedTime > 1.5 && (g_udElapsedTime < 1.5 + g_dDeltaTime))
         { 
+        //kills all enemies in map and -100 to boss hp
             for (int i = 0; i < ne; i++)
             {
                 g_sEnemy[i].m_dHealth = 0;
@@ -1835,13 +1891,14 @@ void seraphUlt()
     }
 }
 
-void focusAttack()
+void focusAttack() //focus ability enhancement for Gin
 {
     int move;
     if (g_sFocus == true)
     {
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && (g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 || g_sChar.m_cLocation.X > 2))
         {
+            PlaySound(TEXT("GinSlice.wav"), NULL, SND_ALIAS | SND_ASYNC);
             f++;
         }
         if (f < 25)
@@ -2052,6 +2109,7 @@ void focusUlt() //Gin's Focus ultimate
             }
             if (g_udElapsedTime > 3 && g_udElapsedTime < 3 + g_dDeltaTime)
             {
+                //kill all enemies in Y axis and -100 boss in Y axis
                 for (int i = 0; i < ne; i++)
                 {
                     if (g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
@@ -2077,16 +2135,16 @@ void focusUlt() //Gin's Focus ultimate
 
 }
 
-void spiritUlt()
+void spiritUlt() //summon bear entity
 {
-    if (g_sSpirit == false)
+    if (g_sSpirit == false) //check if spirit is false before summoning
     {
         g_sBearSpirit[0].m_cLocation.X = g_sChar.m_cLocation.X + 2;
         g_sBearSpirit[0].m_cLocation.Y = g_sChar.m_cLocation.Y;
         g_sBearSpirit[1].m_cLocation.X = g_sChar.m_cLocation.X + 2;
         g_sBearSpirit[1].m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
     }
-    else if (g_sSpirit == true)
+    else if (g_sSpirit == true) //bear goes after any enemy in Y axis and attacks
     {
         for (int i = 0; i <= ne; i++)
         {
@@ -2161,6 +2219,7 @@ void spiritUlt()
 
 void setdamage()
 {
+    //Check damage for enemy projectile
     for (int i = 0; i < ne; i++)
     {
         if (g_sEnemy[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y || g_sEnemy[i].m_cLocation.X == g_sChar.m_cLocation.X + 1 && g_sEnemy[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
@@ -2176,7 +2235,7 @@ void setdamage()
                 {
                     g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2; //program recognises as 2 damage
                 }
-                if (g_sFocus == true || g_sSpirit)
+                if (g_sFocus == true || g_sSpirit == true)
                 {
                     g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 5;
                 }
@@ -2193,7 +2252,10 @@ void setdamage()
                 g_hElapsedTime = 0;
                 
             }
-            g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
+            if (!g_sInvulnerable)
+            {
+                g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
+            }
         }
     }
     //Boss 1 damage
@@ -2378,7 +2440,7 @@ void setdamage()
     }
 }
 
-void setUltimate(int M)
+void setUltimate(int M) //setting ultimate meter and mechanics
 {
     if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus && !g_sSpirit) //checks if Player mana is less than 50 and is not in rage mode
     {
@@ -2420,7 +2482,7 @@ void setUltimate(int M)
             }
         }
     }
-    if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased)
+    if (g_sChar.m_dMana == M && g_skKeyEvent[K_SPACE].keyReleased) //activate ultimate
     {
         if (characterSelect == 0)
         {
@@ -2450,7 +2512,7 @@ void setUltimate(int M)
 
 }
 
-void healthPotion(int i)
+void healthPotion(int i) //use health potion
 {
     if (g_sChar.m_cLocation.X == g_sPotion[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPotion[i].m_cLocation.Y && cO[i] != 0)
     {
@@ -2461,7 +2523,7 @@ void healthPotion(int i)
     
 }
 
-void moveEnemy(int &i, char a, int n, double t, int d, int e)
+void moveEnemy(int &i, char a, int n, double t, int d, int e) //enemy movement mechanic
 {
     if (c5[e] != 0 && !g_sUltimate && !g_sFocus)
     {
@@ -2566,7 +2628,7 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
     }
 }
 
-void moveBoss(int n, double t, double t2, int d)
+void moveBoss(int n, double t, double t2, int d) //Boss movement mechanic
 {
     if (g_sBoss1[0].m_cLocation.Y - 4 <= g_sChar.m_cLocation.Y)
     { 
@@ -2676,7 +2738,7 @@ void moveBoss(int n, double t, double t2, int d)
     }
 }
 
-void BossProjectile(int i,  double n)
+void BossProjectile(int i,  double n) //boss projectile for Robot boss
 {
     if (g_sBoss2.m_dHealth > 0 && !g_sUltimate && !g_sFocus) 
     {
@@ -2780,204 +2842,213 @@ void BossProjectile(int i,  double n)
     }
 }
 
+//enemy projectile physics
 void EnemyProjectile(int& k, int i, double n, int x) //i = enemy number, x is distance of range
 {
-    if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
+    if (!g_sFocus && !g_sUltimate)
     {
-        if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
+        if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
         {
-            cP5[i] = 248;
-            if (g_epElapsedTime[i] > n) //time between shots
+            if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
             {
-                if (k != x)
+                cP5[i] = 248;
+                if (g_epElapsedTime[i] > n) //time between shots
                 {
-                    /*if (j == 1)
+                    if (k != x)
                     {
-                        Beep(1440, 30);
-                    }*/
+                        /*if (j == 1)
+                        {
+                            Beep(1440, 30);
+                        }*/
+                        g_sEProj[i].m_cLocation.X++;
+                        g_epElapsedTime[i] = 0;
+                        k++;
+
+                    }
+                    else
+                    {
+                        g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                        g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                        k = 0;
+                    }
+                }
+            }
+        }
+        if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
+        {
+            if (k >= 1 && k < x)
+            {
+                if (g_epElapsedTime[i] > n)
+                {
                     g_sEProj[i].m_cLocation.X++;
                     g_epElapsedTime[i] = 0;
                     k++;
-
-                }
-                else
-                {
-                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                    k = 0;
                 }
             }
-        }
-    }
-    if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
-    {
-        if (k >= 1 && k < x)
-        {
-            if (g_epElapsedTime[i] > n)
+            else
             {
-                g_sEProj[i].m_cLocation.X++;
-                g_epElapsedTime[i] = 0;
-                k++;
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
             }
         }
-        else
+        if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
         {
-            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-            cP5[i] = 0;
-            k = 0;
-        }
-    }
-    if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
-    {
-        if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
-        {
-            cP5[i] = 248;
-            if (g_epElapsedTime[i] > n)
+            if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
             {
-                if (k != x)
+                cP5[i] = 248;
+                if (g_epElapsedTime[i] > n)
                 {
-                    /*if (j == 1)
+                    if (k != x)
                     {
-                        Beep(1440, 30);
-                    }*/
+                        /*if (j == 1)
+                        {
+                            Beep(1440, 30);
+                        }*/
+                        g_sEProj[i].m_cLocation.X--;
+                        g_epElapsedTime[i] = 0;
+                        k++;
+                    }
+                    else
+                    {
+                        g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                        g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                        k = 0;
+                    }
+                }
+            }
+
+        }
+        if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
+        {
+            if (k >= 1 && k < x)
+            {
+                if (g_epElapsedTime[i] > n)
+                {
                     g_sEProj[i].m_cLocation.X--;
                     g_epElapsedTime[i] = 0;
                     k++;
                 }
-                else
-                {
-                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                    k = 0;
-                }
             }
-        }
-
-    }
-    if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
-    {
-        if (k >= 1 && k < x)
-        {
-            if (g_epElapsedTime[i] > n)
+            else
             {
-                g_sEProj[i].m_cLocation.X--;
-                g_epElapsedTime[i] = 0;
-                k++;
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
             }
-        }
-        else
-        {
-            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-            cP5[i] = 0;
-            k = 0;
         }
     }
     
 }
 
+//same as enemy projectile but with delay
 void vikingBow(int& k, int i, double n, double t, int x) //i = enemy number, x is distance of range
 {
-    if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
+    if (!g_sFocus && !g_sUltimate && !g_sInvulnerable)
     {
-        if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
+        if (g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
         {
-            if (g_epElapsedTime[i] > n && g_enemyDelay[i] > t) //time between shots
+            if (g_sChar.m_cLocation.X <= g_sEnemy[i].m_cLocation.X + x) //shoot to right
             {
-                if (k != x)
+                if (g_epElapsedTime[i] > n && g_enemyDelay[i] > t) //time between shots
                 {
-                    /*if (j == 1)
+                    if (k != x)
                     {
-                        Beep(1440, 30);
-                    }*/
+                        /*if (j == 1)
+                        {
+                            Beep(1440, 30);
+                        }*/
+                        g_sEProj[i].m_cLocation.X++;
+                        g_epElapsedTime[i] = 0;
+                        k++;
+
+                    }
+                    else
+                    {
+                        g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                        g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                        k = 0;
+                    }
+                }
+            }
+        }
+        if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
+        {
+            if (k >= 1 && k < x)
+            {
+                if (g_epElapsedTime[i] > n)
+                {
                     g_sEProj[i].m_cLocation.X++;
                     g_epElapsedTime[i] = 0;
                     k++;
-
-                }
-                else
-                {
-                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                    k = 0;
                 }
             }
-        }
-    }
-    if (g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X)
-    {
-        if (k >= 1 && k < x)
-        {
-            if (g_epElapsedTime[i] > n)
+            else
             {
-                g_sEProj[i].m_cLocation.X++;
-                g_epElapsedTime[i] = 0;
-                k++;
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
+                g_enemyDelay[i] = 0;
             }
         }
-        else
+        if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
         {
-            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-            cP5[i] = 0;
-            k = 0;
-            g_enemyDelay[i] = 0;
-        }
-    }
-    if (g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
-    {
-        if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
-        {
-            cP5[i] = 248;
-            if (g_epElapsedTime[i] > n && g_enemyDelay[i] > t)
+            if (g_sChar.m_cLocation.X >= g_sEnemy[i].m_cLocation.X - x) //shoot to left
             {
-                if (k != x)
+                cP5[i] = 248;
+                if (g_epElapsedTime[i] > n && g_enemyDelay[i] > t)
                 {
-                    /*if (j == 1)
+                    if (k != x)
                     {
-                        Beep(1440, 30);
-                    }*/
+                        /*if (j == 1)
+                        {
+                            Beep(1440, 30);
+                        }*/
+                        g_sEProj[i].m_cLocation.X--;
+                        g_epElapsedTime[i] = 0;
+                        k++;
+                    }
+                    else
+                    {
+                        g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                        g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                        k = 0;
+                    }
+                }
+            }
+
+        }
+        if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
+        {
+            if (k >= 1 && k < x)
+            {
+                if (g_epElapsedTime[i] > n)
+                {
                     g_sEProj[i].m_cLocation.X--;
                     g_epElapsedTime[i] = 0;
                     k++;
                 }
-                else
-                {
-                    g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-                    g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-                    k = 0;
-                }
             }
-        }
-
-    }
-    if (g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X)
-    {
-        if (k >= 1 && k < x)
-        {
-            if (g_epElapsedTime[i] > n)
+            else
             {
-                g_sEProj[i].m_cLocation.X--;
-                g_epElapsedTime[i] = 0;
-                k++;
+                g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
+                g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
+                cP5[i] = 0;
+                k = 0;
+                g_enemyDelay[i] = 0;
             }
-        }
-        else
-        {
-            g_sEProj[i].m_cLocation.Y = g_sEnemy[i].m_cLocation.Y;
-            g_sEProj[i].m_cLocation.X = g_sEnemy[i].m_cLocation.X;
-            cP5[i] = 0;
-            k = 0;
-            g_enemyDelay[i] = 0;
         }
     }
 
 }
 
+//attacking with disappearance and appearance
 void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 counters, boundary of attack, attack speed, original position and enemy array
 {
-    if (g_sEnemy[e].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
+    if (g_sEnemy[e].m_dHealth > 0 && !g_sUltimate && !g_sFocus && !g_sInvulnerable)
     {
         if (g_stun > 2)
         {
@@ -3128,10 +3199,10 @@ void ninjaAttack(int& i, int& a, int n, double t, int d, int e) //stores 2 count
     }
 }
 
-
+//approach player and knockback
 void vikingAttack(int& i, int n, double t, int d, int e) //stores 2 counters, boundary of attack, attack speed, original position and enemy array
 {
-    if (g_sEnemy[e].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
+    if (g_sEnemy[e].m_dHealth > 0 && !g_sUltimate && !g_sFocus && !g_sInvulnerable)
     {
         if (g_stun > 2)
         {
@@ -3286,6 +3357,8 @@ void vikingAttack(int& i, int n, double t, int d, int e) //stores 2 counters, bo
     }*/
 }
 
+//Cutscenes in intros
+
 void DewmAwaken()
 {
     if (levelFile == "Dewmtutorial_1.txt")
@@ -3401,7 +3474,7 @@ void DewmIntro()
 
 void SeraphIntro()
 {
-    if (level == 0)
+    if (levelFile == "SeraphIntro.txt")
     {
         if (g_sChar.m_cLocation.X == 15 && g_sChar.m_cLocation.Y == 23 && cut == 0)
         {
@@ -3443,6 +3516,100 @@ void SeraphIntro()
                     g_sChar.m_cLocation.X++;
                     g_cElapsedTime = 0;
                     cut++;
+                }
+            }
+        }
+        else
+        {
+            g_sCutscene = false;
+        }
+    }
+}
+
+void GinIntro()
+{
+    if (levelFile == "GinIntro.txt")
+    {
+        if (g_sChar.m_cLocation.X == 85 && g_sChar.m_cLocation.Y == 22 && g_sCutscene == false && cut == 0)
+        {
+            g_sCutscene = true;
+            cut++;
+        }
+        if (cut < 163 && g_sCutscene == true)
+        {
+            if (g_cElapsedTime > 0.3)
+            {
+                if (cut >= 1 && cut < 38)
+                {
+                    g_sChar.m_cLocation.X--;
+                    cut++;
+                    g_cElapsedTime = 0;
+                    if (cut == 38)
+                    {
+                        g_cDelayTime = 0;
+                    }
+                }
+                if (cut >= 54 && cut < 64)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 1;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+                if (cut >= 130 && cut < 156 && g_cDelayTime > 5)
+                {
+                    g_sNPC[0].m_cLocation.X = g_sNPC[0].m_cLocation.X - 2;
+                    g_sNPC[1].m_cLocation.X = g_sNPC[1].m_cLocation.X - 2;
+                    g_sNPC[2].m_cLocation.X = g_sNPC[2].m_cLocation.X - 2;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+            }
+            if (g_cElapsedTime > 0.05)
+            {
+                if (cut >= 38 && cut < 47 && g_cDelayTime > 3)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+                if (cut >= 47 && cut < 52)
+                {
+                    g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 1;
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+                if (cut >= 52 && cut < 54)
+                {
+                    g_sChar.m_cLocation.Y = g_sChar.m_cLocation.Y - 1;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+                if (cut >= 64 && cut < 128)
+                {
+                    g_sNPC[0].m_cLocation.X = g_sNPC[0].m_cLocation.X - 1;
+                    g_cElapsedTime = 0;
+                    cut++;
+                }
+                if (cut >= 87 && cut < 130)
+                {
+                    g_sNPC[1].m_cLocation.X = g_sNPC[1].m_cLocation.X - 2;
+                    if (cut >= 89)
+                    {
+                        g_sNPC[2].m_cLocation.X = g_sNPC[2].m_cLocation.X - 2;
+                    }
+                    g_cElapsedTime = 0;
+                    cut++;
+                    if (cut == 130)
+                    {
+                        g_cDelayTime = 0;
+                    }
+                }
+                if (cut >= 156 && cut < 163)
+                {
+                    g_sChar.m_cLocation.Y++;
+                    cut++;
+                    g_cElapsedTime = 0;
                 }
             }
         }
@@ -3896,34 +4063,36 @@ void renderMenuBackground() {
 }
 
 void renderEnemyStats() {
-    if (characterSelect == 0)
+    if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "Gintutorial_1.txt" || levelFile == "Gintutorial_2.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
     {
-        if (level >= 4)
+        if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt") //Demw guy lvls
         {
-            if (level < 7) //Demw guy lvls
-            {
-                Healthcolor = 0x4E;
-            }
-            else if (level > 7 && level < 15) // Seraph's and Gin's levels
-            {
-                Healthcolor = 0x1E;
-            }
-            else if (level == 16) //Thorfinn's levels
-            {
-                Healthcolor = 0x37;
-            }
-            for (int e = 0; e < ne; e++) //Render health stats
-            {
-                int enemyhealth = g_sEnemy[e].m_dHealth;
-                if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
-                    if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
-                        g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
-                    }
-                }
-
-            }
+            Healthcolor = 0x4E;
         }
-        if (level == 7) //first boss in Dewm
+        else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "Gintutorial_1.txt" || levelFile == "Gintutorial_2.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt") // Seraph's and Gin's levels
+        {
+            Healthcolor = 0x1E;
+        }
+        else if (levelFile == "Gintutorial_1.txt" || levelFile == "Gintutorial_2.txt")
+        {
+            Healthcolor = 0x9E;
+        }
+        else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt") //Thorfinn's levels
+        {
+            Healthcolor = 0x37;
+        }
+        for (int e = 0; e < ne; e++) //Render health stats
+        {
+            int enemyhealth = g_sEnemy[e].m_dHealth;
+            if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
+                if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
+                    g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
+                }
+            }
+
+        }
+        
+        if (levelFile == "lvlDewm4.txt") //first boss in Dewm
         {
             if (g_sBoss1[0].m_dHealth > 0)
             {
@@ -3931,7 +4100,7 @@ void renderEnemyStats() {
                 g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
             }
         }
-        if (level == 11) //Second boss in Seraph
+        if (levelFile == "lvlSeraph4.txt") //Second boss in Seraph
         {
             if (g_sBoss2.m_dHealth > 0)
             {
@@ -4077,7 +4246,8 @@ void nextLevel() {
         g_sBearSpirit[0].m_cLocation.Y = 0;
         g_sBearSpirit[1].m_cLocation.X = 0;
         g_sBearSpirit[1].m_cLocation.Y = 0;
-        deletePlatforms();   
+        deletePlatforms();
+        
     }
     if (oneTime == 0) {
         loadLevelData(level);
@@ -4189,13 +4359,38 @@ void renderMap() {
     {
         renderDialogue("PINK symbolises an enemy, WHITE symbolises a portal", 33, 10);
         renderDialogue("Left click to attack", 33, 11);
-        renderDialogue("When in the air, press S to downslam to do AOE", 33, 12);
+        renderDialogue("When in the air, press <S> to downslam to do AOE", 33, 12);
     }
 
     if (levelFile == "Seraphtutorial_2.txt")
     {
         renderDialogue("When ultimate meter is full,", 31, 21);
-        renderDialogue("press space to limit break", 31, 22);
+        renderDialogue("press <SPACE> to limit break", 31, 22);
+    }
+
+    //Gin intro
+    if (levelFile == "GinIntro.txt")
+    {
+        if (cut >= 163)
+        {
+            renderDialogue("Press <AD> to move left and right", 29, 25);
+        }
+    }
+    if (levelFile == "Gintutorial_1.txt")
+    {
+        renderDialogue("Press <W> to jump", 73, 25);
+        renderDialogue("BLUE symbolises an enemy, WHITE symbolises a portal", 11, 25);
+        renderDialogue("Left click to attack", 11, 26);
+    }
+    if (levelFile == "Gintutorial_2.txt")
+    {
+        renderDialogue("Press <Q> or <E> to dodge", 45, 10);
+        renderDialogue("Press <S> to sneak", 35, 19);
+    }
+    if (levelFile == "Gintutorial_3.txt")
+    {
+        renderDialogue("When focus meter is full, press <SPACE> to enter Focus mode", 3, 17);
+        renderDialogue("While focus meter is full, press <U> to unleash Focus ultimate", 3, 18);
     }
     
 }
@@ -4210,6 +4405,11 @@ void renderDialogue(string d, int x, int y) {
     {
         if (x > 0 && x < g_Console.getConsoleSize().X)
             g_Console.writeToBuffer(x, y, d, 0x0E);
+    }
+    if (characterSelect == 2)
+    {
+        if (x > 0 && x < g_Console.getConsoleSize().X)
+            g_Console.writeToBuffer(x, y, d, 0x0F);
     }
 }
 
@@ -4249,19 +4449,19 @@ void renderCharacter()
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8E);
                 }
-                else if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+                if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
                 }
-                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
+                if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1E);
                 }
-                else if (levelFile == "lvlNinja4.txt")
+                if (levelFile == "lvlNinja4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x7E);
                 }
-                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
+                if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x3E);
                 }
@@ -4333,25 +4533,25 @@ void renderCharacter()
             c1 = 254;
             c2 = 254;
             c3 = std::string(1, c1) + c2;
-            if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
+            if ((g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && g_sRanged == true)
             {
                 if (levelFile == "Dewmtutorial_1.txt" || levelFile == "Dewmtutorial_2.txt" || levelFile == "Dewmtutorial_3.txt" || levelFile == "DewmIntro.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8B);
                 }
-                else if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+                if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4B);
                 }
-                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
+                if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1B);
                 }
-                else if (levelFile == "lvlNinja4.txt")
+                if (levelFile == "lvlNinja4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x7B);
                 }
-                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
+                if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x3B);
                 }
@@ -4366,7 +4566,7 @@ void renderEnemy()
 {
     for (int i = 0; i < ne; i++) //Enemy
     {
-        if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+        if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "Gintutorial_1.txt" || levelFile == "Gintutorial_2.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
         {
             if (g_sEnemy[i].m_dHealth > 0 && g_ninjaState[i] == false)
             {
@@ -4383,12 +4583,16 @@ void renderEnemy()
                     c5[i] = 232;
                     cP5[i] = 247;
                 }
-                else if (levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
+                else if (levelFile == "Gintutorial_1.txt" || levelFile == "Gintutorial_2.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
                     enemyColor[i] = 0x0B;
                     EProjColor[i] = 0x18;
                     c5[i] = 223;
                     cP5[i] = 43;
+                    if (levelFile == "Gintutorial_2.txt")
+                    {
+                        EProjColor[i] = 0x98;
+                    }
                 }
                 else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
                 {
@@ -4516,7 +4720,7 @@ void renderObj()
     }
         
     //potion rendering
-    if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+    if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "Gintutorial_2.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
     {
         for (int i = 0; i <= hp; i++)
         {
@@ -4530,6 +4734,10 @@ void renderObj()
                 if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt")
                 {
                     PotionColor[i] = 0x4A;
+                }
+                else if (levelFile == "Gintutorial_2.txt")
+                {
+                    PotionColor[i] = 0x9A;
                 }
                 else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
@@ -4609,6 +4817,40 @@ void renderObj()
         }
     }
 
+    if (levelFile == "GinIntro.txt")
+    {
+        for (int i = 0; i < 650; i++)
+        {
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            NPC[0] = 229;
+            NPCcolor[0] = 0xF5;
+            NPC[1] = 223;
+            NPCcolor[1] = 0x0B;
+            NPC[2] = 223;
+            NPCcolor[2] = 0x0B;
+            if (g_sNPC[i].m_cLocation.X > 2)
+            {
+                if (cut >= 64)
+                {
+                    g_Console.writeToBuffer(g_sNPC[0].m_cLocation, NPC[0], NPCcolor[0]);
+                }
+                if (cut >= 87)
+                {
+                    g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+                }
+            }
+        }
+    }
+    if (levelFile == "Gintutorial_2.txt")
+    {
+        for (int i = 0; i < 55; i++)
+        {
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+        }
+    }
     
 
 }
@@ -4859,6 +5101,133 @@ void loadLevelData(int number) {
         }
         if (number == 18) {
             levelFile = "lvlVik4.txt";
+        }
+    }
+    else if (characterSelect == 2)
+    {
+        if (number == 0) {
+            BGcolor = 0x90;
+            levelFile = "GinIntro.txt";
+        }
+        if (number == 1) {
+            levelFile = "Gintutorial_1.txt";
+        }
+        if (number == 2) {
+            levelFile = "Gintutorial_2.txt";
+        }
+        if (number == 3) {
+            levelFile = "Gintutorial_3.txt";
+        }
+        if (number == 4) {
+            BGcolor = 0x10;
+            levelFile = "lvlNinja1.txt";
+        }
+        if (number == 5) {
+            levelFile = "lvlNinja2.txt";
+        }
+        if (number == 6) {
+            levelFile = "lvlNinja3.txt";
+        }
+        if (number == 7) {
+            BGcolor = 0x70;
+            levelFile = "lvlNinja4.txt";
+        }
+        if (number == 8) {
+            BGcolor = 0x40;
+            levelFile = "lvlDewm1.txt";
+        }
+        if (number == 9) {
+            levelFile = "lvlDewm2.txt";
+        }
+        if (number == 10) {
+            levelFile = "lvlDewm3.txt";
+        }
+        if (number == 11) {
+            levelFile = "lvlDewm4.txt";
+        }
+        if (number == 12) {
+            BGcolor = 0x10;
+            levelFile = "lvlSeraph1.txt";
+        }
+        if (number == 13) {
+            levelFile = "lvlSeraph2.txt";
+        }
+        if (number == 14) {
+            levelFile = "lvlSeraph3.txt";
+        }
+        if (number == 15) {
+            BGcolor = 0x10;
+            levelFile = "lvlSeraph4.txt";
+        }
+        if (number == 16) {
+            BGcolor = 0x30;
+            levelFile = "lvlVik1.txt";
+        }
+        if (number == 17) {
+            levelFile = "lvlVik2.txt";
+        }
+        if (number == 18) {
+            levelFile = "lvlVik3.txt";
+        }
+        if (number == 19) {
+            levelFile = "lvlVik4.txt";
+        }
+    }
+    else if (characterSelect == 3)
+    {
+        if (number == 0) {
+            BGcolor = 0x30;
+            levelFile = "lvlVik1.txt";
+        }
+        if (number == 1) {
+            levelFile = "lvlVik2.txt";
+        }
+        if (number == 2) {
+            levelFile = "lvlVik3.txt";
+        }
+        if (number == 3) {
+            levelFile = "lvlVik4.txt";
+        }
+        if (number == 4) {
+            BGcolor = 0x40;
+            levelFile = "lvlDewm1.txt";
+        }
+        if (number == 5) {
+            levelFile = "lvlDewm2.txt";
+        }
+        if (number == 6) {
+            levelFile = "lvlDewm3.txt";
+        }
+        if (number == 7) {
+            levelFile = "lvlDewm4.txt";
+        }
+        if (number == 8) {
+            BGcolor = 0x10;
+            levelFile = "lvlSeraph1.txt";
+        }
+        if (number == 9) {
+            levelFile = "lvlSeraph2.txt";
+        }
+        if (number == 10) {
+            levelFile = "lvlSeraph3.txt";
+        }
+        if (number == 11) {
+            BGcolor = 0x10;
+            levelFile = "lvlSeraph4.txt";
+        }
+        if (number == 12) {
+            BGcolor = 0x10;
+            levelFile = "lvlNinja1.txt";
+        }
+        if (number == 13) {
+            levelFile = "lvlNinja2.txt";
+        }
+        if (number == 14) {
+            levelFile = "lvlNinja3.txt";
+        }
+        if (number == 15) {
+            BGcolor = 0x70;
+            levelFile = "lvlNinja4.txt";
         }
     }
     std::ifstream level;
@@ -5261,6 +5630,44 @@ void renderNPCDialogue() {
                 g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 6, g_sNPC[2].m_cLocation.Y - 2, "Farewell", 0x1E);
             }
       
+        }
+    }
+    if (levelFile == "GinIntro.txt")
+    {
+        if (cut > 22 && cut < 38) {
+            g_Console.writeToBuffer(g_sChar.m_cLocation.X - 1, g_sChar.m_cLocation.Y-1, "....", 0x90);
+        }
+        if (cut == 38 && g_cDelayTime < 3)
+        {
+            g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 9, g_sNPC[0].m_cLocation.Y-1, "AAAAAHHHH!!!", 0x90);
+        }
+        if (cut == 38 && g_cDelayTime > 1)
+        {
+            g_Console.writeToBuffer(g_sChar.m_cLocation.X - 1, g_sChar.m_cLocation.Y - 1, "...!?", 0x90);
+        }
+        if (cut >= 64 && cut < 112)
+        {
+            g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 5, g_sNPC[0].m_cLocation.Y - 1, "HELP! SOMEBODY!!", 0x90);
+        }
+        if (cut >= 88 && cut < 112)
+        {
+            g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "Get back here!", 0x90);
+        }
+        if (cut == 130 && g_cDelayTime < 2)
+        {
+            g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 3, g_sNPC[0].m_cLocation.Y - 1, "NOOOO!!!", 0x90);
+        }
+        if (cut == 130 && g_cDelayTime > 2 && g_cDelayTime < 3)
+        {
+            g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X, g_sNPC[1].m_cLocation.Y - 1, "Shut up!", 0x90);
+        }
+        if (cut == 130 && g_cDelayTime > 3 && g_cDelayTime < 5)
+        {
+            g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 1, "You're coming with us, young lady!", 0x90);
+        }
+        if (cut > 130 && cut < 145)
+        {
+            g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "Get moving you mutt!", 0x90);
         }
     }
 }

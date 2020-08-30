@@ -94,19 +94,15 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="DewmIntro.txt" />
+    <Text Include="GinIntro.txt" />
+    <Text Include="Gintutorial_1.txt" />
+    <Text Include="Gintutorial_2.txt" />
+    <Text Include="Gintutorial_3.txt" />
     <Text Include="Intro.txt" />
-    <Text Include="lvlDewm4.txt" />
-    <Text Include="lvlSeraph4.txt" />
+    <Text Include="lvlNinja1.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />
-    <Text Include="SeraphIntro.txt" />
-    <Text Include="Seraphtutorial_1.txt" />
-    <Text Include="Seraphtutorial_2.txt" />
-    <Text Include="train.txt" />
-    <Text Include="tutorial_1.txt" />
-    <Text Include="tutorial_2.txt" />
-    <Text Include="tutorial_3.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

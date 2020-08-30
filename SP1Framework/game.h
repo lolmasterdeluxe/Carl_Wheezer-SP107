@@ -115,6 +115,7 @@ string sendSaveData();
 void DewmAwaken();          // Dewm Guy's awakening
 void DewmIntro();           // Dewm Guy's intro
 void SeraphIntro();         // Seraph intro
+void GinIntro();            // Gin Intro
 
 // level funcs
 void nextLevel();           // switches to the next level

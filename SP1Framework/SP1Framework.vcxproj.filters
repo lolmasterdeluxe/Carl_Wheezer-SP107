@@ -67,37 +67,25 @@
     <Text Include="Intro.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="tutorial_1.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="tutorial_2.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="tutorial_3.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="menu.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="SeraphIntro.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="Seraphtutorial_1.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="Seraphtutorial_2.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="train.txt">
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="DewmIntro.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlSeraph4.txt">
+    <Text Include="Gintutorial_1.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlDewm4.txt">
+    <Text Include="Gintutorial_2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="Gintutorial_3.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="GinIntro.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="lvlNinja1.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

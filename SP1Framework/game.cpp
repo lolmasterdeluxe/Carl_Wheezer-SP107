@@ -783,7 +783,6 @@ void moveCharacter(int n)
 {
     // Updating the location of the character based on the key release
     // providing a beep sound whenver we shift the character
-
     int oneStep;
     if (g_skKeyEvent[K_57].keyDown) {
         for (int j = 0; j < g_iPlatforms; j++) {
@@ -793,14 +792,17 @@ void moveCharacter(int n)
                 l++;
                 g_sChar.m_cLocation.Y++;
             }
-            for (int i = 0; i < g_iPlatforms; i++)
+            else if (g_sChar.m_cLocation.Y + 1 == g_aPlatformsY[j] && g_sChar.m_cLocation.X+1 == g_aPlatformsX[j]) //Jump up
             {
-                if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X == g_aPlatformsX[i]) {
-                    g_sChar.m_cLocation.Y--;
-                }
-                else if (g_sChar.m_cLocation.Y == g_aPlatformsY[i] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[i]) {
-                    g_sChar.m_cLocation.Y--;
-                }
+                l = 0;
+                l++;
+                g_sChar.m_cLocation.Y++;
+            }
+            if (g_sChar.m_cLocation.Y == g_aPlatformsY[j] && g_sChar.m_cLocation.X == g_aPlatformsX[j]) {
+                g_sChar.m_cLocation.Y--;
+            }
+            else if (g_sChar.m_cLocation.Y == g_aPlatformsY[j] && g_sChar.m_cLocation.X + 1 == g_aPlatformsX[j]) {
+                g_sChar.m_cLocation.Y--;
             }
         }
     }
@@ -3721,7 +3723,7 @@ void renderStartMenu() {
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
         c.X -= 1;
-        g_Console.writeToBuffer(c, "Level Editor", 0x0F);
+        //g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == 1) {
         c.X += 1;
@@ -3732,7 +3734,7 @@ void renderStartMenu() {
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
         c.X -= 1;
-        g_Console.writeToBuffer(c, "Level Editor", 0x0F);
+        //g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == -1) {
         c.X += 1;
@@ -3743,7 +3745,7 @@ void renderStartMenu() {
         g_Console.writeToBuffer(c, "Exit Game", 0x9F);
         c.Y += 1;
         c.X -= 1;
-        g_Console.writeToBuffer(c, "Level Editor", 0x0F);
+        //g_Console.writeToBuffer(c, "Level Editor", 0x0F);
     }
     if (startMenuSelect == -2) {
         c.X += 1;
@@ -3754,7 +3756,7 @@ void renderStartMenu() {
         g_Console.writeToBuffer(c, "Exit Game", 0x0F);
         c.Y += 1;
         c.X -= 1;
-        g_Console.writeToBuffer(c, "Level Editor", 0x9F);
+        //g_Console.writeToBuffer(c, "Level Editor", 0x9F);
     }
     c.Y += 2;
     c.X -= 1;
@@ -3956,50 +3958,10 @@ void nextLevel() {
         g_sBearSpirit[0].m_cLocation.Y = 0;
         g_sBearSpirit[1].m_cLocation.X = 0;
         g_sBearSpirit[1].m_cLocation.Y = 0;
-        deletePlatforms();
-        
+        deletePlatforms();   
     }
     if (oneTime == 0) {
-        if (level == 0)
-            loadLevelData(0);
-        if (level == 1)
-            loadLevelData(1);
-        if (level == 2)
-            loadLevelData(2);
-        if (level == 3)
-            loadLevelData(3);
-        if (level == 4)
-            loadLevelData(4);
-        if (level == 5)
-            loadLevelData(5);
-        if (level == 6)
-            loadLevelData(6);
-        if (level == 7)
-            loadLevelData(7);
-        if (level == 8)
-            loadLevelData(8);
-        if (level == 9)
-            loadLevelData(9);
-        if (level == 10)
-            loadLevelData(10);
-        if (level == 11)
-            loadLevelData(11);
-        if (level == 12)
-            loadLevelData(12);
-        if (level == 13)
-            loadLevelData(13);
-        if (level == 14)
-            loadLevelData(14);
-        if (level == 15)
-            loadLevelData(15);
-        if (level == 16)
-            loadLevelData(16);
-        if (level == 17)
-            loadLevelData(17);
-        if (level == 18)
-            loadLevelData(18);
-        if (level == 19)
-            loadLevelData(19);
+        loadLevelData(level);
         oneTime = 1;
         g_sChar.m_cLocation.X = g_sCharSpawn.m_cLocation.X;
         g_sChar.m_cLocation.Y = g_sCharSpawn.m_cLocation.Y;
@@ -5100,7 +5062,7 @@ string sendSaveData() {
         save = save + enx[i] + eny[i] + enh[i];
     }
 
-    bx = g_sBossP1.m_cLocation.X; by = g_sBossP1.m_cLocation.Y; bh = g_sBossP1.m_dHealth;
+    bx = g_sBoss1[0].m_cLocation.X; by = g_sBoss1[0].m_cLocation.Y; bh = g_sBoss1[0].m_dHealth;
     bosx = to_string(bx); bosy = to_string(by); bosh = to_string(bh);
     if (bosx.length() == 1) bosx = "0" + bosx;
     if (bosy.length() == 1) bosy = "0" + bosy;

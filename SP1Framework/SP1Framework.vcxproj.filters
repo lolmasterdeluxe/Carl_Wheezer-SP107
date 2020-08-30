@@ -88,12 +88,6 @@
     <Text Include="Seraphtutorial_2.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="Seraphtutorial_3.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="Seraphtutorial_4.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="train.txt">
       <Filter>Source Files</Filter>
     </Text>

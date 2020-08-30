@@ -95,14 +95,14 @@
   <ItemGroup>
     <Text Include="DewmIntro.txt" />
     <Text Include="Intro.txt" />
+    <Text Include="lvlDewm4.txt" />
+    <Text Include="lvlSeraph4.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />
     <Text Include="SeraphIntro.txt" />
     <Text Include="Seraphtutorial_1.txt" />
     <Text Include="Seraphtutorial_2.txt" />
-    <Text Include="Seraphtutorial_3.txt" />
-    <Text Include="Seraphtutorial_4.txt" />
     <Text Include="train.txt" />
     <Text Include="tutorial_1.txt" />
     <Text Include="tutorial_2.txt" />

@@ -22,6 +22,7 @@ double  g_enemyDelay[10] = { };   //enemy attack delay specific to Ninjas && Vik
 double  g_sElapsedTime; //slash elapsed time
 double  g_doElapsedTime;//Dodge elapsed time
 double  g_bElapsedTime; //boss movement elapsed time
+double  g_bpElapsedTime[5]; //Boss projectile elapsed time
 double  g_bjElapsedTime;//boss jump elapsed time
 double  g_jElapsedTime; //player jump elapsed time
 double  g_hElapsedTime; //health elapsed time
@@ -36,6 +37,7 @@ double  g_udElapsedTime;//Seraph ulti delay elapsed time
 double  g_uElapsedTime; //ultimate elapsed time
 double  g_cElapsedTime; //Cutscene Elapsed time
 double  g_cDelayTime;   //Some cutscene delays
+std::string levelFile;
 int characterSelect; int startMenuSelect; int pauseMenuSelect;
 int oneTime; int canDo; int saveTimer;  int level;
 
@@ -47,6 +49,7 @@ int i[10] = {0,0,0,0,0,0,0,0,0,0}; //enemy movement counter
 int ip[10] = { 0,0,0,0,0,0,0,0,0,0 }; //enemy projectile counter
 int j = 0;       //projectile counter
 int k = 0;       //boss movement counter
+int kp[5] = { 0,0,0,0,0 };//Boss projectile counter
 int l = 0;       //player movement counter
 int s = 0;       //slash attack counter
 int n = 2;       //control movement speed (used for movement && sneak)
@@ -87,6 +90,7 @@ char c4;                     //projectile ascii
 
 char c5[10] = { };  //Enemy ascii
 char cP5[10] = { };
+char bP5[5] = { };
 char c0[25] = { }; //Object Ascii
 char cO[5] = { 160, 160 };  // Potion ascii
 char NPC[9] = { }; //NPC ascii
@@ -105,8 +109,13 @@ char c8 = 186;
 char c9 = 186;
 auto boss2 = std::string(3, c8) + c9;
 
+char c10 = 237;
+char c11 = 237;
+auto boss3 = std::string(4, c10) + c11;
+
 WORD enemyColor[10] = { };
-WORD bossColor = 0x4E;
+WORD bossColor[4] = { 0x4E , 0x0E, 0X8E, 0X8E };
+WORD BProjColor[5] = { 0X7E,0X7E,0X7E,0X7E,0X7E };
 WORD bearColor = 0x9F;
 WORD BGcolor;
 WORD Healthcolor;
@@ -126,11 +135,12 @@ SGameChar   g_sEnemy[10]; SGameChar g_sEProj[10]; //Enemy specific chars
 SGameChar   g_sPortal;
 SGameChar   g_sBearSpirit[2];   //Thorfinn's bear
 SGameChar   g_sBoss1[2];       //Boss top and bottom half
+SGameChar   g_sBoss2; SGameChar g_sBProj[5]; // 2nd boss and its projectile
 SGameChar   g_sNPC[9];       //NPC
 SGameChar   g_sPotion[5];     //Potion Object
 SGameChar   g_sObj[25];      //Any obj
 SGameChar   g_sbCutscene[10000];  //Cutscene bacground
-SGameChar   g_sTrainTracks[100]; //Train tracks for train scene 
+SGameChar   g_sTrainTracks[200]; //Train tracks for train scene 
 SGameChar   g_sPrimeObj[2];  //Collidable Obj used in cutscenes
 EGAMESTATES g_eGameState = S_START; // initial state
 
@@ -157,22 +167,22 @@ void init(void) {
     std::ifstream save;
     save.open("save.txt");
     if (!save) {
-        g_sChar.m_cLocation.X = 0;
-        g_sChar.m_cLocation.Y = 0;
-        g_sChar.m_dMana = 50;
-        g_sChar.m_dHealth = 50;
-        //g_sBossP1.m_cLocation.X = state.returnBossX();
-        //g_sBossP1.m_cLocation.Y = state.returnBossY();
-        //g_sBossP2.m_cLocation.X = state.returnBossX();
-        //g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
-        //g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
-        //g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
-        //g_sChar.m_bActive = state.returnCharState();
-        //g_sChar.m_dHealth = state.returnCharHealth();
-        /*g_sBossP1.m_cLocation.X = bossd;
-        g_sBossP1.m_cLocation.Y = 28;
-        g_sBossP2.m_cLocation.X = bossd;
-        g_sBossP2.m_cLocation.Y = 28 - 1;*/
+  //      g_sChar.m_cLocation.X = 0;
+  //      g_sChar.m_cLocation.Y = 0;
+  //      g_sChar.m_dMana = 0;
+  //      g_sChar.m_dHealth = 50;
+  //      g_sBossP1.m_cLocation.X = state.returnBossX();
+  //      g_sBossP1.m_cLocation.Y = state.returnBossY();
+  //      g_sBossP2.m_cLocation.X = state.returnBossX();
+  //      g_sBossP2.m_cLocation.Y = state.returnBossY() - 1;
+  //      g_sProj.m_cLocation.X = g_sChar.m_cLocation.X;
+  //      g_sProj.m_cLocation.Y = g_sChar.m_cLocation.Y;
+  //      g_sChar.m_bActive = state.returnCharState();
+  //      g_sChar.m_dHealth = state.returnCharHealth();
+  //      g_sBossP1.m_cLocation.X = bossd;
+  //      g_sBossP1.m_cLocation.Y = 28;
+  //      g_sBossP2.m_cLocation.X = bossd;
+  //      g_sBossP2.m_cLocation.Y = 28 - 1;
         for (int i = 0; i <= ne; i++)
         {
             g_sEnemy[i].m_dHealth = 5;
@@ -188,7 +198,8 @@ void init(void) {
                 g_sObj[i].m_dHealth = 20;
             }
         }
-        g_sBoss1[0].m_dHealth = 100;
+        g_sBoss1[0].m_dHealth = 300;
+        g_sBoss2.m_dHealth = 300;
     }
     else
     {
@@ -205,12 +216,21 @@ void init(void) {
     {
         c4 = 246;
     }
+    g_sBProj[0].m_cLocation.X = g_sBoss2.m_cLocation.X;
+    g_sBProj[1].m_cLocation.X = g_sBoss2.m_cLocation.X + 1;
+    g_sBProj[2].m_cLocation.X = g_sBoss2.m_cLocation.X + 2;
+    g_sBProj[3].m_cLocation.X = g_sBoss2.m_cLocation.X + 3;
+    g_sBProj[4].m_cLocation.X = g_sBoss2.m_cLocation.X + 4;
+    for (int i = 0; i < 5; i++)
+    {
+        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+    }
     g_sChar.m_dMana = state.returnCharMana();
-    g_sChar.m_dMana = 50;
-    g_sPortal.m_cLocation.X = 97;
-    g_sPortal.m_cLocation.Y = 28;
+    g_sChar.m_dMana = 0;
     y = g_Console.getConsoleSize().Y - 2;
     x = g_Console.getConsoleSize().X - 2;
+    g_sBoss1[0].m_dHealth = 300;
+    g_sBoss2.m_dHealth = 300;
     
     // sets the width, height and the font name to use in the console
     g_Console.setConsoleFont(0, 20, L"Consolas");
@@ -424,6 +444,7 @@ void updateTime(double dt) {
         g_eElapsedTime[i] += dt; //Enemy movement time elapsed
         g_epElapsedTime[i] += dt; //Enemy projectile elapsed time
         g_enemyDelay[i] += dt;    //Enemy ninja delay
+        g_bpElapsedTime[i] += dt; //Boss projectile elapsed time
     }
     g_sElapsedTime += dt;   //Slash movement time elapsed
     g_doElapsedTime += dt;  //Dodge time elapsed
@@ -464,26 +485,35 @@ void updateGame() {     // gameplay logic
         }
         if (characterSelect == 0)  //Dewm Guy
         {
-            if (level == 0)
+            if (levelFile == "Dewmtutorial_1.txt")
             {
                 DewmAwaken();
             }
-            if (level == 3)
+            if (levelFile == "DewmIntro.txt")
             {
                 DewmIntro();
             }
-            if (level >= 2 && g_sCutscene == false)
+            if (level >= 2)
             {
                 moveProjectile(); //Shooting mechanic
                 setUltimate(50);  //Set ultimate capacity to *50
             }
         }
         if (characterSelect == 1) { //Seraph
-            slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
-            downslam();             //Seraph down slam attack
-            seraphUlt();            //seraph star combo breaker
-            setUltimate(200);        //Set ultimate capacity to *200
-            SeraphIntro();
+            if (level >= 1)
+            {
+                slashAttack(0.2, 10);   //slash forward by *10 steps, speed of slash is *.2 seconds
+                downslam();             //Seraph down slam attack
+            }
+            if (level >= 2)
+            {
+                seraphUlt();            //seraph star combo breaker
+                setUltimate(200);        //Set ultimate capacity to *200
+            }
+            if (levelFile == "SeraphIntro.txt")
+            {
+                SeraphIntro();
+            }
         }
         if (characterSelect == 2) { //Gin
             slashAttack(0.1, 10); //slash forward by *10 steps, speed of slash is *.1 seconds
@@ -515,259 +545,215 @@ void updateGame() {     // gameplay logic
 
 void updateEnemy()
 {
-    if (characterSelect == 0) //Dewm Guy's Levels
+    if (levelFile == "lvlDewm1.txt")
     {
-        if (level == 4)
-        {
-            moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
-            EnemyProjectile(i[2], 2, 0.1, 19);       //Enemy int counter, Enemy array number, delay between shots and distance
-            moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
-            moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
-            moveEnemy(i[5], 'r', 17, 0.1, 38, 5);
-            moveEnemy(i[6], 'l', 22, 0.5, 79, 6);
-            moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
-            moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
-            EnemyProjectile(i[9], 9, 0.1, 28);
-        }
-        if (level == 5)
-        {
-            moveEnemy(i[0], 'r', 44, 0.2, 36, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 15, 0.2, 97, 1);  //0 is the constant
-            EnemyProjectile(ip[2], 2, 0.1, 10);
-            moveEnemy(i[3], 'r', 19, 0.4, 16, 3);
-            moveEnemy(i[4], 'l', 12, 0.3, 81, 4);
-            moveEnemy(i[5], 'l', 22, 0.1, 63, 5);
-            EnemyProjectile(ip[6], 6, 0.1, 10);
-            moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
-            moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
-            EnemyProjectile(ip[9], 9, 0.1, 24);
-            healthPotion(0);
-            hp = 0;
-        }
-        if (level == 6)
-        {
-            moveEnemy(i[0], 'l', 14, 0.2, 29, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 13, 0.3, 28, 1);  //0 is the constant
-            moveEnemy(i[2], 'r', 13, 0.3, 32, 2);
-            moveEnemy(i[3], 'r', 12, 0.4, 33, 3);
-            EnemyProjectile(ip[4], 4, 0.1, 26);
-            moveEnemy(i[5], 'l', 26, 0.1, 61, 5);
-            EnemyProjectile(ip[6], 6, 0.1, 19);
-            moveEnemy(i[7], 'r', 22, 0.4, 44, 7);
-            EnemyProjectile(ip[8], 8, 0.1, 12);
-            moveEnemy(i[9], 'l', 17, 0.1, 51, 9);
-            healthPotion(0);
-            healthPotion(1);
-            hp = 1;
-        }
-        if (level == 7)
-        {
-            EnemyProjectile(ip[0], 0, 0.1, 35);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 15, 0.3, 97, 1);  //0 is the constant
-            moveEnemy(i[2], 'r', 17, 0.3, 38, 2);
-            EnemyProjectile(ip[3], 3, 0.1, 16);
-            EnemyProjectile(ip[4], 4, 0.1, 9);
-            moveEnemy(i[5], 'l', 13, 0.1, 15, 5);
-            moveBoss(26, 0.05, 5, 43); //move *26 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *43
-            healthPotion(0);
-            healthPotion(1);
-            ne = 7;
-        }
-        if (level == 8)
-        {
-            moveEnemy(i[0], 'l', 22, 0.2, 34, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            EnemyProjectile(ip[1], 1, 0.1, 20);
-            moveEnemy(i[2], 'r', 30, 0.3, 58, 2);
-            EnemyProjectile(ip[2], 2, 0.1, 15);
-            EnemyProjectile(ip[3], 3, 0.05, 66);
-            EnemyProjectile(ip[4], 4, 0.05, 66);
-            moveEnemy(i[5], 'r', 10, 0.1, 54, 5);
-            EnemyProjectile(ip[6], 6, 0.1, 23);
-            moveEnemy(i[7], 'l', 7, 0.4, 50, 7);
-            EnemyProjectile(ip[8], 8, 0.1, 32);
-            healthPotion(0);
-            healthPotion(1);
-            ne = 9;
-        }
-        if (level == 9)
-        {
-            moveEnemy(i[0], 'l', 7, 0.2, 56, 0);
-            EnemyProjectile(ip[1], 1, 0.1, 12);
-            moveEnemy(i[2], 'r', 26, 0.2, 36, 2);
-            EnemyProjectile(ip[3], 3, 0.1, 51);
-            moveEnemy(i[4], 'r', 30, 0.2, 11, 4);
-            EnemyProjectile(ip[4], 4, 0.1, 30);
-            EnemyProjectile(ip[5], 5, 0.05, 77);
-            moveEnemy(i[6], 'l', 20, 0.2, 88, 6);
-            EnemyProjectile(ip[7], 7, 0.1, 15);
-            moveEnemy(i[8], 'l', 67, 0.1, 86, 8);
-            EnemyProjectile(ip[9], 9, 0.05, 68);
-            healthPotion(0);
-            ne = 10;
-            hp = 0;
-        }
-        if (level == 10)
-        {
-            moveEnemy(i[0], 'r', 62, 0.2, 13, 0);
-            EnemyProjectile(ip[1], 1, 0.1, 18);
-            moveEnemy(i[2], 'r', 44, 0.3, 32, 2);
-            EnemyProjectile(ip[2], 2, 0.1, 44);
-            EnemyProjectile(ip[3], 3, 0.05, 47);
-            moveEnemy(i[4], 'l', 29, 0.4, 87, 4);
-            EnemyProjectile(ip[4], 4, 0.1, 29);
-            EnemyProjectile(ip[5], 5, 0.1, 25);
-            moveEnemy(i[6], 'r', 30, 0.2, 37, 6);
-            EnemyProjectile(ip[6], 6, 0.1, 51);
-            EnemyProjectile(ip[7], 7, 0.1, 12);
-            moveEnemy(i[8], 'l', 15, 0.3, 56, 8);
-            EnemyProjectile(ip[9], 9, 0.1, 29);
-            healthPotion(0);
-        }
-        if (level == 11)
-        {
-            moveEnemy(i[0], 'l', 15, 0.2, 58, 0);
-            EnemyProjectile(ip[1], 1, 0.05, 67);
-            EnemyProjectile(ip[2], 2, 0.05, 80);
-            EnemyProjectile(ip[3], 3, 0.1, 34);
-            moveEnemy(i[4], 'r', 23, 0.2, 34, 4);
-            EnemyProjectile(ip[5], 5, 0.05, 67);
-            healthPotion(0);
-            ne = 6;
-        }
-        if (level == 12)
-        {
-            ninjaAttack(i[0], ip[0], 20, 0.03, 55, 0);
-            ninjaAttack(i[1], ip[1], 18, 0.03, 89, 1);
-            ninjaAttack(i[2], ip[2], 8, 0.03, 89, 2);
-            healthPotion(0);
-            ne = 3;
-        }
-        if (level == 13)
-        {
-            ninjaAttack(i[0], ip[0], 29, 0.03, 49, 0);
-            ninjaAttack(i[1], ip[1], 48, 0.03, 67, 1);
-            EnemyProjectile(ip[2], 2, 0.1, 90);
-            ninjaAttack(i[3], ip[3], 14, 0.03, 21, 3);
-            ninjaAttack(i[4], ip[4], 20, 0.03, 63, 4);
-            EnemyProjectile(ip[5], 5, 0.1, 69);
-            ninjaAttack(i[6], ip[6], 18, 0.03, 52, 6);
-            ninjaAttack(i[7], ip[7], 32, 0.03, 67, 7);
-            EnemyProjectile(ip[8], 8, 0.1, 58);
-            healthPotion(0);
-            ne = 9;
-        }
-        if (level == 14)
-        {
-            ninjaAttack(i[0], ip[0], 12, 0.03, 67, 0);
-            ninjaAttack(i[1], ip[1], 12, 0.03, 29, 1);
-            ninjaAttack(i[2], ip[2], 10, 0.03, 57, 2);
-            ninjaAttack(i[3], ip[3], 30, 0.03, 96, 3);
-            ninjaAttack(i[4], ip[4], 28, 0.03, 69, 4);
-            ninjaAttack(i[5], ip[5], 58, 0.03, 60, 5);
-            EnemyProjectile(ip[6], 6, 0.05, 87);
-            healthPotion(0);
-            healthPotion(1);
-            ne = 7;
-            hp = 1;
-        }
-        if (level == 15)
-        {
-            //boss is here
-            ne = 0;
-            hp = 0;
-        }
-        if (level == 16)
-        {
-            vikingAttack(i[0], 25, 0.03, 49, 0);
-            vikingAttack(i[1], 29, 0.03, 53, 1);
-            vikingAttack(i[2], 32, 0.03, 56, 2);
-            vikingBow(i[3], 3, 0.01, 3, 67);
-            healthPotion(0);
-            ne = 4;
-            hp = 0;
-        }
-        if (level == 17)
-        {
-            if (g_sChar.m_cLocation.X > g_sEnemy[0].m_cLocation.X)
-            {
-                vikingAttack(i[0], 31, 0.03, 20, 0);
-            }
-            vikingAttack(i[1], 33, 0.03, 51, 1);
-            vikingAttack(i[2], 7, 0.03, 40, 2);
-            vikingBow(i[3], 3, 0.01, 3, 51);
-            vikingAttack(i[4], 20, 0.03, 86, 4);
-            vikingBow(i[5], 5, 0.01, 3, 53);
-            vikingAttack(i[6], 6, 0.03, 70, 6);
-            moveEnemy(i[7], 'r', 7, 0.2, 68, 7);
-            healthPotion(0);
-            ne = 8;
-        }
-        if (level == 18)
-        {
-            vikingAttack(i[0], 5, 0.03, 22, 0);
-            vikingAttack(i[1], 8, 0.03, 5, 1);
-            vikingAttack(i[2], 16, 0.03, 35, 2);
-            vikingAttack(i[3], 21, 0.03, 40, 3);
-            vikingBow(i[4], 4, 0.01, 3, 39);
-            healthPotion(0);
-            ne = 5;
-        }
-
-        
+        moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
+        EnemyProjectile(i[2], 2, 0.1, 19);       //Enemy int counter, Enemy array number, delay between shots and distance
+        moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
+        moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
+        moveEnemy(i[5], 'r', 17, 0.1, 38, 5);
+        moveEnemy(i[6], 'l', 22, 0.5, 79, 6);
+        moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
+        moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
+        EnemyProjectile(i[9], 9, 0.1, 28);
     }
-    if (characterSelect == 1) //Seraph's levels
-    { 
-        if (level == 4)
-        {
-            moveEnemy(i[0], 'r', 15, 0.5, 15, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 26, 0.2, 63, 1);  //0 is the constant
-            EnemyProjectile(ip[2], 2, 0.1, 19);       //Enemy int counter, Enemy array number, delay between shots and distance
-            moveEnemy(i[3], 'r', 19, 0.4, 61, 3);
-            moveEnemy(i[4], 'l', 20, 0.3, 35, 4);
-            moveEnemy(i[5], 'r', 17, 0.1, 38, 5);
-            moveEnemy(i[6], 'l', 22, 0.5, 79, 6);
-            moveEnemy(i[7], 'r', 46, 0.4, 33, 7);
-            moveEnemy(i[8], 'r', 20, 0.3, 29, 8);
-            EnemyProjectile(ip[9], 9, 0.1, 28);
-        }
-        if (level == 5)
-        {
-            moveEnemy(i[0], 'r', 44, 0.2, 36, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 15, 0.2, 97, 1);  //0 is the constant
-            EnemyProjectile(ip[2], 2, 0.1, 10);
-            moveEnemy(i[3], 'r', 19, 0.4, 16, 3);
-            moveEnemy(i[4], 'l', 12, 0.3, 81, 4);
-            moveEnemy(i[5], 'l', 22, 0.1, 63, 5);
-            EnemyProjectile(ip[6], 6, 0.1, 10);
-            moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
-            moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
-            EnemyProjectile(ip[9], 9, 0.1, 24);
-        }
-        if (level == 6)
-        {
-            moveEnemy(i[0], 'l', 14, 0.2, 29, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 13, 0.3, 28, 1);  //0 is the constant
-            moveEnemy(i[2], 'r', 13, 0.3, 32, 2);
-            moveEnemy(i[3], 'r', 12, 0.4, 33, 3);
-            EnemyProjectile(ip[4], 4, 0.1, 26);
-            moveEnemy(i[5], 'l', 26, 0.1, 61, 5);
-            EnemyProjectile(ip[6], 6, 0.1, 19);
-            moveEnemy(i[7], 'r', 22, 0.4, 44, 7);
-            EnemyProjectile(ip[8], 8, 0.1, 12);
-            moveEnemy(i[9], 'l', 17, 0.1, 51, 9);
-        }
-        if (level == 7)
-        {
-            EnemyProjectile(ip[0], 0, 0.1, 35);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
-            moveEnemy(i[1], 'l', 15, 0.3, 97, 1);  //0 is the constant
-            moveEnemy(i[2], 'r', 17, 0.3, 38, 2);
-            EnemyProjectile(ip[3], 3, 0.1, 16);
-            EnemyProjectile(ip[4], 4, 0.1, 9);
-            moveEnemy(i[5], 'l', 13, 0.1, 15, 5);
-            moveBoss(26, 0.05, 5, 43); //move *26 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *43
-        }
+    if (levelFile == "lvlDewm2.txt")
+    {
+        moveEnemy(i[0], 'r', 44, 0.2, 36, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveEnemy(i[1], 'l', 15, 0.2, 97, 1);  //0 is the constant
+        EnemyProjectile(ip[2], 2, 0.1, 10);
+        moveEnemy(i[3], 'r', 19, 0.4, 16, 3);
+        moveEnemy(i[4], 'l', 12, 0.3, 81, 4);
+        moveEnemy(i[5], 'l', 22, 0.1, 63, 5);
+        EnemyProjectile(ip[6], 6, 0.1, 10);
+        moveEnemy(i[7], 'l', 33, 0.4, 85, 7);
+        moveEnemy(i[8], 'r', 33, 0.3, 51, 8);
+        EnemyProjectile(ip[9], 9, 0.1, 24);
+        healthPotion(0);
+        hp = 0;
     }
+    if (levelFile == "lvlDewm3.txt")
+    {
+        moveEnemy(i[0], 'l', 14, 0.2, 29, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveEnemy(i[1], 'l', 13, 0.3, 28, 1);  //0 is the constant
+        moveEnemy(i[2], 'r', 13, 0.3, 32, 2);
+        moveEnemy(i[3], 'r', 12, 0.4, 33, 3);
+        EnemyProjectile(ip[4], 4, 0.1, 26);
+        moveEnemy(i[5], 'l', 26, 0.1, 61, 5);
+        EnemyProjectile(ip[6], 6, 0.1, 19);
+        moveEnemy(i[7], 'r', 22, 0.4, 44, 7);
+        EnemyProjectile(ip[8], 8, 0.1, 12);
+        moveEnemy(i[9], 'l', 17, 0.1, 51, 9);
+        healthPotion(0);
+        healthPotion(1);
+        hp = 1;
+    }
+    if (levelFile == "lvlDewm4.txt")
+    {
+        EnemyProjectile(ip[0], 0, 0.1, 35);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+        moveEnemy(i[1], 'l', 15, 0.3, 97, 1);  //0 is the constant
+        moveEnemy(i[2], 'r', 17, 0.3, 38, 2);
+        EnemyProjectile(ip[3], 3, 0.1, 16);
+        EnemyProjectile(ip[4], 4, 0.1, 9);
+        moveEnemy(i[5], 'l', 13, 0.1, 15, 5);
+        moveBoss(26, 0.05, 5, 43); //move *26 steps, delays his movement by *0.05 seconds, stops for *2 seconds, returns to position x = *43
+        healthPotion(0);
+        healthPotion(1);
+        ne = 6;
+    }
+    if (levelFile == "lvlSeraph1.txt")
+    {
+        moveEnemy(i[0], 'l', 22, 0.2, 34, 0);  //move enemy [e] by *5 steps back and forth from position x = *50 every *0.5 seconds
+        EnemyProjectile(ip[1], 1, 0.1, 20);
+        moveEnemy(i[2], 'r', 30, 0.3, 58, 2);
+        EnemyProjectile(ip[2], 2, 0.1, 15);
+        EnemyProjectile(ip[3], 3, 0.05, 66);
+        EnemyProjectile(ip[4], 4, 0.05, 66);
+        moveEnemy(i[5], 'r', 10, 0.1, 54, 5);
+        EnemyProjectile(ip[6], 6, 0.1, 23);
+        moveEnemy(i[7], 'l', 7, 0.4, 50, 7);
+        EnemyProjectile(ip[8], 8, 0.1, 32);
+        healthPotion(0);
+        healthPotion(1);
+        ne = 9;
+    }
+    if (levelFile == "lvlSeraph3.txt")
+    {
+        moveEnemy(i[0], 'l', 7, 0.2, 56, 0);
+        EnemyProjectile(ip[1], 1, 0.1, 12);
+        moveEnemy(i[2], 'r', 26, 0.2, 36, 2);
+        EnemyProjectile(ip[3], 3, 0.1, 51);
+        moveEnemy(i[4], 'r', 30, 0.2, 11, 4);
+        EnemyProjectile(ip[4], 4, 0.1, 30);
+        EnemyProjectile(ip[5], 5, 0.05, 77);
+        moveEnemy(i[6], 'l', 20, 0.2, 88, 6);
+        EnemyProjectile(ip[7], 7, 0.1, 15);
+        moveEnemy(i[8], 'l', 67, 0.1, 86, 8);
+        EnemyProjectile(ip[9], 9, 0.05, 68);
+        healthPotion(0);
+        ne = 10;
+        hp = 0;
+    }
+    if (levelFile == "lvlSeraph3.txt")
+    {
+        moveEnemy(i[0], 'r', 62, 0.2, 13, 0);
+        EnemyProjectile(ip[1], 1, 0.1, 18);
+        moveEnemy(i[2], 'r', 44, 0.3, 32, 2);
+        EnemyProjectile(ip[2], 2, 0.1, 44);
+        EnemyProjectile(ip[3], 3, 0.05, 47);
+        moveEnemy(i[4], 'l', 29, 0.4, 87, 4);
+        EnemyProjectile(ip[4], 4, 0.1, 29);
+        EnemyProjectile(ip[5], 5, 0.1, 25);
+        moveEnemy(i[6], 'r', 30, 0.2, 37, 6);
+        EnemyProjectile(ip[6], 6, 0.1, 51);
+        EnemyProjectile(ip[7], 7, 0.1, 12);
+        moveEnemy(i[8], 'l', 15, 0.3, 56, 8);
+        EnemyProjectile(ip[9], 9, 0.1, 29);
+        healthPotion(0);
+    }
+    if (levelFile == "lvlSeraph4.txt")
+    {
+        moveEnemy(i[0], 'l', 15, 0.2, 58, 0);
+        EnemyProjectile(ip[1], 1, 0.05, 67);
+        EnemyProjectile(ip[2], 2, 0.05, 80);
+        EnemyProjectile(ip[3], 3, 0.1, 34);
+        moveEnemy(i[4], 'r', 23, 0.2, 34, 4);
+        EnemyProjectile(ip[5], 5, 0.05, 67);
+        BossProjectile(0, 0.3);
+        BossProjectile(1, 0.1);
+        if (g_sBoss2.m_dHealth < 150) //Boss becomes more difficult
+        {
+            BossProjectile(2, 0.2);
+            BossProjectile(3, 0.4);
+            BossProjectile(4, 0.1);
+        }
+        healthPotion(0);
+        ne = 6;
+    }
+    if (levelFile == "lvlGin1.txt")
+    {
+        ninjaAttack(i[0], ip[0], 20, 0.03, 55, 0);
+        ninjaAttack(i[1], ip[1], 18, 0.03, 89, 1);
+        ninjaAttack(i[2], ip[2], 8, 0.03, 89, 2);
+        healthPotion(0);
+        ne = 3;
+    }
+    if (levelFile == "lvlGin2.txt")
+    {
+        ninjaAttack(i[0], ip[0], 29, 0.03, 49, 0);
+        ninjaAttack(i[1], ip[1], 48, 0.03, 67, 1);
+        EnemyProjectile(ip[2], 2, 0.1, 90);
+        ninjaAttack(i[3], ip[3], 14, 0.03, 21, 3);
+        ninjaAttack(i[4], ip[4], 20, 0.03, 63, 4);
+        EnemyProjectile(ip[5], 5, 0.1, 69);
+        ninjaAttack(i[6], ip[6], 18, 0.03, 52, 6);
+        ninjaAttack(i[7], ip[7], 32, 0.03, 67, 7);
+        EnemyProjectile(ip[8], 8, 0.1, 58);
+        healthPotion(0);
+        ne = 9;
+    }
+    if (levelFile == "lvlGin3.txt")
+    {
+        ninjaAttack(i[0], ip[0], 12, 0.03, 67, 0);
+        ninjaAttack(i[1], ip[1], 12, 0.03, 29, 1);
+        ninjaAttack(i[2], ip[2], 10, 0.03, 57, 2);
+        ninjaAttack(i[3], ip[3], 30, 0.03, 96, 3);
+        ninjaAttack(i[4], ip[4], 28, 0.03, 69, 4);
+        ninjaAttack(i[5], ip[5], 58, 0.03, 60, 5);
+        EnemyProjectile(ip[6], 6, 0.05, 87);
+        healthPotion(0);
+        healthPotion(1);
+        ne = 7;
+        hp = 1;
+    }
+    if (levelFile == "lvlGin4.txt")
+    {
+        //boss is here
+        ne = 0;
+        hp = 0;
+    }
+    if (levelFile == "lvlVik1.txt")
+    {
+        vikingAttack(i[0], 25, 0.03, 49, 0);
+        vikingAttack(i[1], 29, 0.03, 53, 1);
+        vikingAttack(i[2], 32, 0.03, 56, 2);
+        vikingBow(i[3], 3, 0.01, 3, 67);
+        healthPotion(0);
+        ne = 4;
+        hp = 0;
+    }
+    if (levelFile == "lvlVik2.txt")
+    {
+        if (g_sChar.m_cLocation.X > g_sEnemy[0].m_cLocation.X)
+        {
+            vikingAttack(i[0], 31, 0.03, 20, 0);
+        }
+        vikingAttack(i[1], 33, 0.03, 51, 1);
+        vikingAttack(i[2], 7, 0.03, 40, 2);
+        vikingBow(i[3], 3, 0.01, 3, 51);
+        vikingAttack(i[4], 20, 0.03, 86, 4);
+        vikingBow(i[5], 5, 0.01, 3, 53);
+        vikingAttack(i[6], 6, 0.03, 70, 6);
+        moveEnemy(i[7], 'r', 7, 0.2, 68, 7);
+        healthPotion(0);
+        ne = 8;
+    }
+    if (levelFile == "lvlVik3.txt")
+    {
+        vikingAttack(i[0], 5, 0.03, 22, 0);
+        vikingAttack(i[1], 8, 0.03, 5, 1);
+        vikingAttack(i[2], 16, 0.03, 35, 2);
+        vikingAttack(i[3], 21, 0.03, 40, 3);
+        vikingBow(i[4], 4, 0.01, 3, 39);
+        healthPotion(0);
+        ne = 5;
+    }
+    if (levelFile == "lvlVik4.txt")
+    {
+        //viking boss here
+    }
+  
 }
 
 void updateMenu() {
@@ -1836,7 +1822,8 @@ void seraphUlt()
             {
                 g_sEnemy[i].m_dHealth = 0;
             }
-            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 50;
+            g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 150;
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 150;
         }
         else if (g_udElapsedTime > 3)
         {
@@ -2209,6 +2196,7 @@ void setdamage()
             g_sEProj[i].m_cLocation = g_sEnemy[i].m_cLocation;
         }
     }
+    //Boss 1 damage
     if ((g_sBoss1[0].m_cLocation.X == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBoss1[0].m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBoss1[0].m_cLocation.Y == g_sChar.m_cLocation.Y)
     {
         if (g_hElapsedTime > 0.2)
@@ -2228,26 +2216,28 @@ void setdamage()
             g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 10;
         }
     }
-    //for (int i = 0; i < ne; i++) //melee damage for enemy
-    //{
-    //    if (g_sChar.m_cLocation.X + 2 >= g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.X < g_sEnemy[i].m_cLocation.X && g_sAttackState) //right slash attack
-    //    {
-    //        if (g_hElapsedTime > 0.2)
-    //        {
-    //            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-    //            g_hElapsedTime = 0;
-    //        }
-    //    }
-    //    if (g_sChar.m_cLocation.X - 2 <= g_sEnemy[i].m_cLocation.X && g_sChar.m_cLocation.X > g_sEnemy[i].m_cLocation.X && g_sAttackState) //left slash attack
-    //    {
-    //        if (g_hElapsedTime > 0.2)
-    //        {
-    //            g_sEnemy[i].m_dHealth = g_sEnemy[i].m_dHealth - 2;
-    //            g_hElapsedTime = 0;
-    //        }
-    //    }
-    //}
-    for (int i = 0; i < obj; i++) //melee damage for obj
+    //Boss 2 damage
+    if ((g_sBoss2.m_cLocation.X == g_sChar.m_cLocation.X || g_sBoss2.m_cLocation.X + 1 == g_sChar.m_cLocation.X || g_sBoss2.m_cLocation.X + 2 == g_sChar.m_cLocation.X) && g_sBoss2.m_cLocation.Y == g_sChar.m_cLocation.Y)
+    {
+        if (g_hElapsedTime > 0.2)
+        {
+            if (g_sBoss2.m_dHealth > 0 && !g_sUltimate && !g_sRage && !g_sAttackState && !g_sInvulnerable && !g_sFocus && !g_sSpirit)
+            {
+                g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+            }
+            g_hElapsedTime = 0;
+        }
+        if (g_sAttackState == true)
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 1; //program recognises as 2 damage
+        }
+        if (g_sFocus == true || g_sSpirit == true)
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 10;
+        }
+    }
+    //Melee damage for obj
+    for (int i = 0; i < obj; i++)
     {
         if (g_sChar.m_cLocation.X + 2 >= g_sObj[i].m_cLocation.X && g_sChar.m_cLocation.X < g_sObj[i].m_cLocation.X && g_sAttackState) //right slash attack
         {
@@ -2267,23 +2257,6 @@ void setdamage()
             }
         }
     }
-    //  Knockback slash for boss not active
-    //if (g_sChar.m_cLocation.X - 2 <= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X > g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
-    //{
-    //    if (g_hElapsedTime > 0.2)
-    //    {
-    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
-    //        g_hElapsedTime = 0;
-    //    }
-    //}
-    //if (g_sChar.m_cLocation.X + 2 >= g_sBossP1.m_cLocation.X && g_sChar.m_cLocation.X < g_sBossP1.m_cLocation.X && g_sAttackState.m_bActive) //left slash attack
-    //{
-    //    if (g_hElapsedTime > 0.2)
-    //    {
-    //        g_sBossP1.m_dHealth = g_sBossP1.m_dHealth - 1;
-    //        g_hElapsedTime = 0;
-    //    }
-    //}
     for (int i = 0; i < ne; i++)  //check projectile damage to enemy
     {
         if ((g_sProj.m_cLocation.X == g_sEnemy[i].m_cLocation.X && g_sProj.m_cLocation.Y == g_sEnemy[i].m_cLocation.Y) && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c5[i] != 0)
@@ -2310,7 +2283,7 @@ void setdamage()
             enemyColor[i] = 0x4A;
         }
     }
-    //to Boss
+    //to Boss 1
     if (g_sProj.m_cLocation.X == g_sBoss1[0].m_cLocation.X && g_sProj.m_cLocation.Y == g_sBoss1[0].m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c6 != 0)
     {
         if (!g_sRage)
@@ -2320,6 +2293,24 @@ void setdamage()
         else
         {
             g_sBoss1[0].m_dHealth = g_sBoss1[0].m_dHealth - 2;
+        }
+        if (characterSelect == 3)
+        {
+            g_slashdelay = 0;
+        }
+        j = 0;
+        g_sProj.m_cLocation = g_sChar.m_cLocation;
+    }
+    //to Boss 2
+    if (g_sProj.m_cLocation.X == g_sBoss2.m_cLocation.X && g_sProj.m_cLocation.Y == g_sBoss2.m_cLocation.Y && (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X) && c10 != 0)
+    {
+        if (!g_sRage)
+        {
+            g_sBoss2.m_dHealth--;
+        }
+        else
+        {
+            g_sBoss2.m_dHealth = g_sBoss2.m_dHealth - 2;
         }
         if (characterSelect == 3)
         {
@@ -2370,7 +2361,14 @@ void setdamage()
         c8 = 0;
         c9 = 0;
         boss2 = std::string(3, c8) + c9;
-        bossColor = 0x1A;
+        bossColor[0] = BGcolor;
+    }
+    if (g_sBoss2.m_dHealth <= 0)
+    {
+        c10 = 0;
+        c11 = 0;
+        boss1 = std::string(3, c10) + c11;
+        bossColor[1] = BGcolor;
     }
     if (g_sChar.m_cLocation.Y > g_Console.getConsoleSize().Y)
         g_sChar.m_dHealth--;
@@ -2570,37 +2568,40 @@ void moveEnemy(int &i, char a, int n, double t, int d, int e)
 
 void moveBoss(int n, double t, double t2, int d)
 {
-    if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
-    {
-        if (g_sBoss1[0].m_dHealth <= 50)
+    if (g_sBoss1[0].m_cLocation.Y - 4 <= g_sChar.m_cLocation.Y)
+    { 
+        if (g_sBoss1[0].m_dHealth > 0 && !g_sUltimate && !g_sFocus)
         {
-            t2 = t2 / 3;
-            t = t / 2;
-        }
-        if (g_bElapsedTime > t)
-        {
-            if (k != n)
+            if (g_sBoss1[0].m_dHealth <= 150)
             {
-                if (g_delay1 > t2) //go to right
-                {
-                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X + 2;
-                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X + 2;
-                    g_bElapsedTime = 0;
-                    k++;
-                    g_delay2 = 0;
-                }
+                t2 = t2 / 3;
+                t = t / 2;
             }
-            else
+            if (g_bElapsedTime > t)
             {
-                if (g_delay2 > t2) //go to left
+                if (k != n)
                 {
-                    g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X - 2;
-                    g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X - 2;
-                    g_bElapsedTime = 0;
-                    g_delay1 = 0;
-                    if (g_sBoss1[0].m_cLocation.X <= d)
+                    if (g_delay1 > t2) //go to right
                     {
-                        k = 0;
+                        g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X + 2;
+                        g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X + 2;
+                        g_bElapsedTime = 0;
+                        k++;
+                        g_delay2 = 0;
+                    }
+                }
+                else
+                {
+                    if (g_delay2 > t2) //go to left
+                    {
+                        g_sBoss1[0].m_cLocation.X = g_sBoss1[0].m_cLocation.X - 2;
+                        g_sBoss1[1].m_cLocation.X = g_sBoss1[1].m_cLocation.X - 2;
+                        g_bElapsedTime = 0;
+                        g_delay1 = 0;
+                        if (g_sBoss1[0].m_cLocation.X <= d)
+                        {
+                            k = 0;
+                        }
                     }
                 }
             }
@@ -2672,6 +2673,110 @@ void moveBoss(int n, double t, double t2, int d)
         //{
         //    m = 0;
         //}
+    }
+}
+
+void BossProjectile(int i,  double n)
+{
+    if (g_sBoss2.m_dHealth > 0 && !g_sUltimate && !g_sFocus) 
+    {
+        if (g_sChar.m_cLocation.X > g_sBoss2.m_cLocation.X && g_sChar.m_cLocation.Y == g_sBoss2.m_cLocation.Y)
+        {
+
+            if (g_sChar.m_cLocation.X <= g_sBoss2.m_cLocation.X + x) //shoot to right
+            {
+                bP5[i] = 233;
+                if (g_bpElapsedTime[i] > n) //time between shots
+                {
+                    if (kp[i] >= 0 && kp[i] < 5)
+                    {
+                        g_sBProj[i].m_cLocation.Y--;
+                        g_bpElapsedTime[i] = 0;
+                        kp[i]++;
+                    }
+                    if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X--;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                    {
+                        g_sBProj[i].m_cLocation.Y++;
+                        kp[i]++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X + 3 >= g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
+                    {
+                        if (!g_sUltimate && !g_sFocus && !g_sRage && !g_sSpirit && !g_sAttackState)
+                        {
+                            g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+                        }
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X + 2;
+                        g_sBProj[i].m_cLocation.X = g_sBoss2.m_cLocation.X;
+                        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+                        kp[i] = 0;
+                    }
+                    else if (kp[i] >= 10 && kp[i] < 30)
+                    {
+                        g_sBoss2.m_cLocation.X = g_sBoss2.m_cLocation.X + 1;
+                    }
+                }
+            }
+
+        }
+        if (g_sChar.m_cLocation.X < g_sBoss2.m_cLocation.X && g_sChar.m_cLocation.Y == g_sBoss2.m_cLocation.Y)
+        {
+            if (g_sChar.m_cLocation.X >= g_sBoss2.m_cLocation.X - x) //shoot to left
+            {
+                bP5[i] = 233;
+                if (g_bpElapsedTime[i] > n) //time between shots
+                {
+                    if (kp[i] >= 0 && kp[i] < 5)
+                    {
+                        g_sBProj[i].m_cLocation.Y--;
+                        g_bpElapsedTime[i] = 0;
+                        kp[i]++;
+                    }
+                    if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X > g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X--;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (kp[i] >= 5 && g_sBProj[i].m_cLocation.X < g_sChar.m_cLocation.X)
+                    {
+                        g_sBProj[i].m_cLocation.X++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X == g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                    {
+                        g_sBProj[i].m_cLocation.Y++;
+                        kp[i]++;
+                        g_bpElapsedTime[i] = 0;
+                    }
+                    else if (g_sBProj[i].m_cLocation.X - 3 <= g_sChar.m_cLocation.X && g_sBProj[i].m_cLocation.Y == g_sChar.m_cLocation.Y)
+                    {
+                        if (!g_sUltimate && !g_sFocus && !g_sRage && !g_sSpirit && !g_sAttackState)
+                        {
+                            g_sChar.m_dHealth = g_sChar.m_dHealth - 10;
+                        }
+                        g_sChar.m_cLocation.X = g_sChar.m_cLocation.X - 2;
+                        g_sBProj[i].m_cLocation.X = g_sBoss2.m_cLocation.X;
+                        g_sBProj[i].m_cLocation.Y = g_sBoss2.m_cLocation.Y;
+                        kp[i] = 0;
+                    }
+                    else if (kp[i] >= 10 && kp[i] < 30)
+                    {
+                        g_sBoss2.m_cLocation.X = g_sBoss2.m_cLocation.X - 1;
+                    }
+                }
+            }
+
+        }
     }
 }
 
@@ -3183,7 +3288,7 @@ void vikingAttack(int& i, int n, double t, int d, int e) //stores 2 counters, bo
 
 void DewmAwaken()
 {
-    if (level == 0)
+    if (levelFile == "Dewmtutorial_1.txt")
     {
         if (g_skKeyEvent[K_SPACE].keyReleased && g_sCutscene == false)
         {
@@ -3262,16 +3367,16 @@ void DewmIntro()
 {
     if (level == 3)
     {
-        if (g_sChar.m_cLocation.X == 4 && g_sChar.m_cLocation.Y == 28)
+        if (g_sChar.m_cLocation.X == 4 && g_sChar.m_cLocation.Y == 28 && cut == 0)
         {
             g_sCutscene = true;
             cut++;
         }
-        if (cut < 96 && g_sCutscene == true)
+        if (cut < 93 && g_sCutscene == true)
         {
             if (g_cElapsedTime > 0.3)
             {
-                if (cut >= 1 && cut < 96)
+                if (cut >= 1 && cut < 93)
                 {
                     g_sChar.m_cLocation.X++;
                     if (cut >= 59)
@@ -3303,7 +3408,7 @@ void SeraphIntro()
             g_sCutscene = true;
             cut++;
         }
-        if (cut < 91 && g_sCutscene == true)
+        if (cut < 89 && g_sCutscene == true)
         {
             if (g_cElapsedTime > 0.3)
             {
@@ -3314,12 +3419,12 @@ void SeraphIntro()
                     g_sNPC[2].m_cLocation.X--;
                     g_cElapsedTime = 0;
                     cut++;
-                    if (cut == 6)
+                    if (cut == 7)
                     {
                         g_cDelayTime = 0;
                     }
                 }
-                if (cut >= 6 && cut <= 61 && g_cDelayTime > 10)
+                if (cut >= 6 && cut <= 61 && g_cDelayTime > 17)
                 {
                     g_sNPC[0].m_cLocation.X++;
                     g_sNPC[1].m_cLocation.X++;
@@ -3333,11 +3438,8 @@ void SeraphIntro()
                         cut++;
                     }
                 }
-                if (cut > 61 && cut <= 91 && g_cDelayTime > 10)
+                if (cut > 61 && cut <= 89 && g_cDelayTime > 23)
                 {
-                    g_sNPC[0].m_cLocation.X++;
-                    g_sNPC[1].m_cLocation.X++;
-                    g_sNPC[2].m_cLocation.X++;
                     g_sChar.m_cLocation.X++;
                     g_cElapsedTime = 0;
                     cut++;
@@ -3686,19 +3788,26 @@ void renderNewGameOption() {
     c.Y += 2;
     c.X = 0;
     if (characterSelect == 0) {
-        desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the ice of   Elsa, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
+        desc = "In the last age, in the last battle, when the light last shortened, one sat. Frozen by the frost of  ice, his soul blistered by the light of Heaven and tainted below descension, he did not choose the path of perpetual relaxation. In his ravenous happiness he lost peace; and with freezing blood he   lazed around the Umbral Plains seeking vengeance against the light slaves who had right him. He tookoff the crown of the Day Sentinels, and those that did not taste the bite of his sword named him... the Dewm Slayer.";
     }
     if (characterSelect == 1) {
-        desc = "Uses a buster sword (close range), High health, high damage, low speed, can charge attack, build charge metre to do special move";
+        desc = "The Cetra people were the first civilization to occupy the Planet. Originating from the outer confines of the universe, these nomadic people saw the Planet as their Promised Land, a perfect place in  harmony with their vision of supreme happiness: a paradise. Nevertheless,the concept of a Promised   Land is subject to individual appraisal; it is not the same for everyone. And so, some of the Cetra left the Planet when they did not find the fulfillment they were seeking. In contrast, those who remained became its permanent residents.";
     }
     if (characterSelect == 2) {
-        desc = "Uses a katana (close range), low health, highest damage, highest speed, can dodge backwards and through enemy, build focus metre to insta kill anything in a straight line, can sneak such that is unnoticeable and cannot be attacked by enemies";
+        desc = "In the late 13th century, the Sushi empire has laid waste to entire nations along their campaign to conquer the East. Sashimi Island is all that stands between mainland Japan and a massive Ninja invasion fleet led by the ruthless and cunning general, Wasabi. As the island burns in the wake of the   first wave of the Sushi assault, samurai warrior Gin Isei stands as one of the last surviving members of his clan. He is resolved to do whatever it takes, at any cost, to protect his people and reclaim his home. He must set aside the traditions that have shaped him as a warrior to forge a new path, the path of the Raven, and wage an unconventional war for the freedom of Sashimi";
     }
     if (characterSelect == 3) {
-        desc = "Uses an axe (close range) and can change to bow (long range) , highest health, balanced damage, lowest speed, spirit metre slowly builds up overtime, or when enemies slain, and is used to summon a bear spirit which can attack enemies for him, whilst becoming invincible";
+        desc = "Many years have passed since Thorfinn took his vengeance against the Norse gods. Having survived hisfinal encounter with his father Thor, Thorfinn has since travelled to Olympus in Ancient Greece and now lives with his young son Askeladd in the world of the Olympian gods, a savage land inhabited by many ferocious monsters and warriors. In order to teach his son, whose mother has recently died,    how to survive in such a world, Thorfinn must master the spirit that has driven him for many years  and embrace his newfound role as a father and a mentor.";
     }
     g_Console.writeToBuffer(c, desc, color);
-    c.Y += 6;
+    if (characterSelect == 2)
+    {
+        c.Y += 7;
+    }
+    else
+    {
+        c.Y += 6;
+    }
     c.X = g_Console.getConsoleSize().X / 2 - 20;
     g_Console.writeToBuffer(c, "Arrow Keys to switch characters", 0x0F);
     c.Y += 2;
@@ -3775,10 +3884,10 @@ void renderMenuBackground() {
                     g_Console.writeToBuffer(x, y, " ", 0X0000);
                 }
                 if (perLine[x] == '8') {
-                    g_Console.writeToBuffer(x, y, " ", BACKGROUND_GREEN);
+                    g_Console.writeToBuffer(x, y, " ", 0xA0);
                 }
                 if (perLine[x] == '7') {
-                    g_Console.writeToBuffer(x, y, " ", 0x30);
+                    g_Console.writeToBuffer(x, y, " ", 0xB0);
                 }
             }
             y++;
@@ -3787,41 +3896,48 @@ void renderMenuBackground() {
 }
 
 void renderEnemyStats() {
-    if (level >= 4) 
+    if (characterSelect == 0)
     {
-        if (level < 7)
+        if (level >= 4)
         {
-            Healthcolor = 0x4E;
-        }
-        else if (level > 7 && level < 12)
-        {
-            Healthcolor = 0x1E;
-        }
-        else if (level >= 12 && level < 15)
-        {
-            Healthcolor = 0x1E;
-        }
-        else if (level == 16)
-        {
-            Healthcolor = 0x37;
-        }
-        for (int e = 0; e < ne; e++)
-        {
-            int enemyhealth = g_sEnemy[e].m_dHealth;
-            if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
-                if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
-                    g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
-                }
+            if (level < 7) //Demw guy lvls
+            {
+                Healthcolor = 0x4E;
             }
-            
+            else if (level > 7 && level < 15) // Seraph's and Gin's levels
+            {
+                Healthcolor = 0x1E;
+            }
+            else if (level == 16) //Thorfinn's levels
+            {
+                Healthcolor = 0x37;
+            }
+            for (int e = 0; e < ne; e++) //Render health stats
+            {
+                int enemyhealth = g_sEnemy[e].m_dHealth;
+                if (g_sEnemy[e].m_dHealth > 0 && g_ninjaState[e] == false) {
+                    if (g_sEnemy[e].m_cLocation.X > 0 && g_sEnemy[e].m_cLocation.X < g_Console.getConsoleSize().X) {
+                        g_Console.writeToBuffer(g_sEnemy[e].m_cLocation.X, g_sEnemy[e].m_cLocation.Y - 1, std::to_string(enemyhealth), Healthcolor);
+                    }
+                }
+
+            }
         }
-    }
-    if (level == 7)
-    {
-        if (g_sBoss1[0].m_dHealth > 0)
+        if (level == 7) //first boss in Dewm
         {
-            int bosshealth = g_sBoss1[0].m_dHealth;
-            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+            if (g_sBoss1[0].m_dHealth > 0)
+            {
+                int bosshealth = g_sBoss1[0].m_dHealth;
+                g_Console.writeToBuffer(g_sBoss1[0].m_cLocation.X + 1, g_sBoss1[0].m_cLocation.Y - 2, std::to_string(bosshealth), 0x4A);
+            }
+        }
+        if (level == 11) //Second boss in Seraph
+        {
+            if (g_sBoss2.m_dHealth > 0)
+            {
+                int bosshealth = g_sBoss2.m_dHealth;
+                g_Console.writeToBuffer(g_sBoss2.m_cLocation.X + 1, g_sBoss2.m_cLocation.Y - 2, std::to_string(bosshealth), 0x1A);
+            }
         }
     }
 }
@@ -3829,21 +3945,23 @@ void renderEnemyStats() {
 void renderGame() {
     renderMap();        // renders the map to the buffer first
     renderObj();        // renders obj under char
-    renderEnemy();      // renders enemies into the buffer
     renderCharacter();  // renders the character into the buffer
+    renderEnemy();      // renders enemies into the buffer
     renderHUD();
-    if (level != 7)
+    //Set portal spawn if level is boss
+    if (levelFile != "lvlDewm4.txt" && levelFile != "lvlSeraph4.txt" && levelFile != "lvlNinja4.txt" && levelFile != "lvlVik4.txt")
     {
         renderPortal();
     }
-    else if (level == 7 && g_sBoss1[0].m_dHealth <= 0)
+    else if (levelFile == "lvlDewm4.txt" && g_sBoss1[0].m_dHealth <= 0)
     {
         renderPortal();
     }
-    if (level == 3 )
+    else if (levelFile == "lvlSeraph4.txt" && g_sBoss2.m_dHealth <= 0)
     {
-        renderNPCDialogue();
+        renderPortal();
     }
+    renderNPCDialogue();
     renderEnemyStats();  //Renders enemy health bar
     LEMoveChar();
     //renderInputEvents();
@@ -3950,6 +4068,7 @@ void nextLevel() {
             g_sbCutscene[i].m_cLocation.X = 0;
             g_sbCutscene[i].m_cLocation.Y = 0;
         }
+        k = 0;
         g_sBoss1[0].m_cLocation.X = 0;
         g_sBoss1[0].m_cLocation.Y = 0;
         g_sBoss1[1].m_cLocation.X = 0;
@@ -4033,49 +4152,52 @@ void renderMap() {
     }
     map.close();
     renderPlatform();
-    if (characterSelect == 0)
-    {
-        if (level == 0) {
-            if (g_sChar.m_cLocation.X == 45)
-            {
-                renderDialogue("Press <Space> to awaken", 11, 16);
-            }
-            else
-            {
-                renderDialogue("Press <AD> to move left and right", 11, 16);
-            }
-        }
-        if (level == 1)
-            renderDialogue("Press <W> to jump", 11, 16);
-        if (level == 2) {
-            renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
-            renderDialogue("Left Click to shoot", 11, 15);
-        }
-        if (level == 3)
+
+    //Dewm Guy Intro
+    if (levelFile == "Dewmtutorial_1.txt") {
+        if (g_sChar.m_cLocation.X == 45)
         {
-            renderDialogue("When Rage meter is full,", 10, 11);
-            renderDialogue("press space to unleash havoc", 10, 12);
+            renderDialogue("Press <Space> to awaken", 11, 16);
+        }
+        else
+        {
+            renderDialogue("Press <AD> to move left and right", 11, 16);
         }
     }
-    if (characterSelect == 1)
-    {
-        if (level == 0) 
-        {
-            renderDialogue("Press <AD> to move left and right", 40, 13);
-            renderDialogue("Press <W> to jump", 40, 14);
-        }
-        if (level == 1)
-        {
-            renderDialogue("PINK symbolises an enemy, WHITE symbolises a portal", 33, 10);
-            renderDialogue("Left click to attack", 33, 11);
-            renderDialogue("When in the air, press S to downslam to do AOE", 33, 12);
-        }
-        if (level == 2)
-        {
-            renderDialogue("When ultimate meter is full,", 33, 21);
-            renderDialogue("press space to limit break", 33, 22);
-        }
+    if (levelFile == "Dewmtutorial_2.txt")
+        renderDialogue("Press <W> to jump", 11, 16);
+
+    if (levelFile == "Dewmtutorial_3.txt") {
+        renderDialogue("RED symbolises an enemy, WHITE symbolises a portal", 11, 14);
+        renderDialogue("Left Click to shoot", 11, 15);
     }
+
+    if (levelFile == "DewmIntro.txt")
+    {
+        renderDialogue("When Rage meter is full,", 10, 11);
+        renderDialogue("press space to unleash havoc", 10, 12);
+    }
+    
+    //Seraph intro
+    if (levelFile == "SeraphIntro.txt") 
+    {
+        renderDialogue("Press <AD> to move left and right", 40, 13);
+        renderDialogue("Press <W> to jump", 40, 14);
+    }
+
+    if (levelFile == "Seraphtutorial_1.txt")
+    {
+        renderDialogue("PINK symbolises an enemy, WHITE symbolises a portal", 33, 10);
+        renderDialogue("Left click to attack", 33, 11);
+        renderDialogue("When in the air, press S to downslam to do AOE", 33, 12);
+    }
+
+    if (levelFile == "Seraphtutorial_2.txt")
+    {
+        renderDialogue("When ultimate meter is full,", 31, 21);
+        renderDialogue("press space to limit break", 31, 22);
+    }
+    
 }
 
 void renderDialogue(string d, int x, int y) {
@@ -4123,23 +4245,23 @@ void renderCharacter()
             c2 = 203;
             if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
             {
-                if (level >= 2 && level < 4)
-                { 
+                if (levelFile == "Dewmtutorial_3.txt" || levelFile == "DewmIntro.txt")
+                {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8E);
                 }
-                else if (level >= 4 && level < 8)
+                else if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4E);
                 }
-                else if (level > 7 && level < 15)
+                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1E);
                 }
-                else if (level == 15)
+                else if (levelFile == "lvlNinja4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x7E);
                 }
-                else if (level > 15 && level <= 18)
+                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x3E);
                 }
@@ -4213,23 +4335,23 @@ void renderCharacter()
             c3 = std::string(1, c1) + c2;
             if (g_sProj.m_cLocation.X > g_sChar.m_cLocation.X || g_sProj.m_cLocation.X < g_sChar.m_cLocation.X)
             {
-                if (level >= 2 && level < 4)
+                if (levelFile == "Dewmtutorial_1.txt" || levelFile == "Dewmtutorial_2.txt" || levelFile == "Dewmtutorial_3.txt" || levelFile == "DewmIntro.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x8B);
                 }
-                else if (level >= 4 && level < 8)
+                else if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x4B);
                 }
-                else if (level > 7 && level < 15)
+                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x1B);
                 }
-                else if (level == 15)
+                else if (levelFile == "lvlNinja4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x7B);
                 }
-                else if (level > 15 && level <= 18)
+                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt" || levelFile == "lvlVik4.txt")
                 {
                     g_Console.writeToBuffer(g_sProj.m_cLocation, c4, 0x3B);
                 }
@@ -4242,65 +4364,56 @@ void renderCharacter()
 
 void renderEnemy()
 {
-    if (characterSelect == 0) //rendering for Dewm Guy
+    for (int i = 0; i < ne; i++) //Enemy
     {
-        for (int i = 0; i < ne; i++) //Enemy
+        if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
         {
-            if (level >= 4)
+            if (g_sEnemy[i].m_dHealth > 0 && g_ninjaState[i] == false)
             {
-                if (g_sEnemy[i].m_dHealth > 0 && g_ninjaState[i] == false)
+                if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt")
                 {
-                    if (level <= 7) 
-                    {
-                        enemyColor[i] = 0x4F;
-                        EProjColor[i] = 0x4F;
-                        c5[i] = 157;
-                    }
-                    else if (level > 7 && level < 12)
-                    {
-                        enemyColor[i] = 0x8C;
-                        EProjColor[i] = 0x1C;
-                        c5[i] = 232;
-                        cP5[i] = 247;
-                    }
-                    else if (level >= 12 && level < 15)
-                    {
-                        enemyColor[i] = 0x0B;
-                        EProjColor[i] = 0x18;
-                        c5[i] = 223;
-                        cP5[i] = 43;
-                    }
-                    else if (level == 15)
-                    {
-                        enemyColor[i] = 0x0B;
-                        EProjColor[i] = 0x78;
-                        c5[i] = 223;
-                        cP5[i] = 43;
-                    }
-                    else if (level >= 15)
-                    {
-                        enemyColor[i] = 0x0F;
-                        EProjColor[i] = 0x37;
-                        c5[i] = 86;
-                        cP5[i] = 196;
-                    }
-                    if ((g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X || g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X) && g_sEProj[i].m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
-                    {
-                        g_Console.writeToBuffer(g_sEProj[i].m_cLocation, cP5[i], EProjColor[i]); //enemy projectile
-                    }
-                    g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]); //enemy write
+                    enemyColor[i] = 0x4F;
+                    EProjColor[i] = 0x4F;
+                    c5[i] = 157;
                 }
-                else
+                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt")
                 {
-                    c5[i] = 0;
-                    cP5[i] = 0;
-                    enemyColor[i] = BGcolor;
+                    enemyColor[i] = 0x8C;
+                    EProjColor[i] = 0x1C;
+                    c5[i] = 232;
+                    cP5[i] = 247;
                 }
+                else if (levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
+                {
+                    enemyColor[i] = 0x0B;
+                    EProjColor[i] = 0x18;
+                    c5[i] = 223;
+                    cP5[i] = 43;
+                }
+                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+                {
+                    enemyColor[i] = 0x0F;
+                    EProjColor[i] = 0x37;
+                    c5[i] = 86;
+                    cP5[i] = 196;
+                }
+                if ((g_sEProj[i].m_cLocation.X > g_sEnemy[i].m_cLocation.X || g_sEProj[i].m_cLocation.X < g_sEnemy[i].m_cLocation.X) && g_sEProj[i].m_cLocation.Y == g_sEnemy[i].m_cLocation.Y)
+                {
+                    g_Console.writeToBuffer(g_sEProj[i].m_cLocation, cP5[i], EProjColor[i]); //enemy projectile
+                }
+                g_Console.writeToBuffer(g_sEnemy[i].m_cLocation, c5[i], enemyColor[i]); //enemy write
+            }
+            else
+            {
+                c5[i] = 0;
+                cP5[i] = 0;
+                enemyColor[i] = BGcolor;
             }
         }
+        
         for (int i = 0; i <= 3; i++)
         {
-            if (level == 6) //spawner level
+            if (levelFile == "lvlDewm3.txt") //spawner level
             {
                 if (g_sObj[0].m_dHealth > 0 || g_sObj[1].m_dHealth > 0) //writes spawner obj
                 {
@@ -4316,175 +4429,187 @@ void renderEnemy()
             }
         }
 
-        if (level == 7) //mini - boss level
+        if (levelFile == "lvlDewm4.txt") //mini - boss level
         {
-            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation, boss1, bossColor);
-            g_Console.writeToBuffer(g_sBoss1[1].m_cLocation, boss2, bossColor);
+            g_Console.writeToBuffer(g_sBoss1[0].m_cLocation, boss1, bossColor[0]);
+            g_Console.writeToBuffer(g_sBoss1[1].m_cLocation, boss2, bossColor[0]);
+        }
+        if (levelFile == "lvlSeraph4.txt")
+        {
+            for (int i = 0; i <= 5; i++) {
+                if (g_sBProj[i].m_cLocation.Y != g_sChar.m_cLocation.Y)
+                {
+                    g_Console.writeToBuffer(g_sBProj[i].m_cLocation, bP5[i], BProjColor[i]);
+                }
+            }
+            g_Console.writeToBuffer(g_sBoss2.m_cLocation, boss3, bossColor[1]);
         }
     }
 }
 
 void renderObj()
 {
-    if (characterSelect == 0)
+    if (levelFile == "Dewmtutorial_1.txt")
     {
-        if (level == 0)
+        for (int i = 0; i <= 3; i++)
         {
-            for (int i = 0; i <= 3; i++)
+            if (g_sObj[i].m_dHealth > 0)
             {
-                if (g_sObj[i].m_dHealth > 0)
-                {
-                    c0[i] = 221;
-                    ObjColor[i] = 0x44;
-                }
-                else
-                {
-                    ObjColor[i] = BGcolor;
-                    c0[i] = 0;
-                }
-                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
-                g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x44);
+                c0[i] = 221;
+                ObjColor[i] = 0x44;
             }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+            g_Console.writeToBuffer(g_sPrimeObj[i].m_cLocation, 220, 0x44);
         }
-        if (level == 2)
+    }
+    if (levelFile == "Dewmtutorial_3.txt")
+    {
+        for (int i = 0; i <= 4; i++)
         {
-            for (int i = 0; i <= 4; i++)
+            if (g_sObj[i].m_dHealth > 0)
             {
-                if (g_sObj[i].m_dHealth > 0)
-                {
-                    c0[i] = 237;
-                    ObjColor[i] = 0x40;
-                }
-                else
-                {
-                    ObjColor[i] = BGcolor;
-                    c0[i] = 0;
-                }
-                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                c0[i] = 237;
+                ObjColor[i] = 0x40;
             }
+            else
+            {
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
+            }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
         }
-        if (level == 3)
+    }
+    if (levelFile == "DewmIntro.txt")
+    {
+        for (int i = 0; i <= 24; i++)
         {
-            for (int i = 0; i <= 24; i++)
+            if (g_sObj[i].m_dHealth > 0)
             {
-                if (g_sObj[i].m_dHealth > 0)
-                {
-                    c0[i] = 219;
-                    ObjColor[i] = 0x00;
-                }
-                else
-                {
-                    ObjColor[i] = BGcolor;
-                    c0[i] = 0;
-                }
-                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                c0[i] = 219;
+                ObjColor[i] = 0x00;
             }
-            for (int i = 1; i <= 8; i++)
+            else
             {
-                NPC[i] = 246;
-                NPCcolor[i] = 0x9F;
-                NPCcolor[5] = 0x9C;
-                NPC[8] = 241;
-                NPCcolor[8] = 0x0F;
-                g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
             }
+            g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
         }
-        if (level >= 5) //potion rendering
+        for (int i = 0; i <= 8; i++)
         {
-            for (int i = 0; i <= hp; i++)
-            {
-                if (g_sChar.m_cLocation.X == g_sPotion[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPotion[i].m_cLocation.Y && cO[i] != 0)
-                {
-                    cO[i] = 0;
-                    PotionColor[i] = BGcolor;
-                }
-                else
-                {
-                    if (level >= 5 && level < 8)
-                    {
-                        PotionColor[i] = 0x4A;
-                    }
-                    else if (level >= 8 && level < 16)
-                    {
-                        PotionColor[i] = 0x1A;
-                    }
-                    else if (level > 16)
-                    {
-                        PotionColor[i] = 0x3A;
-                    }
-                    g_Console.writeToBuffer(g_sPotion[i].m_cLocation, cO[i], PotionColor[i]);
-                }
-            }
+            NPC[i] = 246;
+            NPCcolor[i] = 0x9F;
+            NPCcolor[5] = 0x9C;
+            NPC[8] = 241;
+            NPCcolor[8] = 0x0F;
+            g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
         }
-        if (level == 6)
+        for (int i = 0; i < 500; i++)
         {
-            for (int i = 0; i < 2; i++)
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", BACKGROUND_GREEN);
+        }
+    }
+        
+    //potion rendering
+    if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt" || levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt" || levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+    {
+        for (int i = 0; i <= hp; i++)
+        {
+            if (g_sChar.m_cLocation.X == g_sPotion[i].m_cLocation.X && g_sChar.m_cLocation.Y == g_sPotion[i].m_cLocation.Y && cO[i] != 0)
             {
-                if (g_sObj[i].m_dHealth > 0)
+                cO[i] = 0;
+                PotionColor[i] = BGcolor;
+            }
+            else
+            {
+                if (levelFile == "lvlDewm1.txt" || levelFile == "lvlDewm2.txt" || levelFile == "lvlDewm3.txt" || levelFile == "lvlDewm4.txt")
                 {
-                    c0[i] = 144;
-                    ObjColor[i] = 0x4E;
-                    g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
+                    PotionColor[i] = 0x4A;
                 }
-                else
+                else if (levelFile == "lvlSeraph1.txt" || levelFile == "lvlSeraph2.txt" || levelFile == "lvlSeraph3.txt" || levelFile == "lvlSeraph4.txt" || levelFile == "lvlNinja1.txt" || levelFile == "lvlNinja2.txt" || levelFile == "lvlNinja3.txt")
                 {
-                    ObjColor[i] = BGcolor;
-                    c0[i] = 0;
+                    PotionColor[i] = 0x1A;
                 }
+                else if (levelFile == "lvlVik1.txt" || levelFile == "lvlVik2.txt" || levelFile == "lvlVik3.txt")
+                {
+                    PotionColor[i] = 0x3A;
+                }
+                g_Console.writeToBuffer(g_sPotion[i].m_cLocation, cO[i], PotionColor[i]);
             }
         }
     }
-    if (characterSelect == 1) //rendering background and NPCs
+    if (levelFile == "lvlDewm3.txt")
     {
-        if (level == 0)
+        for (int i = 0; i < 2; i++)
         {
-            for (int i = 0; i <= 2; i++)
+            if (g_sObj[i].m_dHealth > 0)
             {
-                NPC[0] = 194;
-                NPCcolor[0] = 0x05;
-                NPC[1] = 205;
-                NPCcolor[1] = 0x06;
-                NPC[2] = 236;
-                NPCcolor[2] = 0x0F;
-                g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+                c0[i] = 144;
+                ObjColor[i] = 0x4E;
+                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
             }
-            for (int i = 0; i < 384; i++)
+            else
             {
-                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x80);
-            }
-            for (int i = 0; i < 96; i++)
-            {
-                g_Console.writeToBuffer(g_sTrainTracks[i].m_cLocation, " ", 0x70);
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
             }
         }
-        if (level == 1) {
-            for (int i = 0; i < 1500; i++)
+    }
+    
+    if (levelFile == "SeraphIntro.txt")
+    {
+        for (int i = 0; i <= 2; i++)
+        {
+            NPC[0] = 194;
+            NPCcolor[0] = 0x05;
+            NPC[1] = 223;
+            NPCcolor[1] = 0x0B;
+            NPC[2] = 236;
+            NPCcolor[2] = 0x0F;
+            g_Console.writeToBuffer(g_sNPC[i].m_cLocation, NPC[i], NPCcolor[i]);
+        }
+        for (int i = 0; i < 384; i++)
+        {
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x80);
+        }
+        for (int i = 0; i < 96; i++)
+        {
+            g_Console.writeToBuffer(g_sTrainTracks[i].m_cLocation, " ", 0x70);
+        }
+    }
+    if (levelFile == "Seraphtutorial_1.txt") {
+        for (int i = 0; i < 1500; i++)
+        {
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            if (g_sObj[i].m_dHealth > 0)
             {
-                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
+                c0[i] = 173;
+                ObjColor[i] = 0x50;
+                g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
             }
-            for (int i = 0; i < 4; i++)
+            else
             {
-                if (g_sObj[i].m_dHealth > 0)
-                {
-                    c0[i] = 173;
-                    ObjColor[i] = 0x50;
-                    g_Console.writeToBuffer(g_sObj[i].m_cLocation, c0[i], ObjColor[i]);
-                }
-                else
-                {
-                    ObjColor[i] = BGcolor;
-                    c0[i] = 0;
-                }
+                ObjColor[i] = BGcolor;
+                c0[i] = 0;
             }
         }
-        if (level == 2) {
-            for (int i = 0; i < 117; i++)
-            {
-                g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
-            }
+    }
+    if (levelFile == "Seraphtutorial_2.txt") {
+        for (int i = 0; i < 117; i++)
+        {
+            g_Console.writeToBuffer(g_sbCutscene[i].m_cLocation, " ", 0x00);
         }
+    }
 
-    }
+    
 
 }
 
@@ -4600,8 +4725,7 @@ void renderInputEvents() {
 void loadLevelData(int number) {
     int n1 = 0; int n = 0; int b = 0; int h = 0;
     int y = 0; int e = 0; int o = 0; int po = 0;
-    int t = 0; int tt = 0;
-    std::string levelFile;
+    int t = 0; int tt = 0; int bp = 0;
     std::string line2;
     if (characterSelect == 0)
     {
@@ -4685,58 +4809,55 @@ void loadLevelData(int number) {
             levelFile = "Seraphtutorial_2.txt";
         }
         if (number == 3) {
-            levelFile = "Seraphtutorial_3.txt";
-        }
-        if (number == 4) {
             levelFile = "lvlSeraph1.txt";
         }
-        if (number == 5) {
+        if (number == 4) {
             levelFile = "lvlSeraph2.txt";
         }
-        if (number == 6) {
+        if (number == 5) {
             levelFile = "lvlSeraph3.txt";
         }
-        if (number == 7) {
+        if (number == 6) {
             levelFile = "lvlSeraph4.txt";
         }
-        if (number == 8) {
+        if (number == 7) {
             BGcolor = 0x40;
             levelFile = "lvlDewm1.txt";
         }
-        if (number == 9) {
+        if (number == 8) {
             levelFile = "lvlDewm2.txt";
         }
-        if (number == 10) {
+        if (number == 9) {
             levelFile = "lvlDewm3.txt";
         }
-        if (number == 11) {
+        if (number == 10) {
             levelFile = "lvlDewm4.txt";
         }
-        if (number == 12) {
+        if (number == 11) {
             BGcolor = 0x10;
             levelFile = "lvlNinja1.txt";
         }
-        if (number == 13) {
+        if (number == 12) {
             levelFile = "lvlNinja2.txt";
         }
-        if (number == 14) {
+        if (number == 13) {
             levelFile = "lvlNinja3.txt";
         }
-        if (number == 15) {
+        if (number == 14) {
             BGcolor = 0x70;
             levelFile = "lvlNinja4.txt";
         }
-        if (number == 16) {
+        if (number == 15) {
             BGcolor = 0x30;
             levelFile = "lvlVik1.txt";
         }
-        if (number == 17) {
+        if (number == 16) {
             levelFile = "lvlVik2.txt";
         }
-        if (number == 18) {
+        if (number == 17) {
             levelFile = "lvlVik3.txt";
         }
-        if (number == 19) {
+        if (number == 18) {
             levelFile = "lvlVik4.txt";
         }
     }
@@ -4813,6 +4934,16 @@ void loadLevelData(int number) {
                     g_sBoss1[0].m_cLocation.Y = y;
                     g_sBoss1[1].m_cLocation.X = x;
                     g_sBoss1[1].m_cLocation.Y = y - 1;
+                }
+                if (perLine[x] == 'S')
+                {
+                    g_sBoss2.m_cLocation.X = x;
+                    g_sBoss2.m_cLocation.Y = y;
+                }
+                if (perLine[x] == 'M')
+                {
+                    g_sBProj[bp].m_cLocation.X = x;
+                    g_sBProj[bp].m_cLocation.Y = y;
                 }
                 if (perLine[x] == 'O')
                 {
@@ -4965,8 +5096,7 @@ void reset() {
     {
         g_sObj[i].m_dHealth = 5;
     }
-    g_sBoss1[0].m_dHealth = 100;
-    g_sChar.m_dMana = 50;
+    g_sChar.m_dMana = 0;
     g_sChar.m_dHealth = 50;
 }
 
@@ -5004,30 +5134,133 @@ void renderIntro() {
 }
 
 void renderNPCDialogue() {
-    if (g_sChar.m_cLocation.Y == g_sNPC[0].m_cLocation.Y) {
-        if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "  ...!?", 0x80);
+    if (levelFile == "DewmIntro.txt")
+    {
+        if (g_sChar.m_cLocation.Y == g_sNPC[0].m_cLocation.Y) {
+            if ((g_sChar.m_cLocation.X > g_sNPC[0].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[0].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 3, g_sNPC[0].m_cLocation.Y - 1, "  ...!?", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[1].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[1].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 3, g_sNPC[1].m_cLocation.Y - 1, "Excuse me..?", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "It's him...", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, " Huh!?", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "What the..", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3) && g_sNPC[5].m_cLocation.X < g_sNPC[6].m_cLocation.X) {
+                g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "    Waaa!", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "     Oh sh*t..", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[7].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[7].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "  :O", 0x80);
+            }
+            if ((g_sChar.m_cLocation.X > g_sNPC[8].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[8].m_cLocation.X + 3)) {
+                g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, " !!!", 0x80);
+            }
         }
-        if ((g_sChar.m_cLocation.X > g_sNPC[2].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[2].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 1, g_sNPC[2].m_cLocation.Y - 1, "It's him...", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[3].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[3].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[3].m_cLocation.X - 3, g_sNPC[3].m_cLocation.Y - 1, " Huh!?", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[4].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[4].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[4].m_cLocation.X - 3, g_sNPC[4].m_cLocation.Y - 1, "What the..", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[5].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[5].m_cLocation.X + 3) && g_sNPC[5].m_cLocation.X < g_sNPC[6].m_cLocation.X) {
-            g_Console.writeToBuffer(g_sNPC[5].m_cLocation.X - 6, g_sNPC[5].m_cLocation.Y - 1, "    Waaa!", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[6].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[6].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[6].m_cLocation.X - 9, g_sNPC[6].m_cLocation.Y - 1, "     Oh sh*t..", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[7].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[7].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[7].m_cLocation.X - 3, g_sNPC[7].m_cLocation.Y - 1, "  :O", 0x80);
-        }
-        if ((g_sChar.m_cLocation.X > g_sNPC[8].m_cLocation.X - 3) && (g_sChar.m_cLocation.X < g_sNPC[8].m_cLocation.X + 3)) {
-            g_Console.writeToBuffer(g_sNPC[8].m_cLocation.X - 1, g_sNPC[8].m_cLocation.Y - 1, " !!!", 0x80);
+    }
+    if (levelFile == "SeraphIntro.txt")
+    {
+        if (g_sChar.m_cLocation.Y == g_sNPC[0].m_cLocation.Y) {
+            if (cut == 7 && g_cDelayTime < 2) {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 2, g_sNPC[0].m_cLocation.Y - 1, "Mifa: Seraph!? ", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 2 && g_cDelayTime < 4) {
+                g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 2, g_sNPC[1].m_cLocation.Y - 1, "Aireth:Hey..", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 4 && g_cDelayTime < 6) {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 2, g_sNPC[0].m_cLocation.Y - 1, "Mifa: It's been such a long time...", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 6 && g_cDelayTime < 8) {
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 1, "Warren: Well yeah we have to get moving soon", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 8 && g_cDelayTime < 11) {
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 1, "My senses telling me that something's bad about to happen", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 11 && g_cDelayTime < 13) {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 6, g_sNPC[0].m_cLocation.Y - 1, "Mifa: Warren... you worry too much", 0x1E);
+            }
+            if (cut == 7 && g_cDelayTime > 15 && g_cDelayTime < 17) {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 3, g_sNPC[0].m_cLocation.Y - 1, "Let's walk shall we?", 0x1E);
+            }
+            if (cut > 7 && cut < 62 && g_cDelayTime > 19 && g_cDelayTime < 22)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 3, g_sNPC[0].m_cLocation.Y - 1, "Seraph, now that you're here.. ", 0x1E);
+            }
+            if (cut > 7 && cut < 62 && g_cDelayTime > 22 && g_cDelayTime < 25)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 3, g_sNPC[0].m_cLocation.Y - 1, "The people, they need you", 0x1E);
+            }
+            if (cut > 7 && cut < 62 && g_cDelayTime > 25 && g_cDelayTime < 28)
+            {
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 2, "Warren(sarcastically): ", 0x1E);
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 1, "You picked a great time to come back buddy", 0x1E);
+            }
+            if (cut > 7 && cut < 62 && g_cDelayTime > 28 && g_cDelayTime < 31)
+            {
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 13, g_sNPC[2].m_cLocation.Y - 1, "Ever since you left, Gaia has gone to hell", 0x1E);
+            }
+            if (cut > 7 && cut < 62 && g_cDelayTime > 31 && g_cDelayTime < 34)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 9, g_sNPC[2].m_cLocation.Y - 1, "Mifa: Warren, don't be like that..", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime < 3)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 7, g_sNPC[2].m_cLocation.Y - 1, "It's partly our fault too", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 3 && g_cDelayTime < 6)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 25, g_sNPC[2].m_cLocation.Y - 1, "Sorry Seraph but, we were actually waiting here...", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 6 && g_cDelayTime < 8)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 25, g_sNPC[2].m_cLocation.Y - 1, "Warren: Yeah, we're actually waiting for our train", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 8 && g_cDelayTime < 10)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 20, g_sNPC[2].m_cLocation.Y - 1, "We don't have time for a deserter like you", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 10 && g_cDelayTime < 11)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 2, g_sNPC[2].m_cLocation.Y - 1, "Warren!", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 11 && g_cDelayTime < 13)
+            {
+                g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 25, g_sNPC[1].m_cLocation.Y - 1, "Aireth: How about, we just say our last goodbyes", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 13 && g_cDelayTime < 15)
+            {
+                g_Console.writeToBuffer(g_sNPC[1].m_cLocation.X - 9, g_sNPC[1].m_cLocation.Y - 1, "and bid him farewell", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 15 && g_cDelayTime < 17)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 9, g_sNPC[0].m_cLocation.Y - 1, "Mifa: Yeah, you're right", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 17 && g_cDelayTime < 19)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 15, g_sNPC[0].m_cLocation.Y - 1, "Bye Seraph, it was nice seeing you..", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 19 && g_cDelayTime < 21)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 15, g_sNPC[0].m_cLocation.Y - 1, "Sorry for dragging you into this,", 0x1E);
+            }
+            if (cut == 62 && g_cDelayTime > 21 && g_cDelayTime < 23)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 10, g_sNPC[0].m_cLocation.Y - 1, "but you're our only hope", 0x1E);
+            }
+            if (cut > 62)
+            {
+                g_Console.writeToBuffer(g_sNPC[0].m_cLocation.X - 6, g_sNPC[0].m_cLocation.Y - 1, "See you!", 0x1E);
+                g_Console.writeToBuffer(g_sNPC[2].m_cLocation.X - 6, g_sNPC[2].m_cLocation.Y - 2, "Farewell", 0x1E);
+            }
+      
         }
     }
 }

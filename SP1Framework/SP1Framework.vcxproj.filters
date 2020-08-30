@@ -30,13 +30,13 @@
     <ClCompile Include="Framework\timer.cpp">
       <Filter>Source Files\Framework</Filter>
     </ClCompile>
-    <ClCompile Include="game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="save.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="levels.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -76,55 +76,28 @@
     <Text Include="tutorial_3.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlDewm1.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlDewm2.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlDewm3.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlDewm4.txt">
-      <Filter>Source Files</Filter>
-    </Text>
     <Text Include="menu.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlSeraph1.txt">
+    <Text Include="SeraphIntro.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlSeraph2.txt">
+    <Text Include="Seraphtutorial_1.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlSeraph3.txt">
+    <Text Include="Seraphtutorial_2.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="train.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="DewmIntro.txt">
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="lvlSeraph4.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="lvlNinja1.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlNinja2.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlNinja3.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlNinja4.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlVik1.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlVik2.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlVik3.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="lvlVik4.txt">
+    <Text Include="lvlDewm4.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

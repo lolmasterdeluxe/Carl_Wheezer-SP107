@@ -93,26 +93,17 @@
     <ClInclude Include="save.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="DewmIntro.txt" />
     <Text Include="Intro.txt" />
-    <Text Include="lvlDewm1.txt" />
-    <Text Include="lvlDewm2.txt" />
-    <Text Include="lvlDewm3.txt" />
     <Text Include="lvlDewm4.txt" />
-    <Text Include="lvlNinja1.txt" />
-    <Text Include="lvlNinja2.txt" />
-    <Text Include="lvlNinja3.txt" />
-    <Text Include="lvlNinja4.txt" />
-    <Text Include="lvlSeraph1.txt" />
-    <Text Include="lvlSeraph2.txt" />
-    <Text Include="lvlSeraph3.txt" />
     <Text Include="lvlSeraph4.txt" />
-    <Text Include="lvlVik1.txt" />
-    <Text Include="lvlVik2.txt" />
-    <Text Include="lvlVik3.txt" />
-    <Text Include="lvlVik4.txt" />
     <Text Include="map.txt" />
     <Text Include="menu.txt" />
     <Text Include="save.txt" />
+    <Text Include="SeraphIntro.txt" />
+    <Text Include="Seraphtutorial_1.txt" />
+    <Text Include="Seraphtutorial_2.txt" />
+    <Text Include="train.txt" />
     <Text Include="tutorial_1.txt" />
     <Text Include="tutorial_2.txt" />
     <Text Include="tutorial_3.txt" />

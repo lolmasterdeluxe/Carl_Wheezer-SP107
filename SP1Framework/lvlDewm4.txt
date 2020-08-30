@@ -8,7 +8,7 @@ PPPPPPPPPPPPPPPPPPPPP................................0..........................
 PPPPPPPPPPPPP..PPPPPPPPPPPP......................PPPPPPPP.........................................PP
 PPPP....PPPP.....PPPPPPPPPPPPPPPP..........PPPPPPPPPPPPPPPP.......................................PP
 PPPPP..PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP...........................PP
-PPPPP..PPPPP..............................................................................1.......PP
+PPPPP..PPPPP.....................................................................................1PP
 PPPPP..PPPPP......................................................................PPPPPPPPPPPPPPPPPP
 PPPP....PPPP...................................................PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP....PP
 PPPPPP.....P..........................2.................PPPPPPPPPPPPPPPP.....PPPPPPPPPPPPPP.......PP

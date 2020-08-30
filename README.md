@@ -6,20 +6,25 @@ General:
 W          - Jump
 A          - Move left
 D          - Move right
-LeftClick  - Shoot
+LeftClick  - Shoot / Melee
 Space      - Activate ability
 Esc        - Pause menu
 Arrow Keys - Select
 Enter      - Enter selection
 
-Dewm Controls:
+Unique controls:
 
-Seraph Controls:
+Seraph:
+S          - Down slam
 
-Gin Controls:
+Gin:
+S          - Sneak
+Q/E        - Dodge left/right
+U          - Activate Ult while Focus mode active
 
-Thorfinn Controls:
-
+Thorfinn:
+1          - Melee
+2          - Ranged
 
 Misc:
 R - Reset

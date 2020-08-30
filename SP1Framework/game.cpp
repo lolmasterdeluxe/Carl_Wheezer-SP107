@@ -95,7 +95,6 @@ char b2 = 142;
 auto bear1 = std::string(2, b1) + b2;
 char b3 = 142;
 char b4 = 142;
-auto bear1 = std::string(2, b1) + b2;
 
 char c6 = 232;                     //mini - Boss ascii (c6 - 9)
 char c7 = 232;
@@ -1087,6 +1086,7 @@ void moveProjectile()
         n = 0.02;
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
     { 
+        PlaySound(TEXT("DewmShot.wav"), NULL, SND_ALIAS | SND_ASYNC);
         c4 = 205;
         if (g_pElapsedTime > n) 
         {
@@ -1130,6 +1130,7 @@ void moveProjectile()
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X) //shoot to left
     { 
+        PlaySound(TEXT("DewmShot.wav"), NULL, SND_ALIAS | SND_ASYNC);
         c4 = 205;
         if (g_pElapsedTime > n) 
         {
@@ -1187,6 +1188,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
     {
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sProj.m_cLocation.X >= g_sChar.m_cLocation.X) //shoot to right
         {
+            PlaySound(TEXT("ThorfinnBow.wav"), NULL, SND_ALIAS | SND_ASYNC);
             c4 = 246;
             if (g_pElapsedTime > n1 && g_slashdelay > 2)
             {
@@ -1231,6 +1233,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         }
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sProj.m_cLocation.X <= g_sChar.m_cLocation.X) //shoot to left
         {
+            PlaySound(TEXT("ThorfinnBow.wav"), NULL, SND_ALIAS | SND_ASYNC);
             c4 = 246;
             if (g_pElapsedTime > n1 && g_slashdelay > 2)
             {
@@ -1279,6 +1282,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         g_sAttackState = false;
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
         {
+            PlaySound(TEXT("ThorfinnAxe.wav"), NULL, SND_ALIAS | SND_ASYNC);
             g_sAttackState = true;
             if (g_sElapsedTime > n2)
             {
@@ -1324,6 +1328,7 @@ void ThorfinnArms(double n1, double n2, int i, int k) //speed of projectile || m
         }
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
         {
+            PlaySound(TEXT("ThorfinnAxe.wav"), NULL, SND_ALIAS | SND_ASYNC);
             g_sAttackState = true;
             if (g_sElapsedTime > n2)
             {
@@ -1456,6 +1461,7 @@ void slashAttack(double n, int i)
     g_sAttackState = false;
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X > g_sChar.m_cLocation.X && g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 && !g_sUltimate && !g_sFocus) //Slash right
     {
+        PlaySound(TEXT("SeraphSish.wav"), NULL, SND_ALIAS | SND_ASYNC);
         g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
@@ -1501,6 +1507,7 @@ void slashAttack(double n, int i)
     }
     if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && g_mouseEvent.mousePosition.X < g_sChar.m_cLocation.X && g_sChar.m_cLocation.X > 2 && !g_sUltimate && !g_sFocus) //Slash left
     {
+        PlaySound(TEXT("SeraphSish.wav"), NULL, SND_ALIAS | SND_ASYNC);
         g_sAttackState = true;
         if (g_sElapsedTime > n)
         {
@@ -1834,6 +1841,7 @@ void focusAttack()
     {
         if (g_mouseEvent.buttonState == FROM_LEFT_1ST_BUTTON_PRESSED && (g_sChar.m_cLocation.X < g_Console.getConsoleSize().X - 3 || g_sChar.m_cLocation.X > 2))
         {
+            PlaySound(TEXT("GinSlice.wav"), NULL, SND_ALIAS | SND_ASYNC);
             f++;
         }
         if (f < 25)
@@ -2268,7 +2276,7 @@ void setdamage()
         g_sChar.m_dHealth = 0;
     }
 }
-
+ 
 void setUltimate(int M)
 {
     if (g_sChar.m_dMana < M && !g_sUltimate && !g_sRage && !g_sFocus) //checks if Player mana is less than 50 and is not in rage mode

@@ -3705,7 +3705,8 @@ void render() {
     case S_START:
         renderStartMenu();
         break;
-    case S_GAME: 
+    case S_GAME:
+        renderMap();
         renderGame(); 
         renderFramerate();
         break;
@@ -3943,7 +3944,7 @@ void renderEnemyStats() {
 }
 
 void renderGame() {
-    renderMap();        // renders the map to the buffer first
+    //renderMap();        // renders the map to the buffer first
     renderObj();        // renders obj under char
     renderCharacter();  // renders the character into the buffer
     renderEnemy();      // renders enemies into the buffer
